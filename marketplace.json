@@ -1,0 +1,11 @@
+{
+  "name": "e-ws-marketplace",
+  "description": "Marketplace สำหรับระบบ e-WS",
+  "plugins": [
+    {
+      "id": "e-ws-plugin",
+      "name": "e-WS Core",
+      "url": "https://github.com/tratmarshal/e-WS"
+    }
+  ]
+}
