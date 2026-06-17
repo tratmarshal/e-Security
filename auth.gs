@@ -1,11 +1,12 @@
-﻿// ========== auth.gs ==========
-// ตรวจสอบสิทธิ์ผู้ใช้งาน
-
-function isAuthorized(userId) {
-  if (!userId) return false;
-  return AUTHORIZED_USERS.indexOf(String(userId).trim()) !== -1;
-}
+// ========== auth.gs ==========
+// ตรวจสอบสิทธิ์เจ้าหน้าที่ตำรวจศาล
 
 function getAuthorizationStatus(userId) {
-  return isAuthorized(userId) ? "authorized" : "unauthorized";
+  const cleanUserId = normalizeText_(userId);
+  if (!cleanUserId) return "unauthorized";
+  return AUTHORIZED_USERS.indexOf(cleanUserId) !== -1 ? "authorized" : "unauthorized";
+}
+
+function isAuthorizedUser(userId) {
+  return getAuthorizationStatus(userId) === "authorized";
 }

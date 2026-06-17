@@ -49,6 +49,7 @@ function autoUpdateWarrantDatabase_() {
       processSheet.getRange(rowNumber, 11).setValue(SYNC_STATUS_SYNCED);
       processSheet.getRange(rowNumber, 12).setValue(nowText());
       processSheet.getRange(rowNumber, 13).setValue(note);
+      clearWarrantCache_();
       synced++;
     } catch (err) {
       processSheet.getRange(rowNumber, 11).setValue(SYNC_STATUS_ERROR);

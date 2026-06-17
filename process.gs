@@ -126,6 +126,7 @@ function markProcessRevoked(rowId, userId) {
     if (currentStatus !== WARRANT_STATUS_PENDING_REVOCATION) throw new Error(`สถานะปัจจุบันคือ ${currentStatus} จึงเพิกถอนไม่ได้`);
 
     found.sheet.getRange(found.rowNumber, found.columns.status + 1).setValue(WARRANT_STATUS_REVOKED);
+    clearWarrantCache_();
     processSheet.getRange(rowNumber, 7).setValue(CASE_STATUS_WAITING_FORWARD);
     processSheet.getRange(rowNumber, 10).setValue(WARRANT_STATUS_REVOKED);
     processSheet.getRange(rowNumber, 11).setValue(SYNC_STATUS_SYNCED);
