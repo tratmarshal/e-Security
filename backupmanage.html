@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#07111f">
   <title>จัดการหมายจับ | Warrant Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -32,8 +32,8 @@
     h3 { font-size: 16px; margin-bottom: 10px; }
     .muted { color: var(--muted); font-size: 13px; }
     .user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--panel); overflow: hidden; display: grid; place-items: center; }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--panel); overflow: hidden; display: grid; place-items: center; flex-shrink: 0; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 760px) { .grid.two { grid-template-columns: 1fr 1fr; } }
     input, select, textarea { width: 100%; border: 1px solid var(--line); background: #08111f; color: var(--text); border-radius: 10px; padding: 12px; font: inherit; }
@@ -52,7 +52,7 @@
     .record-card { border: 1px solid var(--line); border-radius: 10px; background: #08111f; padding: 12px; display: grid; gap: 10px; }
     .record-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
     .record-no { font-weight: 800; font-family: monospace; color: var(--text); }
-    .record-name { font-weight: 700; }
+    .record-name { font-weight: 700; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .record-meta { display: grid; gap: 6px; }
     .record-row { display: grid; grid-template-columns: 88px 1fr; gap: 8px; font-size: 13px; line-height: 1.45; }
     .record-row span:first-child { color: var(--muted); }
@@ -133,7 +133,7 @@
           <button class="btn secondary hidden" id="syncBtn"><i class="fas fa-arrows-rotate"></i>ลองอัปเดตอีกครั้ง</button>
         </div>
       </div>
-      <div id="pendingList" class="message">กำลังโหลด...</div>
+      <div id="pendingList" class="message" style="max-height:55vh;overflow-y:auto;">กำลังโหลด...</div>
       <button class="add-entry-btn" id="openAddBtn" type="button">
         <span><i class="fas fa-plus"></i></span>
         เพิ่มรายการดำเนินการ
@@ -186,6 +186,7 @@
         <div class="actions" style="margin-top:12px">
           <span class="selected-count-chip" id="selectedCountChip"><i class="fas fa-list-check"></i>เลือก 0 หมายจับ</span>
           <button class="btn" id="saveBtn" disabled><i class="fas fa-clipboard-check"></i>ตรวจสอบก่อนบันทึก</button>
+          <button class="btn secondary" id="cancelFormBtn" type="button"><i class="fas fa-arrow-left"></i>ย้อนกลับ / ยกเลิก</button>
         </div>
       </div>
     </section>
@@ -270,18 +271,21 @@
       const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
       const canForward = row.warrantStatus === STATUS_REVOKED && row.caseStatus === CASE_STATUS_WAITING_FORWARD;
       const updateHtml = syncCell(row);
-      const actionHtml = includeAction
+      const actionBtnHtml = includeAction
         ? (canForward
-          ? `<button class="btn secondary" onclick="markForwarded(${Number(row.rowId)})"><i class="fas fa-share"></i>ส่งต่อ</button>`
-          : `<button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}><i class="fas fa-ban"></i>เพิกถอน</button>`)
+          ? `<button class="btn secondary" style="width:34px; height:34px; padding:0; border-radius:50%; flex-shrink:0;" onclick="markForwarded(${Number(row.rowId)})" title="ส่งต่อ"><i class="fas fa-share" style="margin:0;"></i></button>`
+          : `<button class="btn danger" style="width:34px; height:34px; padding:0; border-radius:50%; flex-shrink:0;" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"} title="เพิกถอน"><i class="fas fa-ban" style="margin:0;"></i></button>`)
         : "";
       return `<article class="record-card">
         <div class="record-card-head">
-          <div>
+          <div style="flex-grow: 1; min-width: 0;">
             <div class="record-no">${escapeHtml(row.warrantNo || "")}</div>
             <div class="record-name">${escapeHtml(row.fullName || "")}</div>
           </div>
-          ${statusBadge(row.warrantStatus)}
+          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            ${statusBadge(row.warrantStatus)}
+            ${actionBtnHtml}
+          </div>
         </div>
         <div class="record-meta">
           <div class="record-row"><span>เวลา</span><strong>${escapeHtml(row.timestamp || "")}</strong></div>
@@ -289,7 +293,6 @@
           <div class="record-row"><span>สถานะสำนวน</span><strong>${escapeHtml(row.caseStatus || "")}</strong></div>
           ${updateHtml ? `<div class="record-row"><span>ผลอัปเดต</span><strong>${updateHtml}</strong></div>` : ""}
         </div>
-        ${actionHtml}
       </article>`;
     }
 
@@ -516,8 +519,8 @@
             const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
             const canForward = row.warrantStatus === STATUS_REVOKED && row.caseStatus === CASE_STATUS_WAITING_FORWARD;
             const actionButtons = canForward
-              ? `<button class="btn secondary" onclick="markForwarded(${Number(row.rowId)})">ส่งต่อ</button>`
-              : `<button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}>เพิกถอน</button>`;
+              ? `<button class="btn secondary" style="width:34px; height:34px; padding:0; border-radius:50%;" onclick="markForwarded(${Number(row.rowId)})" title="ส่งต่อ"><i class="fas fa-share"></i></button>`
+              : `<button class="btn danger" style="width:34px; height:34px; padding:0; border-radius:50%;" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"} title="เพิกถอน"><i class="fas fa-ban"></i></button>`;
             html += `<tr>
               <td>${escapeHtml(row.timestamp || "")}</td>
               <td>${escapeHtml(row.warrantNo || "")}</td>
@@ -639,6 +642,7 @@
 
     document.getElementById("openAddBtn").addEventListener("click", openAddPanel);
     document.getElementById("closeAddBtn").addEventListener("click", closeAddPanel);
+    document.getElementById("cancelFormBtn").addEventListener("click", closeAddPanel);
     document.getElementById("searchBtn").addEventListener("click", searchWarrants);
     document.getElementById("clearBtn").addEventListener("click", () => { clearForm(true); setMessage("searchMessage", ""); });
     document.getElementById("saveBtn").addEventListener("click", openConfirm);
@@ -669,12 +673,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
