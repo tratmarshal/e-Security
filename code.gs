@@ -15,8 +15,9 @@ function doPost(e) {
 
     const data = JSON.parse(e.postData.contents);
     action = data.action || "unknown";
-    userId = data.userId || "";
-    displayName = data.displayName || "";
+    const verifiedProfile = getVerifiedLineProfile_(data.accessToken);
+    userId = verifiedProfile.userId || "";
+    displayName = verifiedProfile.displayName || data.displayName || "";
     page = data.page || "unknown";
     const payload = data.payload || data;
 
@@ -43,6 +44,9 @@ function doPost(e) {
         break;
       case "markRevoked":
         result = markProcessRevoked(payload.rowId, userId);
+        break;
+      case "markForwarded":
+        result = markProcessForwarded(payload.rowId, userId);
         break;
       default:
         result = { success: false, error: "Invalid action" };

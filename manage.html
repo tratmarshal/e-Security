@@ -224,13 +224,16 @@
   </div>
   <script src="https://static.line-scdn.net/liff/edge/versions/2.23.0/sdk.js"></script>
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyss_zHh0OcITnBgf86OQCL_TMBbWLuyYkQpI2gyQIzXPYOlW0VLOo5O1i2gs2RC13a/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxIeWnUnaO1tzNilGlv2pG3_xW7hFiTITDM5pMwuKy01zRQbUxU55X5rtaIQlN1iQ4l/exec";
     const LIFF_ID = "2010272973-QI3DZhXq";
     const STATUS_WANTED = "ต้องการตัว";
     const STATUS_PENDING = "สิ้นผลรอเพิกถอน";
     const STATUS_REVOKED = "เพิกถอน";
+    const CASE_STATUS_WAITING_FORWARD = "รอส่งต่อ";
+    const CASE_STATUS_FORWARDED = "ส่งต่อแล้ว";
 
     let lineProfile = { userId: "", displayName: "", pictureUrl: "" };
+    let lineAccessToken = "";
     let searchResults = [];
     let pendingRows = [];
     let revokeRowId = null;
@@ -265,7 +268,13 @@
 
     function recordCard(row, includeAction) {
       const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
+      const canForward = row.warrantStatus === STATUS_REVOKED && row.caseStatus === CASE_STATUS_WAITING_FORWARD;
       const updateHtml = syncCell(row);
+      const actionHtml = includeAction
+        ? (canForward
+          ? `<button class="btn secondary" onclick="markForwarded(${Number(row.rowId)})"><i class="fas fa-share"></i>ส่งต่อ</button>`
+          : `<button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}><i class="fas fa-ban"></i>เพิกถอน</button>`)
+        : "";
       return `<article class="record-card">
         <div class="record-card-head">
           <div>
@@ -277,9 +286,10 @@
         <div class="record-meta">
           <div class="record-row"><span>เวลา</span><strong>${escapeHtml(row.timestamp || "")}</strong></div>
           <div class="record-row"><span>เหตุ</span><strong>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</strong></div>
+          <div class="record-row"><span>สถานะสำนวน</span><strong>${escapeHtml(row.caseStatus || "")}</strong></div>
           ${updateHtml ? `<div class="record-row"><span>ผลอัปเดต</span><strong>${updateHtml}</strong></div>` : ""}
         </div>
-        ${includeAction ? `<button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}><i class="fas fa-ban"></i>เพิกถอน</button>` : ""}
+        ${actionHtml}
       </article>`;
     }
 
@@ -310,6 +320,7 @@
       }
       const profile = await liff.getProfile();
       lineProfile = profile;
+      lineAccessToken = liff.getAccessToken();
       document.getElementById("displayName").innerText = profile.displayName;
       if (profile.pictureUrl) {
         document.getElementById("avatar").innerHTML = `<img src="${profile.pictureUrl}" alt="Profile">`;
@@ -324,7 +335,7 @@
         body: JSON.stringify({
           action,
           page: "manage.html",
-          userId: lineProfile.userId,
+          accessToken: lineAccessToken,
           displayName: lineProfile.displayName,
           payload
         })
@@ -485,8 +496,8 @@
           box.innerHTML = "ยังไม่มีรายการดำเนินการ เริ่มจากเพิ่มรายการดำเนินการ";
           return;
         }
-        const activeRows = pendingRows.filter(row => row.warrantStatus !== STATUS_REVOKED);
-        const historyRows = pendingRows.filter(row => row.warrantStatus === STATUS_REVOKED);
+        const activeRows = pendingRows.filter(row => row.caseStatus !== CASE_STATUS_FORWARDED);
+        const historyRows = pendingRows.filter(row => row.caseStatus === CASE_STATUS_FORWARDED && row.warrantStatus === STATUS_REVOKED);
         const needsStatusUpdate = pendingRows.some(row => row.syncStatus !== "synced");
         document.getElementById("syncBtn").classList.toggle("hidden", !needsStatusUpdate);
         const updateHeader = needsStatusUpdate ? `<th>ผลอัปเดต</th>` : "";
@@ -500,17 +511,22 @@
         if (!activeRows.length) {
           html += `<div class="message">ไม่มีรายการที่ดำเนินอยู่</div>`;
         } else {
-          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะหมายจับ</th>${updateHeader}<th>จัดการ</th></tr></thead><tbody>`;
+          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะสำนวน</th><th>สถานะหมายจับ</th>${updateHeader}<th>จัดการ</th></tr></thead><tbody>`;
           activeRows.forEach(row => {
             const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
+            const canForward = row.warrantStatus === STATUS_REVOKED && row.caseStatus === CASE_STATUS_WAITING_FORWARD;
+            const actionButtons = canForward
+              ? `<button class="btn secondary" onclick="markForwarded(${Number(row.rowId)})">ส่งต่อ</button>`
+              : `<button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}>เพิกถอน</button>`;
             html += `<tr>
               <td>${escapeHtml(row.timestamp || "")}</td>
               <td>${escapeHtml(row.warrantNo || "")}</td>
               <td>${escapeHtml(row.fullName || "")}</td>
               <td>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</td>
+              <td>${escapeHtml(row.caseStatus || "")}</td>
               <td>${statusBadge(row.warrantStatus)}</td>
               ${needsStatusUpdate ? `<td>${syncCell(row)}</td>` : ""}
-              <td><button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}>เพิกถอน</button></td>
+              <td><div class="actions">${actionButtons}</div></td>
             </tr>`;
           });
           html += `</tbody></table></div><div class="mobile-list">${activeRows.map(row => recordCard(row, true)).join("")}</div>`;
@@ -526,13 +542,14 @@
         if (!historyRows.length) {
           html += `<div class="message">ยังไม่มีประวัติรายการดำเนินการ</div>`;
         } else {
-          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะหมายจับ</th>${updateHeader}</tr></thead><tbody>`;
+          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะสำนวน</th><th>สถานะหมายจับ</th>${updateHeader}</tr></thead><tbody>`;
           historyRows.forEach(row => {
             html += `<tr>
               <td>${escapeHtml(row.timestamp || "")}</td>
               <td>${escapeHtml(row.warrantNo || "")}</td>
               <td>${escapeHtml(row.fullName || "")}</td>
               <td>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</td>
+              <td>${escapeHtml(row.caseStatus || "")}</td>
               <td>${statusBadge(row.warrantStatus)}</td>
               ${needsStatusUpdate ? `<td>${syncCell(row)}</td>` : ""}
             </tr>`;
@@ -594,6 +611,17 @@
       } finally {
         document.getElementById("confirmRevokeBtn").disabled = false;
         document.getElementById("confirmRevokeBtn").innerHTML = `<i class="fas fa-ban"></i>ยืนยันเพิกถอน`;
+      }
+    }
+
+    async function markForwarded(rowId) {
+      if (!confirm("ยืนยันส่งต่อสำนวนรายการนี้?")) return;
+      try {
+        await callGas("markForwarded", { rowId });
+        await loadPending();
+      } catch (err) {
+        document.getElementById("pendingList").className = "message error";
+        document.getElementById("pendingList").innerText = err.message;
       }
     }
 
