@@ -1,0 +1,10 @@
+// ตั้งค่า ID ของ Google Spreadsheet และชื่อแท็บระบบ
+
+const CONFIG = {
+  SPREADSHEET_WARRANT_ID: "YOUR_MASTER_WARRANT_SPREADSHEET_ID_HERE",
+  SPREADSHEET_UPDATE_ID: "YOUR_UPDATE_LOG_SPREADSHEET_ID_HERE",
+  
+  SHEET_MASTER_WARRANTS: "ฐานข้อมูลหมายจับ",
+  SHEET_PROCESSING_NAME: "processing",
+  SHEET_LOG_NAME: "log"
+};
