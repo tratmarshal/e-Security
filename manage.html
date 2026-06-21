@@ -727,7 +727,7 @@
                 // แสดง Skeleton Loader ในผลลัพธ์การค้นหา
                 document.getElementById('searchResultsSection').classList.remove('hidden');
                 document.getElementById('warrantForm').classList.remove('hidden');
-                const listCheckboxDiv = document.getElementById('warrantsCheckboxList');
+                let listCheckboxDiv = document.getElementById('warrantsCheckboxList');
                 listCheckboxDiv.innerHTML = Array(2).fill(0).map(() => `
                     <div class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-100 skeleton">
                         <div class="mt-1 h-4 w-4 rounded bg-slate-200"></div>
@@ -754,7 +754,6 @@
 
                 document.getElementById('searchedDefendantName').innerText = defendantName;
                 
-                const listCheckboxDiv = document.getElementById('warrantsCheckboxList');
                 listCheckboxDiv.innerHTML = ''; 
 
                 warrants.forEach((warrant, index) => {
@@ -823,6 +822,22 @@
             const endReason = document.getElementById('endReason').value;
             const reasonDetail = document.getElementById('reasonDetail').value;
             const proposedTo = document.getElementById('proposedTo').value;
+            
+            // ตรวจสอบค่าว่าง
+            if (!endReason || !endReason.trim()) {
+                alert("กรุณาเลือกเหตุที่ทำให้หมายจับสิ้นผล");
+                return;
+            }
+            
+            if (endReason === 'อื่น ๆ' && (!reasonDetail || !reasonDetail.trim())) {
+                alert("กรุณาระบุรายละเอียดเพิ่มเติมเมื่อเลือก 'อื่น ๆ'");
+                return;
+            }
+            
+            if (!proposedTo || !proposedTo.trim()) {
+                alert("กรุณาเลือกผู้พิพากษาที่เสนอรายงาน");
+                return;
+            }
 
             // บันทึกฟอร์แมตตรงตามตัวแปรควบคุมที่ process.gs คาดหวัง
             pendingDataToSave = {
@@ -892,6 +907,12 @@
         }
 
         async function actionRevoke(rowId) {
+            // ตรวจสอบค่า rowId
+            if (!rowId || typeof rowId !== 'string' || rowId.trim() === '') {
+                alert("เกิดข้อผิดพลาด: ไม่พบรหัสรายการ กรุณารีโหลดหน้าและลองใหม่");
+                return;
+            }
+            
             if(!confirm("ยืนยันว่าศาลได้ลงนามเพิกถอนหมายจับนี้เรียบร้อยแล้ว?")) return;
             
             const routine = async () => {
@@ -909,6 +930,12 @@
         }
 
         async function actionForward(rowId) {
+            // ตรวจสอบค่า rowId
+            if (!rowId || typeof rowId !== 'string' || rowId.trim() === '') {
+                alert("เกิดข้อผิดพลาด: ไม่พบรหัสรายการ กรุณารีโหลดหน้าและลองใหม่");
+                return;
+            }
+            
             if(!confirm("ยืนยันว่าส่งต่อสำนวนนี้เรียบร้อยแล้ว?")) return;
             
             const routine = async () => {
@@ -993,8 +1020,9 @@
                 document.getElementById('searchResultsSection').classList.add('hidden');
                 document.getElementById('warrantForm').classList.add('hidden');
                 document.getElementById('warrantForm').reset();
-                toggleReasonDetail();
                 currentSearchedDefendant = null;
+                // เรียก toggleReasonDetail หลังจาก reset form แล้ว
+                setTimeout(() => toggleReasonDetail(), 10);
             }, 300);
         }
 
