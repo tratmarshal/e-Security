@@ -581,7 +581,8 @@
                 
             } catch (error) {
                 // แสดงป๊อปอัปให้ผู้ใช้ลองยิงข้อมูลใหม่อีกรอบ (Error Handling)
-                showErrorModal(error.message, () => fetchDataFromGAS());
+                const userMessage = "ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่หรือตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                showErrorModal(userMessage, () => fetchDataFromGAS());
             }
         }
 
@@ -794,7 +795,8 @@
                 lastFailedRequest = null;
                 
             } catch (error) {
-                showErrorModal(error.message, () => searchWarrants());
+                const userMessage = "ไม่สามารถค้นหาข้อมูลได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                showErrorModal(userMessage, () => searchWarrants());
             }
         }
 
@@ -895,7 +897,8 @@
                             
                             triggerBackgroundSync();
                         } catch (error) {
-                            showErrorModal(error.message, () => saveRoutine());
+                            const userMessage = "ไม่สามารถบันทึกรายการได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                            showErrorModal(userMessage, () => saveRoutine());
                         }
                     };
                     saveRoutine();
@@ -923,7 +926,8 @@
                     fetchDataFromGAS();
                     lastFailedRequest = null;
                 } catch(error) {
-                    showErrorModal(error.message, () => routine());
+                    const userMessage = "ไม่สามารถบันทึกการเพิกถอนได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                    showErrorModal(userMessage, () => routine());
                 }
             };
             routine();
@@ -946,7 +950,8 @@
                     fetchDataFromGAS();
                     lastFailedRequest = null;
                 } catch(error) {
-                    showErrorModal(error.message, () => routine());
+                    const userMessage = "ไม่สามารถบันทึกการส่งต่อได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                    showErrorModal(userMessage, () => routine());
                 }
             };
             routine();
