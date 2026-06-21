@@ -2,142 +2,141 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="theme-color" content="#050b14">
-    <title>Warrant Tracker | ระบบบันทึกรายการดำเนินการ</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกรายการดำเนินการ (Warrant Tracker)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Modern Fonts & Tactical Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <!-- Google Fonts (Sarabun & Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root {
-            --primary-color: #10b981; /* Emerald */
-            --bg-dark: #050b14;
-            --card-bg: #0f172a;
-            --surface-bg: #111827;
-            --border-color: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --text-dark: #64748b;
-            --radius-lg: 18px;
-            --radius-md: 14px;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
         body {
-            font-family: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(180deg, #0b1220 0%, #050a12 100%);
-            color: var(--text-main);
+            font-family: 'Sarabun', 'Inter', sans-serif;
         }
-
-        /* Custom Scrollbar for Tactical Interface */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        /* Spinner CSS */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #10b981;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
-        ::-webkit-scrollbar-track {
-            background: #050b14;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #334155;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body class="min-h-screen p-3 sm:p-6 md:p-8">
+<body class="bg-slate-50 min-h-screen p-3 sm:p-6 md:p-8">
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-[100] hidden transition-all duration-300">
+        <div class="loader mb-4"></div>
+        <p class="text-white font-medium text-sm">กำลังประมวลผล กรุณารอสักครู่...</p>
+    </div>
+
+    <!-- Error/Retry Modal -->
+    <div id="errorModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-[90] hidden opacity-0 transition-all duration-300">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform scale-95 transition-all duration-300 text-center" id="errorModalCard">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-rose-100 text-rose-600 mb-4">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">เกิดข้อผิดพลาด</h3>
+            <p class="text-sm text-slate-600 mb-6" id="errorMessageText">ไม่สามารถเชื่อมต่อระบบหลังบ้านได้</p>
+            <div class="flex space-x-3">
+                <button onclick="closeErrorModal()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors">ยกเลิก</button>
+                <button id="retryButton" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium text-sm transition-colors shadow-md">ลองใหม่อีกครั้ง</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Container หลักภายนอก -->
-    <div class="max-w-5xl mx-auto space-y-6">
+    <div class="max-w-5xl mx-auto space-y-6 relative">
         
-        <!-- ส่วนหัว (Header) สไตล์แบนเนอร์ใหม่ตามธีมสีกราเดียนท์ Dark Tactical และปุ่มเสนอศาลใหม่ -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] border border-[#1e293b] p-6 rounded-2xl shadow-2xl text-white relative overflow-hidden">
-            <!-- Background Decorative Grid Glow -->
-            <div class="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div class="flex items-center space-x-4 relative z-10">
-                <div class="w-12 h-12 bg-emerald-950/50 border border-emerald-500/30 rounded-xl flex items-center justify-center shrink-0">
-                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
+        <!-- ส่วนหัว (Header) สไตล์แบนเนอร์ใหม่ตามธีมสีกราเดียนท์ Slate-900 และปุ่มเพิ่มรายการ (+) -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl shadow-xl text-white">
+            <div class="flex items-center space-x-3">
+                <!-- SVG Icon สีเขียวมรกตตามธีมที่ส่งมา -->
+                <svg class="w-10 h-10 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-wider text-white">WARRANT TRACKER</h1>
-                    <p class="text-xs text-[#94a3b8] mt-0.5 uppercase tracking-wider font-semibold">ระบบสะสางข้อมูลและเสนอรายงานสิ้นผลหมายจับ • งานธุรการตำรวจศาล</p>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-wide">Warrant Tracker</h1>
+                    <p class="text-xs text-slate-300 mt-0.5">ระบบสะสางข้อมูลและบันทึกรายงานสิ้นผลหมายจับ สำหรับงานธุรการตำรวจศาล</p>
                 </div>
             </div>
             
-            <!-- ปุ่มเสนอศาลสไตล์มัลติฟังก์ชั่นยุทธวิธี -->
-            <button onclick="openFormModal()" 
-                    class="flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-emerald-900/20 hover:shadow-emerald-500/10 transition-all duration-200 text-sm shrink-0 border border-emerald-500/20 relative z-10">
-                <i class="fas fa-plus-circle text-base"></i>
-                <span>บันทึกเสนอศาลใหม่</span>
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- ข้อมูลผู้ใช้จาก LIFF -->
+                <div id="userProfile" class="hidden flex items-center space-x-2 mr-2">
+                    <img id="userPicture" src="" alt="Profile" class="w-8 h-8 rounded-full border border-slate-600">
+                    <span id="userName" class="text-sm font-medium text-slate-200"></span>
+                </div>
+                
+                <!-- ปุ่มบวก (+) สไตล์ปุ่มมรกตพรีเมียมตามธีม -->
+                <button onclick="openFormModal()" 
+                        class="flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-150 text-sm shrink-0 border border-emerald-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    <span>บันทึกเสนอศาลใหม่</span>
+                </button>
+            </div>
         </div>
 
-        <!-- กล่องข้อมูลสถิติเบื้องต้น (Dashboard Summary) มนโค้งมนและมีมิติมืด -->
+        <!-- กล่องข้อมูลสถิติเบื้องต้น (Dashboard Summary) มนโค้งมนและมีมิติ -->
         <div class="grid grid-cols-3 gap-3 sm:gap-4">
-            <div class="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl shadow-lg transition-all hover:border-slate-700">
-                <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> เสนอศาลแล้ว (รอคำสั่ง)
-                </p>
-                <p class="text-xl sm:text-3xl font-black text-amber-500 mt-1 drop-shadow-[0_0_8px_rgba(245,158,11,0.2)]" id="countProposed">0</p>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">เสนอศาลแล้ว (รอคำสั่ง)</p>
+                <p class="text-xl sm:text-3xl font-extrabold text-amber-600 mt-1" id="countProposed">0</p>
             </div>
-            <div class="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl shadow-lg transition-all hover:border-slate-700">
-                <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span> รอส่งต่อสำนวน
-                </p>
-                <p class="text-xl sm:text-3xl font-black text-indigo-400 mt-1 drop-shadow-[0_0_8px_rgba(129,140,248,0.2)]" id="countWaiting">0</p>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">รอส่งต่อสำนวน</p>
+                <p class="text-xl sm:text-3xl font-extrabold text-indigo-600 mt-1" id="countWaiting">0</p>
             </div>
-            <div class="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl shadow-lg transition-all hover:border-slate-700">
-                <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> ส่งต่อแล้ว (รอบวันนี้)
-                </p>
-                <p class="text-xl sm:text-3xl font-black text-emerald-400 mt-1 drop-shadow-[0_0_8px_rgba(52,211,153,0.2)]" id="countCompleted">0</p>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                <p class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-wider">ส่งต่อแล้ว (รอบวันนี้)</p>
+                <p class="text-xl sm:text-3xl font-extrabold text-emerald-600 mt-1" id="countCompleted">0</p>
             </div>
         </div>
 
-        <!-- แถบสลับแท็บ (Tabs Navigation) ชัดเจนสไตล์ Tactical Toggle -->
-        <div class="flex border-b border-[#1e293b] gap-6">
+        <!-- แถบสลับแท็บ (Tabs Navigation) ชัดเจนและเข้าใจง่าย -->
+        <div class="flex border-b border-slate-200 gap-6">
             <button onclick="switchTab('active')" id="tabActive" 
-                    class="pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 transition-all focus:outline-none tracking-wide">
+                    class="pb-3 text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 transition-all focus:outline-none">
                 รายการที่ดำเนินอยู่
             </button>
             <button onclick="switchTab('history')" id="tabHistory" 
-                    class="pb-3 text-sm font-medium border-b-2 border-transparent text-[#94a3b8] hover:text-[#f8fafc] transition-all focus:outline-none tracking-wide">
+                    class="pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all focus:outline-none">
                 ประวัติส่งต่อแล้ว
             </button>
         </div>
 
-        <!-- ตารางแสดงข้อมูลหลักและบอร์ดควบคุม -->
-        <div class="bg-[#0f172a] rounded-2xl shadow-2xl border border-[#1e293b] overflow-hidden">
-            <div class="px-6 py-4 bg-[#111827] border-b border-[#1e293b] flex justify-between items-center flex-wrap gap-2">
-                <span class="text-sm font-bold text-[#f8fafc] tracking-wide uppercase flex items-center gap-2" id="tableTitle">
-                    <i class="fas fa-folder-open text-emerald-400"></i> ตารางตรวจสอบงานธุรการตำรวจศาล
-                </span>
-                <span class="text-xs text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/40 px-3 py-1 rounded-full" id="tableCount">ทั้งหมด 0 รายการ</span>
+        <!-- รายการที่ดำเนินอยู่ / ประวัติ (ตารางแสดงข้อมูลจริง) -->
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <span class="text-sm font-bold text-slate-700" id="tableTitle">ตารางตรวจสอบงานธุรการตำรวจศาล</span>
+                <span class="text-xs text-slate-400 font-medium bg-slate-200/60 px-2.5 py-1 rounded-full" id="tableCount">ทั้งหมด 0 รายการ</span>
             </div>
 
-            <!-- พื้นที่แสดงตารางข้อมูลสไตล์สืบสวนสอบสวน -->
+            <!-- พื้นที่แสดงตารางข้อมูล -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse" id="itemsTable">
                     <thead>
-                        <tr class="bg-[#111827] text-[#94a3b8] text-[11px] font-bold uppercase tracking-wider border-b border-[#1e293b]">
-                            <th class="px-6 py-4">ข้อมูลหมายจับ / จำเลย</th>
-                            <th class="px-6 py-4">เสนอผู้พิพากษา</th>
-                            <th class="px-6 py-4">เหตุที่สิ้นผล</th>
-                            <th class="px-6 py-4">สถานะสำนวน</th>
-                            <th class="px-6 py-4">สถานะหมายจับ</th>
-                            <th class="px-6 py-4 text-right" id="thAction">ดำเนินการ</th>
+                        <tr class="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
+                            <th class="px-6 py-3">ข้อมูลหมายจับ / จำเลย</th>
+                            <th class="px-6 py-3">เสนอผู้พิพากษา</th>
+                            <th class="px-6 py-3">เหตุที่สิ้นผล</th>
+                            <th class="px-6 py-3">สถานะสำนวน</th>
+                            <th class="px-6 py-3">สถานะหมายจับ</th>
+                            <th class="px-6 py-3 text-right" id="thAction">ดำเนินการ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#1e293b] text-sm text-[#f8fafc]" id="itemsList">
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700" id="itemsList">
                         <!-- รายการจะถูกสร้างด้วย JavaScript ด้านล่าง -->
                     </tbody>
                 </table>
@@ -145,114 +144,129 @@
 
             <!-- กล่องแสดงกรณีไม่มีรายการเหลืออยู่เลย (Empty State) -->
             <div id="emptyState" class="hidden py-16 text-center">
-                <i class="fas fa-radar text-4xl text-[#64748b] mb-4 animate-pulse"></i>
-                <svg class="mx-auto h-12 w-12 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                 </svg>
-                <h3 class="mt-4 text-sm font-medium text-white tracking-wide">ไม่มีรายการพ้นระบบ</h3>
-                <p class="mt-1 text-xs text-[#94a3b8]">เมื่อทำรายการส่งต่อไปยังคลังประวัติแล้ว จะแสดงผลในแถบประวัติส่งต่อแล้ว</p>
+                <h3 class="mt-2 text-sm font-medium text-slate-950">ไม่มีรายการในส่วนนี้</h3>
+                <p class="mt-1 text-xs text-slate-400">เมื่อทำรายการส่งต่อไปยังคลังประวัติแล้ว จะแสดงผลในแถบประวัติส่งต่อแล้ว</p>
             </div>
         </div>
 
     </div>
 
-    <!-- Modal ฟอร์มบันทึกรายการสิ้นผลใหม่ -->
-    <div id="formModal" class="fixed inset-0 bg-[#050b14]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-all duration-300">
-        <div class="bg-[#0f172a] rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl border border-[#1e293b] transform scale-95 transition-all duration-300" id="formModalCard">
+    <!-- Modal ฟอร์มบันทึกรายการสิ้นผลใหม่ (ออกแบบอิงการสืบค้นหลายหมายจับ) -->
+    <div id="formModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-all duration-300">
+        <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl border border-slate-100 transform scale-95 transition-all duration-300 flex flex-col" style="max-height: 90vh;" id="formModalCard">
             
-            <!-- หัวข้อฟอร์มใน Modal ธีมกองปราบยุทธวิธี -->
-            <div class="bg-[#111827] border-b border-[#1e293b] px-6 py-5 text-white flex justify-between items-center">
+            <!-- หัวข้อฟอร์มใน Modal ธีมเดียวกับแบนเนอร์หลักและฟอร์มตัวอย่าง -->
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 text-white flex justify-between items-center shrink-0">
                 <div class="flex items-center space-x-2.5">
-                    <i class="fas fa-file-invoice text-emerald-400 text-lg"></i>
-                    <span class="font-extrabold tracking-wider text-sm sm:text-base uppercase">บันทึกเสนอรายงานสิ้นผลหมายจับ</span>
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="font-bold tracking-wide text-sm sm:text-base">บันทึกเสนอรายงานสิ้นผลหมายจับ</span>
                 </div>
                 <!-- ปุ่มปิดกากบาท -->
-                <button onclick="closeFormModal()" class="text-[#94a3b8] hover:text-white transition-colors">
-                    <i class="fas fa-times text-lg"></i>
+                <button type="button" onclick="closeFormModal()" class="text-slate-300 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>
 
-            <!-- เนื้อหา Modal -->
-            <div class="p-6 overflow-y-auto max-h-[80vh] space-y-4">
+            <!-- เนื้อหา Modal (Scrollable) -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
                 
                 <!-- ขั้นตอนที่ 1: ค้นหาข้อมูลจำเลย/หมายจับค้างเก่า -->
-                <div class="bg-[#111827] p-4 rounded-xl border border-[#1e293b] space-y-2">
-                    <label class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">
                         1. ค้นหาหมายจับค้างเก่า <span class="text-rose-500">*</span>
                     </label>
                     <div class="flex gap-2">
                         <input type="text" id="searchQuery" 
-                               class="flex-1 px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white placeholder-slate-600 font-medium"
+                               class="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                                placeholder="กรอกชื่อจำเลย หรือเลขบัตร 13 หลัก">
                         <button type="button" onclick="searchWarrants()"
-                                class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-5 py-2 rounded-lg text-sm transition-all flex items-center space-x-2">
-                            <i class="fas fa-search"></i>
+                                class="bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all flex items-center space-x-1 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
                             <span>ค้นหา</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- แสดงผลลัพธ์การค้นหาหมายจับและจำเลยเพื่อกดติ๊กเลือก -->
-                <div id="searchResultsSection" class="hidden space-y-3 bg-[#111827] p-4 rounded-xl border border-[#1e293b] shadow-inner">
-                    <div class="flex justify-between items-center pb-2 border-b border-[#1e293b]">
-                        <h4 class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">ผลการสืบค้นหมายค้างเก่า</h4>
-                        <span class="text-xs text-emerald-400 font-bold bg-emerald-950/60 px-3 py-1 rounded border border-emerald-800/40" id="searchedDefendantName">-</span>
+                <div id="searchResultsSection" class="hidden space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500">ผลการสืบค้นข้อมูลหมายจับค้างเก่า</h4>
+                        <span class="text-xs text-slate-800 font-semibold bg-emerald-50 px-2 py-1 rounded border border-emerald-100" id="searchedDefendantName"></span>
                     </div>
 
                     <!-- รายการหมายจับที่มีให้เลือกติ๊กถูก -->
-                    <div class="space-y-2" id="warrantsCheckboxList">
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-2" id="warrantsCheckboxList">
                         <!-- รายการจะถูกสร้างผ่าน JavaScript -->
                     </div>
-                    <p class="text-[11px] text-amber-500/90 font-medium"><i class="fas fa-info-circle mr-1"></i> ท่านสามารถเลือกหมายจับพร้อมกันหลายรายการได้ หากสิ้นผลจากพฤติการณ์เดียวกัน</p>
+                    <p class="text-[11px] text-amber-600 pt-1 border-t border-slate-50">* ท่านสามารถเลือกหมายจับพร้อมกันหลายรายการได้ หากสิ้นผลจากพฤติการณ์เดียวกัน</p>
                 </div>
 
                 <!-- ฟอร์มกรอกรายละเอียดเสนอศาล (จะเปิดให้กรอกเมื่อค้นพบข้อมูล) -->
                 <form id="warrantForm" onsubmit="handleFormSubmit(event)" class="hidden space-y-4 pt-2">
                     
-                    <!-- เหตุที่ทำให้หมายจับสิ้นผล -->
+                    <!-- เหตุที่ทำให้หมายจับสิ้นผล (เหมือนธีมตัวเลือกดั้งเดิม) -->
                     <div class="space-y-1.5">
-                        <label for="endReason" class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                        <label for="endReason" class="block text-xs font-bold text-slate-600 uppercase tracking-wider">
                             2. เหตุที่ทำให้หมายจับสิ้นผล <span class="text-red-500">*</span>
                         </label>
-                        <select id="endReason" required
-                                class="w-full px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white">
+                        <select id="endReason" required onchange="toggleReasonDetail()"
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-slate-700">
                             <option value="" disabled selected>-- เลือกเหตุผลของคดี --</option>
-                            <option value="มอบตัว">จำเลยเข้ามอบตัว</option>
-                            <option value="Break">เจ้าหน้าที่ตำรวจจับกุมได้</option>
-                            <option value="อยู่เรือนจำอื่น">จำเลยถูกควบคุมตัวอยู่เรือนจำอื่น</option>
-                            <option value="อื่นๆ">อื่นๆ (หมดอายุความ / ถอนคำร้องทุกข์ / ถอนหมายจับ)</option>
+                            <option value="จำเลยมาศาลตามนัด">จำเลยมาศาลตามนัด</option>
+                            <option value="จำเลยมาศาลและศาลอนุญาตให้ปล่อยชั่วคราว">จำเลยมาศาลและศาลอนุญาตให้ปล่อยชั่วคราว</option>
+                            <option value="จับตัวจำเลยได้">จับตัวจำเลยได้</option>
+                            <option value="อายัดตัวจำเลยได้">อายัดตัวจำเลยได้</option>
+                            <option value="จับผู้ต้องหาได้">จับผู้ต้องหาได้</option>
+                            <option value="ถอนหมายจับ">ถอนหมายจับ</option>
+                            <option value="ถอนฟ้อง/ถอนคำร้องทุกข์">ถอนฟ้อง/ถอนคำร้องทุกข์</option>
+                            <option value="ขาดอายุความ">ขาดอายุความ</option>
+                            <option value="จำเลยเสียชีวิต">จำเลยเสียชีวิต</option>
+                            <option value="คดีถึงที่สุด">คดีถึงที่สุด</option>
+                            <option value="อื่น ๆ">อื่น ๆ (ระบุรายละเอียด)</option>
                         </select>
                     </div>
 
-                    <!-- เสนอต่อผู้พิพากษา -->
+                    <!-- รายละเอียดเหตุผลเพิ่มเติม (กรณีเลือก อื่นๆ) -->
+                    <div id="reasonDetailContainer" class="hidden space-y-1.5 pl-4 border-l-2 border-amber-400">
+                         <label for="reasonDetail" class="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                            โปรดระบุรายละเอียด <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="reasonDetail"
+                               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-slate-700"
+                               placeholder="ระบุเหตุที่สิ้นผล">
+                    </div>
+
+                    <!-- เสนอต่อผู้พิพากษา (แบบตัวเลือกรายชื่อ ป้องกันการเขียนสะกดผิด) -->
                     <div class="space-y-1.5">
-                        <label for="proposedTo" class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                        <label for="proposedTo" class="block text-xs font-bold text-slate-600 uppercase tracking-wider">
                             3. เสนอต่อ (ผู้พิพากษาท่านใด) <span class="text-red-500">*</span>
                         </label>
                         <select id="proposedTo" required
-                                class="w-full px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-slate-700">
                             <option value="" disabled selected>-- เลือกชื่อผู้พิพากษา --</option>
                             <option value="ท่านผู้พิพากษา สมศักดิ์ รักยุติธรรม">ท่านผู้พิพากษา สมศักดิ์ รักยุติธรรม</option>
                             <option value="ท่านผู้พิพากษา วิภาดา ขยันดี">ท่านผู้พิพากษา วิภาดา ขยันดี</option>
                             <option value="ท่านผู้พิพากษา ประสิทธิ์ ยุติธรรมดี">ท่านผู้พิพากษา ประสิทธิ์ ยุติธรรมดี</option>
+                            <!-- TODO: อาจจะเปลี่ยนให้เป็นแบบ Text Input หรือดึงจากฐานข้อมูลถ้ามีการเปลี่ยนแปลงรายชื่อบ่อย -->
                         </select>
                     </div>
 
-                    <!-- หมายเหตุเพิ่มเติม -->
-                    <div class="space-y-1.5">
-                        <label for="remark" class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
-                            หมายเหตุ / รายละเอียดเพิ่มเติม
-                        </label>
-                        <textarea id="remark" rows="2.5"
-                                  class="w-full px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white placeholder-slate-600"
-                                  placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
-                    </div>
-
-                    <!-- ปุ่มควบคุมก้นโมดอล -->
-                    <div class="flex items-center space-x-3 pt-4 border-t border-[#1e293b]">
+                    <!-- ปุ่มควบคุมก้นโมดอล สไตล์สีเขียว Emerald ตามธีม -->
+                    <div class="pt-4 border-t border-slate-100">
                         <button type="submit" 
-                                class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center space-x-2">
-                            <i class="fas fa-shield-halved text-base"></i>
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
                             <span>ตรวจสอบและบันทึก</span>
                         </button>
                     </div>
@@ -263,65 +277,72 @@
     </div>
 
     <!-- Modal แจ้งเตือนคอนเฟิร์มซ้อนเพื่อรีเช็คข้อมูลก่อนกดยืนยันจริง (Confirmation Modal) -->
-    <div id="confirmModal" class="fixed inset-0 bg-[#050b14]/90 backdrop-blur-md flex items-center justify-center p-4 z-[60] hidden opacity-0 transition-all duration-300">
-        <div class="bg-[#0f172a] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-[#1e293b] transform scale-95 transition-all duration-300" id="confirmModalCard">
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] hidden opacity-0 transition-all duration-300">
+        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]" id="confirmModalCard">
             
             <!-- หัวเตือนสติเพื่อความรอบคอบ -->
-            <div class="bg-amber-950/20 px-6 py-4 border-b border-amber-900/30 flex items-center space-x-3 text-amber-400">
-                <span class="p-2 rounded-lg bg-amber-950/50 text-amber-400 border border-amber-800/40 shrink-0">
-                    <i class="fas fa-triangle-exclamation text-xl"></i>
+            <div class="bg-amber-50 px-6 py-4 border-b border-amber-100 flex items-center space-x-3 text-amber-800 shrink-0">
+                <span class="p-2 rounded-lg bg-amber-100 text-amber-600 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
                 </span>
                 <div>
-                    <h3 class="font-bold text-[#f8fafc] text-base">ตรวจสอบความถูกต้องอีกครั้ง</h3>
-                    <p class="text-[11px] text-amber-500/90 font-semibold tracking-wide uppercase">โปรดตรวจความถูกต้องสะกดคำก่อนส่งเสนอผู้พิพากษา</p>
+                    <h3 class="font-bold text-slate-900 text-base">ตรวจสอบความถูกต้องอีกครั้ง</h3>
+                    <p class="text-[11px] text-amber-700 font-medium">โปรดรีเช็คข้อมูลสะกดคำก่อนส่งเสนอผู้พิพากษา</p>
                 </div>
             </div>
 
             <!-- ส่วนแสดงสรุปข้อมูลที่กรอก -->
-            <div class="p-6 space-y-4 text-sm text-[#f8fafc]">
-                <div class="space-y-3 bg-[#111827] p-4 rounded-xl border border-[#1e293b]">
-                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
-                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">ชื่อจำเลย:</span>
-                        <span class="font-extrabold text-white text-right" id="confirmDefendant">-</span>
+            <div class="p-6 space-y-4 text-sm text-slate-700 overflow-y-auto flex-1">
+                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                        <span class="text-xs text-slate-400 font-bold uppercase shrink-0 w-24">ชื่อจำเลย:</span>
+                        <span class="font-bold text-slate-900 text-right" id="confirmDefendant"></span>
                     </div>
-                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
-                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">หมายจับที่เลือก:</span>
-                        <div class="flex flex-wrap gap-1 justify-end max-w-[200px]" id="confirmWarrantsList">
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                        <span class="text-xs text-slate-400 font-bold uppercase shrink-0 w-24">หมายจับที่เลือก:</span>
+                        <div class="flex flex-col gap-1 items-end max-w-[200px]" id="confirmWarrantsList">
                             <!-- รายชื่อหมายจับจะถูกเรนเดอร์ในนี้ -->
                         </div>
                     </div>
-                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
-                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">เหตุที่สิ้นผล:</span>
-                        <span class="font-extrabold text-emerald-400 text-right" id="confirmReason">-</span>
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                        <span class="text-xs text-slate-400 font-bold uppercase shrink-0 w-24">เหตุที่สิ้นผล:</span>
+                        <div class="text-right flex flex-col">
+                             <span class="font-semibold text-emerald-700" id="confirmReason"></span>
+                             <span class="text-xs text-slate-500 italic mt-0.5" id="confirmReasonDetail"></span>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
-                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">เสนอรายงานต่อ:</span>
-                        <span class="font-semibold text-white text-right" id="confirmProposed">-</span>
-                    </div>
-                    <div class="flex flex-col pt-1">
-                        <span class="text-xs text-[#94a3b8] font-bold uppercase mb-1">หมายเหตุ:</span>
-                        <p class="text-xs text-slate-300 bg-[#050b14] p-3 rounded border border-[#1e293b] italic" id="confirmRemark">-</p>
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                        <span class="text-xs text-slate-400 font-bold uppercase shrink-0 w-24">เสนอรายงานต่อ:</span>
+                        <span class="font-semibold text-slate-900 text-right" id="confirmProposed"></span>
                     </div>
                 </div>
 
                 <!-- ข้อสังเกตระมัดระวังทางการปฏิบัติงาน -->
-                <div class="text-[11px] text-rose-400 font-medium leading-relaxed bg-rose-950/20 p-3 rounded-lg border border-rose-900/30 flex items-start space-x-2">
-                    <i class="fas fa-shield-halved shrink-0 mt-0.5 text-rose-500"></i>
-                    <span>คำเตือน: หลังกดยืนยันบันทึก ระบบจะลงข้อมูลสถานะ "เสนอศาลแล้ว" ในแถบตารางทันที</span>
+                <div class="text-[11px] text-rose-500 font-medium leading-relaxed bg-rose-50/50 p-3 rounded-lg border border-rose-100 flex items-start space-x-2">
+                    <svg class="w-4.5 h-4.5 shrink-0 mt-0.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>คำเตือน: หลังกดยืนยันบันทึก ระบบจะบันทึกข้อมูลเข้าสู่ฐานข้อมูลและเปลี่ยนสถานะเป็น "เสนอศาลแล้ว" ทันที</span>
                 </div>
             </div>
 
-            <!-- ปุ่มย้อนกลับไปแก้ไข หรือ ยืนยันบันทึก -->
-            <div class="px-6 pb-6 pt-1 flex items-center space-x-3">
+            <!-- ปุ่มย้อนกลับไปแก้ไข หรือ ยืนยันบันทึก มิกซ์สไตล์ธีมอย่างสวยงาม -->
+            <div class="px-6 pb-6 pt-1 flex items-center space-x-3 shrink-0 border-t border-slate-100 mt-2">
                 <button type="button" onclick="closeConfirmModal(false)"
-                        class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-[#f8fafc] font-bold py-3 px-4 rounded-xl transition-all text-xs flex items-center justify-center space-x-1.5 border border-[#1e293b]">
-                    <i class="fas fa-edit text-slate-400"></i>
-                    <span>ย้อนแก้ไข</span>
+                        class="flex-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-bold py-2.5 px-4 rounded-xl transition-all text-xs flex items-center justify-center space-x-1.5 border border-slate-200">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    <span>ย้อนกลับไปแก้ไข</span>
                 </button>
                 <button type="button" onclick="closeConfirmModal(true)"
-                        class="flex-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3 px-4 rounded-xl transition-all text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-emerald-950/30 border border-emerald-500/20">
-                    <i class="fas fa-check-circle"></i>
-                    <span>ยืนยันบันทึก</span>
+                        class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-2.5 px-4 rounded-xl transition-all text-xs flex items-center justify-center space-x-1.5 shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>ยืนยันบันทึกข้อมูล</span>
                 </button>
             </div>
 
@@ -329,108 +350,207 @@
     </div>
 
     <!-- แจ้งเตือนความสำเร็จ (Toast Alert) -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900/95 border border-[#1e293b] text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 backdrop-blur-md">
-        <span class="p-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="toastIcon">
-            <i class="fas fa-check"></i>
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span class="p-1 rounded-full bg-emerald-500/20 text-emerald-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
         </span>
-        <span class="text-xs sm:text-sm font-semibold tracking-wide" id="toastText">บันทึกข้อมูลสำเร็จ</span>
+        <span class="text-xs sm:text-sm font-medium" id="toastText">บันทึกข้อมูลสำเร็จ</span>
     </div>
 
-    <!-- JavaScript สำหรับควบคุมระบบจำลอง -->
+    <!-- JavaScript สำหรับควบคุมระบบและเชื่อมต่อ GAS -->
     <script>
-        // ข้อมูลจำลองตั้งต้นในตารางธุรการ
-        let mockActiveItems = [
-            {
-                id: "w-01",
-                warrantNumber: "จ.452/2567",
-                defendantName: "นายสมชาย แสนดี",
-                endReason: "ตำรวจจับ",
-                proposedTo: "ท่านผู้พิพากษา สมศักดิ์ รักยุติธรรม",
-                caseStatus: "เสนอศาล",
-                warrantStatus: "สิ้นผลรอเพิกถอน",
-                remark: "จับกุมส่งพนักงานสอบสวน สภ.เมืองสระแก้ว"
-            },
-            {
-                id: "w-02",
-                warrantNumber: "จ.12/2568",
-                defendantName: "นางสาวมณี รักษ์โลก",
-                endReason: "มอบตัว",
-                proposedTo: "ท่านผู้พิพากษา วิภาดา ขยันดี",
-                caseStatus: "รอส่งต่อ",
-                warrantStatus: "เพิกถอน",
-                remark: "จำเลยเข้ามาติดต่อขอมอบตัวด้วยตนเองที่ห้องเวรชี้"
-            }
-        ];
+        // LIFF ID ของคุณ (เปลี่ยนให้ตรงกับของจริง)
+        const LIFF_ID = "2010272973-6qo1suX2"; 
+        
+        let currentUser = {
+            userId: "mock-uid-1234", // ค่าเริ่มต้น (ใช้ตอนยังไม่ต่อ LIFF เพื่อทดสอบ UI)
+            displayName: "เจ้าหน้าที่ สมมติ",
+            pictureUrl: ""
+        };
 
-        // ฐานข้อมูลสืบค้นหมายจับจำลอง
-        const mockSearchDatabase = [
-            {
-                citizenId: "1234567890123",
-                defendantName: "นายดำรง เกียรติภูมิ",
-                warrants: [
-                    { warrantNumber: "จ.88/2566", charge: "ลักทรัพย์ในเวลากลางคืน" },
-                    { warrantNumber: "จ.89/2566", charge: "บุกรุกเคหสถานยามวิกาล" },
-                    { warrantNumber: "จ.90/2566", charge: "ร่วมกันกรรโชกทรัพย์" }
-                ]
-            },
-            {
-                citizenId: "9876543210987",
-                defendantName: "นางสาวสุดา รักดี",
-                warrants: [
-                    { warrantNumber: "จ.101/2567", charge: "ร่วมกันฉ้อโกงประชาชน" },
-                    { warrantNumber: "จ.102/2567", charge: "นำเข้าข้อมูลอันเป็นเท็จสู่ระบบคอมพิวเตอร์" }
-                ]
-            }
-        ];
-
-        let currentTab = 'active'; // แท็บปัจจุบัน: active หรือ history
-        let currentSearchedDefendant = null; // เก็บข้อมูลจำเลยที่สืบค้นเจอชั่วคราว
-        let pendingDataToSave = null; // ตัวแปรชั่วคราวเพื่อรอการกดยืนยันในหน้าจอป๊อปอัปแจ้งเตือนซ้อน
+        // สถานะระบบ
+        let currentTab = 'active'; 
+        let currentSearchedDefendant = null; 
+        let pendingDataToSave = null; 
+        
+        // ข้อมูลหลักที่ดึงมาจาก Backend
+        let masterItems = []; 
+        
+        // ข้อมูลล่าสุดที่พยายามจะเรียก GAS (เพื่อใช้เวลา Retry)
+        let lastFailedRequest = null;
 
         // วาดตารางและสถิติเมื่อเปิดหน้าเว็บ
         window.onload = function() {
-            renderDashboard();
+            // ในสถานการณ์จริง จะเปิด LIFF ก่อน
+            // initializeLiff();
+            
+            // เพื่อการทดสอบ เราจะเรียกข้อมูลจาก GAS โดยใช้ Mock User ไปก่อน
+            fetchDataFromGAS();
         };
 
-        // ฟังก์ชันสลับแท็บ
+        // -------------------------------------------------------------
+        // LIFF & Auth
+        // -------------------------------------------------------------
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    currentUser = {
+                        userId: profile.userId,
+                        displayName: profile.displayName,
+                        pictureUrl: profile.pictureUrl
+                    };
+                    
+                    // อัปเดต UI แสดงโปรไฟล์
+                    document.getElementById('userProfile').classList.remove('hidden');
+                    document.getElementById('userName').innerText = currentUser.displayName;
+                    if(currentUser.pictureUrl) {
+                        document.getElementById('userPicture').src = currentUser.pictureUrl;
+                    }
+
+                    // เมื่อล็อกอินสำเร็จ ดึงข้อมูล
+                    fetchDataFromGAS();
+                } else {
+                    liff.login();
+                }
+            } catch (err) {
+                console.error('LIFF Init failed', err);
+                showToast('ไม่สามารถระบุตัวตนได้ กรุณาเปิดผ่านแอปพลิเคชัน LINE');
+            }
+        }
+
+        // -------------------------------------------------------------
+        // การเชื่อมต่อ Google Apps Script (GAS Gateway)
+        // -------------------------------------------------------------
+        
+        // ฟังก์ชันกลางสำหรับคุยกับ code.gs
+        function callGas(action, payload) {
+            return new Promise((resolve, reject) => {
+                showLoading(true);
+                
+                // สำหรับสคริปต์แบบแยกไฟล์ (ไม่ใช่ Google Site)
+                // เราใช้ google.script.run
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    // กำหนด Time out ในใจ (ถ้า GAS ช้าเกินไป)
+                    const timeoutId = setTimeout(() => {
+                        reject(new Error("การเชื่อมต่อใช้เวลานานเกินไป"));
+                    }, 30000); // 30 วิ
+
+                    // เตรียม Request Body เหมือนที่ code.gs รับ
+                    const requestData = {
+                        action: action,
+                        userId: currentUser.userId,
+                        displayName: currentUser.displayName,
+                        page: "manage",
+                        payload: payload
+                    };
+
+                    google.script.run
+                        .withSuccessHandler((response) => {
+                            clearTimeout(timeoutId);
+                            showLoading(false);
+                            
+                            try {
+                                const json = JSON.parse(response);
+                                if (json.success) {
+                                    resolve(json);
+                                } else {
+                                    reject(new Error(json.error || "ไม่สามารถทำรายการได้"));
+                                }
+                            } catch (e) {
+                                reject(new Error("รูปแบบข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง"));
+                            }
+                        })
+                        .withFailureHandler((error) => {
+                            clearTimeout(timeoutId);
+                            showLoading(false);
+                            reject(error);
+                        })
+                        .doPost({ 
+                            // จำลอง e parameter ให้กับ doPost
+                            parameter: { action: action },
+                            postData: { contents: JSON.stringify(requestData) } 
+                        });
+                        
+                } else {
+                    // กรณีเปิดไฟล์ html ตรงๆ ไม่ผ่าน GAS (สำหรับทดสอบ)
+                    setTimeout(() => {
+                        showLoading(false);
+                        console.warn("ไม่พบ google.script.run (ทดสอบ UI)");
+                        resolve({ success: true, isMock: true, data: [] });
+                        // ถ้าจะเทสต์ Error
+                        // reject(new Error("จำลองการเชื่อมต่อล้มเหลว")); 
+                    }, 800);
+                }
+            });
+        }
+
+        // ดึงข้อมูลตารางหลัก (getPendingProcess)
+        async function fetchDataFromGAS() {
+            try {
+                // บันทึก Request เผื่อต้อง Retry
+                lastFailedRequest = { fn: fetchDataFromGAS, args: [] };
+                
+                const response = await callGas("getPending", {});
+                
+                if (response.isMock) {
+                    masterItems = []; // ถ้าเทส UI ก็ให้ว่างไปก่อน
+                } else {
+                    masterItems = response.data || [];
+                }
+                
+                renderDashboard();
+                lastFailedRequest = null; // สำเร็จแล้วล้างค่า
+                
+            } catch (error) {
+                showErrorModal(error.message, () => fetchDataFromGAS());
+            }
+        }
+
+        // -------------------------------------------------------------
+        // UI & Dashboard Rendering
+        // -------------------------------------------------------------
+
         function switchTab(tabName) {
             currentTab = tabName;
             const tabActive = document.getElementById('tabActive');
             const tabHistory = document.getElementById('tabHistory');
 
             if(tabName === 'active') {
-                tabActive.className = "pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 transition-all focus:outline-none tracking-wide";
-                tabHistory.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-[#94a3b8] hover:text-[#f8fafc] transition-all focus:outline-none tracking-wide";
-                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-folder-open text-emerald-400"></i> ตารางตรวจสอบงานธุรการตำรวจศาล';
+                tabActive.className = "pb-3 text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 transition-all focus:outline-none";
+                tabHistory.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all focus:outline-none";
+                document.getElementById('tableTitle').innerText = "ตารางตรวจสอบงานธุรการตำรวจศาล";
                 document.getElementById('thAction').classList.remove('hidden');
             } else {
-                tabActive.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-[#94a3b8] hover:text-[#f8fafc] transition-all focus:outline-none tracking-wide";
-                tabHistory.className = "pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 transition-all focus:outline-none tracking-wide";
-                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-history text-emerald-400"></i> ประวัติสำนวนที่ส่งต่อแล้ววันนี้';
+                tabActive.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all focus:outline-none";
+                tabHistory.className = "pb-3 text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 transition-all focus:outline-none";
+                document.getElementById('tableTitle').innerText = "ประวัติสำนวนที่ส่งต่อแล้ววันนี้";
                 document.getElementById('thAction').classList.add('hidden');
             }
 
             renderDashboard();
         }
 
-        // ฟังก์ชันวาดตารางและตัวเลข Dashboard ใหม่ทุกครั้งที่มีการเปลี่ยนข้อมูล
         function renderDashboard() {
             const listContainer = document.getElementById('itemsList');
             const emptyState = document.getElementById('emptyState');
             const itemsTable = document.getElementById('itemsTable');
             
-            // กรองข้อมูลตามแท็บที่เลือก
+            // กรองข้อมูลตามแท็บที่เลือก (อิงตามสถานะสำนวน)
             let displayedItems = [];
             if (currentTab === 'active') {
-                displayedItems = mockActiveItems.filter(item => item.caseStatus !== 'ส่งต่อแล้ว');
+                displayedItems = masterItems.filter(item => item.caseStatus !== 'ส่งต่อแล้ว');
             } else {
-                displayedItems = mockActiveItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว');
+                displayedItems = masterItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว');
             }
 
             // คำนวณตัวเลขอ้างอิงสถิติทั้งหมด
-            const prCount = mockActiveItems.filter(item => item.caseStatus === 'เสนอศาล').length;
-            const wCount = mockActiveItems.filter(item => item.caseStatus === 'รอส่งต่อ').length;
-            const completedCount = mockActiveItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว').length;
+            const prCount = masterItems.filter(item => item.caseStatus === 'เสนอศาล').length;
+            const wCount = masterItems.filter(item => item.caseStatus === 'รอส่งต่อ').length;
+            const completedCount = masterItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว').length;
 
             document.getElementById('countProposed').innerText = prCount;
             document.getElementById('countWaiting').innerText = wCount;
@@ -446,52 +566,64 @@
                 emptyState.classList.add('hidden');
             }
 
-            // ล้างหน้าตารางเก่าก่อนเขียนใหม่
             listContainer.innerHTML = '';
 
-            // วาดแถวข้อมูลใหม่
             displayedItems.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-[#111827]/50 transition-colors border-b border-[#1e293b]";
+                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
 
-                // จัดการ Badge ของสถานะสำนวน (สไตล์เมฆาส่วนควบคุมความมั่นคง)
+                // จัดการ Badge ของสถานะสำนวน
                 let caseBadge = '';
                 if(item.caseStatus === 'เสนอศาล') {
-                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-950/40 text-amber-400 border border-amber-900/40">เสนอศาลแล้ว</span>';
+                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">เสนอศาลแล้ว</span>';
                 } else if(item.caseStatus === 'รอส่งต่อ') {
-                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-950/40 text-indigo-400 border border-indigo-900/40">รอส่งต่อสำนวน</span>';
+                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">รอส่งต่อสำนวน</span>';
                 } else if(item.caseStatus === 'ส่งต่อแล้ว') {
-                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/40">ส่งต่อสำเร็จแล้ว</span>';
+                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">ส่งต่อสำเร็จแล้ว</span>';
+                } else {
+                    caseBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">${item.caseStatus}</span>`;
                 }
 
                 // จัดการ Badge ของสถานะหมายจับ
                 let warrantBadge = '';
                 if(item.warrantStatus === 'สิ้นผลรอเพิกถอน') {
-                    warrantBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-950/40 text-rose-400 border border-rose-900/40">สิ้นผลรอเพิกถอน</span>';
+                    warrantBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">สิ้นผลรอเพิกถอน</span>';
                 } else if(item.warrantStatus === 'เพิกถอน') {
-                    warrantBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/40">เพิกถอนแล้ว</span>';
+                    warrantBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">เพิกถอนแล้ว</span>';
+                } else {
+                    warrantBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">${item.warrantStatus}</span>`;
                 }
 
+                // ปุ่มดำเนินการ
                 let actionButton = '';
                 if(currentTab === 'active') {
                     if(item.caseStatus === 'เสนอศาล') {
-                        actionButton = `<button onclick="updateWorkflow('${item.id}', 'รอส่งต่อ', 'เพิกถอน')" class="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-lg transition-all font-bold inline-block shadow-md hover:shadow-amber-900/20 active:scale-95">เพิกถอน</button>`;
+                        actionButton = `<button onclick="actionRevoke('${item.rowId}')" class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg transition-all font-semibold inline-block shadow-sm">เพิกถอนหมายจับ</button>`;
                     } else if(item.caseStatus === 'รอส่งต่อ') {
-                        actionButton = `<button onclick="updateWorkflow('${item.id}', 'ส่งต่อแล้ว', 'เพิกถอน')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg transition-all font-bold inline-block shadow-md hover:shadow-emerald-900/20 active:scale-95">ส่งต่อสำนวน</button>`;
+                        actionButton = `<button onclick="actionForward('${item.rowId}')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-all font-semibold inline-block shadow-sm">ส่งต่อสำนวน</button>`;
                     }
+                }
+                
+                // จุดแสดงสถานะ Sync
+                let syncIndicator = '';
+                if (item.syncStatus === 'กำลังเชื่อมโยง') {
+                    syncIndicator = '<span class="inline-block w-2 h-2 bg-amber-400 rounded-full animate-pulse ml-1" title="กำลังซิงค์ฐานข้อมูล"></span>';
+                } else if (item.syncStatus === 'เชื่อมโยงผิดพลาด') {
+                    syncIndicator = '<span class="inline-block w-2 h-2 bg-rose-500 rounded-full ml-1" title="ซิงค์ผิดพลาด"></span>';
                 }
 
                 tr.innerHTML = `
                     <td class="px-6 py-4">
-                        <div class="font-extrabold text-white font-mono tracking-wider">${item.warrantNumber}</div>
-                        <div class="text-xs text-[#94a3b8] mt-1 font-semibold">${item.defendantName}</div>
+                        <div class="font-bold text-slate-900">${item.warrantNumber} ${syncIndicator}</div>
+                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">${item.warrantDetail || '-'}</div>
+                        <div class="text-xs text-slate-500 mt-1">${item.defendantName}</div>
                     </td>
-                    <td class="px-6 py-4 text-xs font-bold text-[#94a3b8]">
-                        ${item.proposedTo}
+                    <td class="px-6 py-4 text-xs font-medium text-slate-600">
+                        ${item.proposedTo || '-'}
                     </td>
                     <td class="px-6 py-4 text-xs">
-                        <div class="font-bold text-white">${item.endReason}</div>
-                        ${item.remark ? `<div class="text-[11px] text-[#64748b] mt-0.5 italic max-w-xs truncate">${item.remark}</div>` : ''}
+                        <div class="font-semibold text-slate-700">${item.endReason}</div>
+                        ${item.reasonDetail ? `<div class="text-[11px] text-slate-400 mt-0.5 italic max-w-xs truncate">${item.reasonDetail}</div>` : ''}
                     </td>
                     <td class="px-6 py-4">${caseBadge}</td>
                     <td class="px-6 py-4">${warrantBadge}</td>
@@ -501,114 +633,267 @@
             });
         }
 
-        // ค้นหาข้อมูลหมายจับค้างเก่าใน Modal
-        function searchWarrants() {
+        // -------------------------------------------------------------
+        // การจัดการฟอร์มและป๊อปอัปต่างๆ
+        // -------------------------------------------------------------
+
+        // เปิด/ปิด ช่องรายละเอียดเหตุผลถ้าเลือก "อื่นๆ"
+        function toggleReasonDetail() {
+            const select = document.getElementById('endReason');
+            const container = document.getElementById('reasonDetailContainer');
+            const input = document.getElementById('reasonDetail');
+            
+            if (select.value === 'อื่น ๆ') {
+                container.classList.remove('hidden');
+                input.required = true;
+            } else {
+                container.classList.add('hidden');
+                input.required = false;
+                input.value = ''; // เคลียร์ค่า
+            }
+        }
+
+        // กดค้นหา
+        async function searchWarrants() {
             const query = document.getElementById('searchQuery').value.trim();
             if(!query) {
-                showToast("⚠️ กรุณากรอกข้อมูลสืบค้นก่อน", true);
+                showToast("กรุณากรอกข้อมูลค้นหาก่อน");
                 return;
             }
 
-            // ค้นจากฐานข้อมูลสืบค้นจำลอง
-            let found = mockSearchDatabase.find(item => item.citizenId === query || item.defendantName.includes(query));
+            try {
+                lastFailedRequest = { fn: searchWarrants, args: [] };
+                
+                const response = await callGas("search", { query: query });
+                const warrants = response.data || [];
+                
+                if(warrants.length === 0) {
+                    alert("ไม่พบข้อมูลหมายจับค้างเก่าของจำเลยรายนี้");
+                    return;
+                }
 
-            // หากสืบค้นไม่พบ จะสุ่มสร้างข้อมูลสมมติขึ้นมาเพื่อให้หน้าจอสามารถทดสอบได้ตลอดเวลา
-            if(!found) {
-                found = {
-                    citizenId: "1100223344556",
-                    defendantName: isNaN(query) ? query : "นายศรายุทธ วงศ์สว่าง (สมมติ)",
-                    warrants: [
-                        { warrantNumber: `จ.315/${new Date().getFullYear() + 542}`, charge: "ร่วมกันกู้ยืมเงินที่เป็นการฉ้อโกงประชาชน" },
-                        { warrantNumber: `จ.316/${new Date().getFullYear() + 543}`, charge: "นำเข้าข้อมูลเท็จสู่ระบบคอมพิวเตอร์" }
-                    ]
+                // สมมติว่าทุกรายการจากการค้นหามาจากจำเลยคนเดียวกัน (เพราะค้นด้วยบัตร/ชื่อ)
+                // ดึงชื่อจำเลยจากรายการแรกมาแสดง
+                const defendantName = warrants[0].defendantName;
+                currentSearchedDefendant = {
+                    defendantName: defendantName,
+                    warrants: warrants
                 };
+
+                // อัปเดตฝั่งรายชื่อและรายการหมายจับเพื่อส่งให้เลือก
+                document.getElementById('searchedDefendantName').innerText = defendantName;
+                
+                const listCheckboxDiv = document.getElementById('warrantsCheckboxList');
+                listCheckboxDiv.innerHTML = ''; 
+
+                warrants.forEach((warrant, index) => {
+                    // ใช้ข้อมูลจากคอลัมน์ใน DB (สมมติว่า search.gs ส่งมาเป็น object)
+                    const wNo = warrant.warrantNumber || warrant.no || `ไม่ทราบเลข`;
+                    const wDet = warrant.charge || warrant.detail || `ไม่มีรายละเอียดข้อหา`;
+                    const wStatus = warrant.status || '';
+
+                    // ข้ามอันที่ถูกเพิกถอนไปแล้ว
+                    if(wStatus === 'เพิกถอน') return;
+
+                    const div = document.createElement('div');
+                    div.className = "flex items-start space-x-3 p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-slate-100";
+                    div.innerHTML = `
+                        <input type="checkbox" id="chk-${index}" value="${wNo}" data-detail="${wDet}" checked
+                               class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <label for="chk-${index}" class="text-xs cursor-pointer block select-none flex-1">
+                            <span class="font-bold text-slate-900 block flex justify-between">
+                                <span>${wNo}</span>
+                                ${wStatus ? `<span class="text-[10px] text-amber-600 font-normal bg-amber-50 px-1.5 rounded">${wStatus}</span>` : ''}
+                            </span>
+                            <span class="text-slate-500 block mt-0.5 line-clamp-2" title="${wDet}">${wDet}</span>
+                        </label>
+                    `;
+                    listCheckboxDiv.appendChild(div);
+                });
+
+                if(listCheckboxDiv.children.length === 0) {
+                    alert("หมายจับของบุคคลนี้ถูกเพิกถอนไปหมดแล้ว หรือไม่มีสถานะที่ดำเนินการได้");
+                    return;
+                }
+
+                document.getElementById('searchResultsSection').classList.remove('hidden');
+                document.getElementById('warrantForm').classList.remove('hidden');
+                
+                lastFailedRequest = null;
+                
+            } catch (error) {
+                showErrorModal(error.message, () => searchWarrants());
             }
-
-            currentSearchedDefendant = found;
-
-            // อัปเดตฝั่งรายชื่อและรายการหมายจับเพื่อส่งให้เลือก
-            document.getElementById('searchedDefendantName').innerText = found.defendantName;
-            
-            const listCheckboxDiv = document.getElementById('warrantsCheckboxList');
-            listCheckboxDiv.innerHTML = ''; // ล้างค่าเก่า
-
-            found.warrants.forEach((warrant, index) => {
-                const div = document.createElement('div');
-                div.className = "flex items-start space-x-3 p-3 bg-[#050b14] hover:bg-slate-900 rounded-lg transition-colors cursor-pointer border border-[#1e293b]";
-                div.innerHTML = `
-                    <input type="checkbox" id="chk-${index}" value="${warrant.warrantNumber}" checked
-                           class="mt-1 h-4 w-4 rounded border-slate-700 bg-[#0f172a] text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 focus:ring-0">
-                    <label for="chk-${index}" class="text-xs cursor-pointer block select-none">
-                        <span class="font-extrabold text-white block">หมายจับเลขที่: ${warrant.warrantNumber}</span>
-                        <span class="text-[#94a3b8] font-medium block mt-0.5">ข้อหา: ${warrant.charge}</span>
-                    </label>
-                `;
-                listCheckboxDiv.appendChild(div);
-            });
-
-            // แสดงหน้าผลลัพธ์และแบบฟอร์มรายละเอียด
-            document.getElementById('searchResultsSection').classList.remove('hidden');
-            document.getElementById('warrantForm').classList.remove('hidden');
         }
 
-        // เมื่อกดยืนยันจากฟอร์มหลัก - จะสกัดค่าแล้วดึงกล่องป๊อปอัปตรวจสอบความถูกต้องขึ้นมา
+        // เมื่อกดยืนยันจากฟอร์มหลัก - สกัดค่าเพื่อรีเช็ค
         function handleFormSubmit(event) {
             event.preventDefault();
 
-            // ดึงค่าหมายจับที่ถูกติ๊กถูกเลือกไว้
             const selectedWarrants = [];
             if (currentSearchedDefendant) {
                 currentSearchedDefendant.warrants.forEach((w, index) => {
                     const chk = document.getElementById(`chk-${index}`);
                     if (chk && chk.checked) {
-                        selectedWarrants.push(w.warrantNumber);
+                        selectedWarrants.push({
+                            warrantNo: chk.value,
+                            warrantDetail: chk.getAttribute('data-detail')
+                        });
                     }
                 });
             }
 
             if(selectedWarrants.length === 0) {
-                showToast("⚠️ กรุณาเลือกหมายจับอย่างน้อย 1 รายการเพื่อดำเนินบันทึก", true);
+                alert("กรุณาติ๊กเลือกหมายจับอย่างน้อย 1 รายการเพื่อบันทึกเสนอศาล");
                 return;
             }
 
             const endReason = document.getElementById('endReason').value;
+            const reasonDetail = document.getElementById('reasonDetail').value;
             const proposedTo = document.getElementById('proposedTo').value;
-            const remark = document.getElementById('remark').value;
 
-            // บันทึกค่าไว้ที่ตัวแปรสำรองกลางชั่วคราว เพื่อรอรับสิทธิ์ยืนยันจากหน้าป๊อปอัป
             pendingDataToSave = {
                 defendantName: currentSearchedDefendant.defendantName,
                 selectedWarrants: selectedWarrants,
                 endReason: endReason,
-                proposedTo: proposedTo,
-                remark: remark || "ไม่มีข้อมูลหมายเหตุเพิ่มเติม"
+                reasonDetail: reasonDetail,
+                proposedTo: proposedTo
             };
 
             // แสดงค่าในหน้าป๊อปอัปรีเช็คซ้อน
             document.getElementById('confirmDefendant').innerText = pendingDataToSave.defendantName;
             document.getElementById('confirmReason').innerText = pendingDataToSave.endReason;
+            document.getElementById('confirmReasonDetail').innerText = pendingDataToSave.reasonDetail ? `(${pendingDataToSave.reasonDetail})` : '';
             document.getElementById('confirmProposed').innerText = pendingDataToSave.proposedTo;
-            document.getElementById('confirmRemark').innerText = pendingDataToSave.remark;
 
-            // แสดงรายการหมายจับที่เลือกลงในแถบ Badge สรุปผล
             const confirmWarrantsList = document.getElementById('confirmWarrantsList');
             confirmWarrantsList.innerHTML = '';
-            pendingDataToSave.selectedWarrants.forEach(warrantNum => {
-                const span = document.createElement('span');
-                span.className = "inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-950/40 text-amber-400 border border-amber-900/40";
-                span.innerText = warrantNum;
-                confirmWarrantsList.appendChild(span);
+            pendingDataToSave.selectedWarrants.forEach(w => {
+                const badge = document.createElement('div');
+                badge.className = "flex flex-col items-end border border-amber-200 bg-amber-50 px-2.5 py-1 rounded-md w-full";
+                badge.innerHTML = `
+                    <span class="text-xs font-bold text-amber-800">${w.warrantNo}</span>
+                    <span class="text-[10px] text-amber-600 truncate max-w-full">${w.warrantDetail || '-'}</span>
+                `;
+                confirmWarrantsList.appendChild(badge);
             });
 
-            // เปิดกล่อง Confirm Modal ขึ้นมาซ้อนบนสุด
             openConfirmModal();
         }
 
-        // คุมสถานะแสดง Confirm Modal
-        function openConfirmModal() {
+        // ปิด Confirm Modal และส่งคำสั่งบันทึกจริง
+        async function closeConfirmModal(isConfirmed = false) {
             const modal = document.getElementById('confirmModal');
             const card = document.getElementById('confirmModalCard');
+
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
             
+            setTimeout(async () => {
+                modal.classList.add('hidden');
+
+                if (isConfirmed && pendingDataToSave) {
+                    
+                    const payloadToSave = { ...pendingDataToSave }; // Clone object
+                    
+                    // เรียกฟังก์ชันบันทึกข้อมูลแบบ Async (มี Retry)
+                    const saveRoutine = async () => {
+                        try {
+                            lastFailedRequest = { fn: saveRoutine, args: [] };
+                            
+                            const res = await callGas("addProcess", payloadToSave);
+                            
+                            showToast(`บันทึกรายการเสนอรายงานสิ้นผลจำนวน ${res.count || payloadToSave.selectedWarrants.length} รายการเสร็จสิ้น`);
+                            
+                            // รีเฟรชตารางหลังเซฟเสร็จ
+                            fetchDataFromGAS();
+                            
+                            closeFormModal();
+                            pendingDataToSave = null;
+                            lastFailedRequest = null;
+                            
+                        } catch (error) {
+                            showErrorModal(error.message, () => saveRoutine());
+                        }
+                    };
+                    
+                    saveRoutine();
+
+                } else {
+                    // กรณีกดปุ่ม "ย้อนกลับไปแก้ไข"
+                    pendingDataToSave = null; 
+                    showToast("ย้อนกลับมายังฟอร์มเดิมเพื่อดำเนินการแก้ไขแล้ว");
+                }
+            }, 300);
+        }
+
+        // การกระทำ: เพิกถอน
+        async function actionRevoke(rowId) {
+            if(!confirm("ยืนยันว่าศาลได้ลงนามเพิกถอนหมายจับนี้เรียบร้อยแล้ว?")) return;
+            
+            const routine = async () => {
+                try {
+                    lastFailedRequest = { fn: routine, args: [] };
+                    await callGas("markRevoked", { rowId: rowId });
+                    showToast("อัปเดตสถานะเป็น เพิกถอน สำเร็จ");
+                    fetchDataFromGAS();
+                    lastFailedRequest = null;
+                } catch(error) {
+                    showErrorModal(error.message, () => routine());
+                }
+            };
+            routine();
+        }
+
+        // การกระทำ: ส่งต่อ
+        async function actionForward(rowId) {
+            if(!confirm("ยืนยันว่าส่งต่อสำนวนนี้เรียบร้อยแล้ว?")) return;
+            
+            const routine = async () => {
+                try {
+                    lastFailedRequest = { fn: routine, args: [] };
+                    await callGas("markForwarded", { rowId: rowId });
+                    showToast("ส่งต่อสำนวนสำเร็จและย้ายเข้าสู่ประวัติ");
+                    fetchDataFromGAS();
+                    lastFailedRequest = null;
+                } catch(error) {
+                    showErrorModal(error.message, () => routine());
+                }
+            };
+            routine();
+        }
+
+        // -------------------------------------------------------------
+        // ควบคุม Modal และ Overlay ต่างๆ
+        // -------------------------------------------------------------
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            // Disable all buttons to prevent double clicks
+            const buttons = document.querySelectorAll('button');
+            
+            if (show) {
+                overlay.classList.remove('hidden');
+                buttons.forEach(b => b.disabled = true);
+            } else {
+                overlay.classList.add('hidden');
+                buttons.forEach(b => b.disabled = false);
+            }
+        }
+
+        function showErrorModal(message, retryCallback) {
+            const modal = document.getElementById('errorModal');
+            const card = document.getElementById('errorModalCard');
+            const btn = document.getElementById('retryButton');
+            
+            document.getElementById('errorMessageText').innerText = message;
+            
+            // ผูก Event ให้ปุ่ม Retry
+            btn.onclick = () => {
+                closeErrorModal();
+                if(retryCallback) retryCallback();
+            };
+
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
@@ -616,67 +901,16 @@
             }, 10);
         }
 
-        // ปิดกล่อง Confirm Modal พร้อมจัดการตรรกะกดยืนยันบันทึก หรือ ย้อนกลับไปแก้ไข
-        function closeConfirmModal(isConfirmed = false) {
-            const modal = document.getElementById('confirmModal');
-            const card = document.getElementById('confirmModalCard');
-
+        function closeErrorModal() {
+            const modal = document.getElementById('errorModal');
+            const card = document.getElementById('errorModalCard');
             modal.classList.add('opacity-0');
             card.classList.add('scale-95');
-            
             setTimeout(() => {
                 modal.classList.add('hidden');
-
-                if (isConfirmed && pendingDataToSave) {
-                    // กรณีเจ้าหน้าที่เลือกกดยืนยัน บันทึกเข้าระบบหลัก
-                    pendingDataToSave.selectedWarrants.forEach(warrantNum => {
-                        const data = {
-                            id: "w-" + Math.random().toString(36).substr(2, 9),
-                            warrantNumber: warrantNum,
-                            defendantName: pendingDataToSave.defendantName,
-                            endReason: pendingDataToSave.endReason,
-                            proposedTo: pendingDataToSave.proposedTo,
-                            caseStatus: "เสนอศาล",
-                            warrantStatus: "สิ้นผลรอเพิกถอน",
-                            remark: pendingDataToSave.remark
-                        };
-                        mockActiveItems.unshift(data);
-                    });
-
-                    showToast(`เสนอรายงานสิ้นผลจำนวน ${pendingDataToSave.selectedWarrants.length} รายการเรียบร้อยแล้ว`, false);
-                    renderDashboard();
-                    
-                    // เคลียร์ค่าฟอร์มทั้งหมดและปิดหน้าต่างกรอกงานหลัก
-                    closeFormModal();
-                    pendingDataToSave = null;
-                } else {
-                    // กรณีกดปุ่ม "ย้อนกลับไปแก้ไข"
-                    pendingDataToSave = null; 
-                    showToast("ℹ️ ย้อนกลับมายังฟอร์มเดิมเพื่อแก้ไขรายละเอียด", false);
-                }
             }, 300);
         }
 
-        // อัปเดตกระบวนการธุรการ
-        function updateWorkflow(itemId, nextCaseStatus, nextWarrantStatus) {
-            const target = mockActiveItems.find(i => i.id === itemId);
-            if(target) {
-                target.caseStatus = nextCaseStatus;
-                target.warrantStatus = nextWarrantStatus;
-                
-                let msg = '';
-                if(nextCaseStatus === 'รอส่งต่อ') {
-                    msg = `ผู้พิพากษาลงนามเพิกถอนหมายจับเลขที่ ${target.warrantNumber} เรียบร้อย`;
-                } else if(nextCaseStatus === 'ส่งต่อแล้ว') {
-                    msg = `ส่งต่อสำนวน ${target.warrantNumber} และบันทึกประวัติสำเร็จ`;
-                }
-                
-                showToast(msg, false);
-                renderDashboard();
-            }
-        }
-
-        // เปิดและปิด Modal กรอกข้อมูลตัวแม่
         function openFormModal() {
             const modal = document.getElementById('formModal');
             const card = document.getElementById('formModalCard');
@@ -697,30 +931,30 @@
             
             setTimeout(() => {
                 modal.classList.add('hidden');
-                // ล้างค่าในหน้าจอค้นหาและฟอร์มหลักหลังจากทำรายการสำเร็จหรือยกเลิกการบันทึก
+                // ล้างค่าในหน้าจอ
                 document.getElementById('searchQuery').value = '';
                 document.getElementById('searchResultsSection').classList.add('hidden');
                 document.getElementById('warrantForm').classList.add('hidden');
                 document.getElementById('warrantForm').reset();
+                toggleReasonDetail(); // ซ่อนช่องระบุรายละเอียดอื่นๆ
                 currentSearchedDefendant = null;
             }, 300);
         }
 
-        // ตัวช่วยแสดงแจ้งเตือนชั่วคราว (Toast)
-        function showToast(text, isWarning = false) {
-            const toast = document.getElementById('toast');
-            const toastIcon = document.getElementById('toastIcon');
-            const toastText = document.getElementById('toastText');
+        function openConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            const card = document.getElementById('confirmModalCard');
             
-            toastText.innerText = text;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
 
-            if (isWarning) {
-                toastIcon.className = "p-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30";
-                toastIcon.innerHTML = `<i class="fas fa-exclamation-triangle"></i>`;
-            } else {
-                toastIcon.className = "p-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-                toastIcon.innerHTML = `<i class="fas fa-check"></i>`;
-            }
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastText').innerText = text;
             
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => {
