@@ -137,7 +137,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    <span>บันทึกเสนอศาลใหม่</span>
+                    <span>เพิ่มรายการใหม่</span>
                 </button>
             </div>
         </div>
@@ -159,8 +159,8 @@
         <!-- รายการที่ดำเนินอยู่ / ประวัติ (ตารางแสดงข้อมูลจริง) -->
         <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                <span class="text-sm font-bold text-slate-700" id="tableTitle">ตารางตรวจสอบงานธุรการตำรวจศาล</span>
-                <span class="text-xs text-slate-400 font-medium bg-slate-200/60 px-2.5 py-1 rounded-full" id="tableCount">ทั้งหมด 0 รายการ</span>
+                <span class="text-sm font-bold text-slate-700" id="tableTitle"></span>
+                <span class="text-xs text-slate-400 font-medium bg-slate-200/60 px-2.5 py-1 rounded-full" id="tableCount"></span>
             </div>
 
             <!-- พื้นที่แสดงตารางข้อมูล -->
@@ -246,10 +246,7 @@
                     <!-- รายการหมายจับที่มีให้เลือกติ๊กถูก -->
                     <div class="space-y-2 max-h-48 overflow-y-auto pr-2" id="warrantsCheckboxList">
                         <!-- รายการจะถูกสร้างผ่าน JavaScript -->
-                    </div>
-                    <p class="text-[11px] text-amber-600 pt-1 border-t border-slate-50">* ท่านสามารถเลือกหมายจับพร้อมกันหลายรายการได้ หากสิ้นผลจากพฤติการณ์เดียวกัน</p>
-                </div>
-
+                    
                 <!-- ฟอร์มกรอกรายละเอียดเสนอศาล (จะเปิดให้กรอกเมื่อค้นพบข้อมูล) -->
                 <form id="warrantForm" onsubmit="handleFormSubmit(event)" class="hidden space-y-4 pt-2">
                     
@@ -589,12 +586,12 @@
             if(tabName === 'active') {
                 tabActive.className = "pb-3 text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 transition-all focus:outline-none";
                 tabHistory.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all focus:outline-none";
-                document.getElementById('tableTitle').innerText = "ตารางตรวจสอบงานธุรการตำรวจศาล";
+                // intentionally left blank: table title removed per request
                 document.getElementById('thAction').classList.remove('hidden');
             } else {
                 tabActive.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all focus:outline-none";
                 tabHistory.className = "pb-3 text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 transition-all focus:outline-none";
-                document.getElementById('tableTitle').innerText = "ประวัติสำนวนที่ส่งต่อแล้ววันนี้";
+                // intentionally left blank: table title removed per request
                 document.getElementById('thAction').classList.add('hidden');
             }
 
@@ -613,7 +610,7 @@
                 displayedItems = masterItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว');
             }
 
-            document.getElementById('tableCount').innerText = "ทั้งหมด " + displayedItems.length + " รายการ";
+            // table count removed per request
 
             if (displayedItems.length === 0) {
                 itemsTable.classList.add('hidden');
