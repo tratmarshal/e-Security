@@ -1,681 +1,732 @@
-<!DOCTYPE html>
+ฟ<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
-  <title>จัดการหมายจับ | Warrant Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --bg: #07111f;
-      --surface: #0f172a;
-      --panel: #111827;
-      --line: #243244;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --blue: #2563eb;
-      --green: #16a34a;
-      --yellow: #eab308;
-      --red: #dc2626;
-      --radius: 12px;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: 'IBM Plex Sans Thai', sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
-    .wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
-    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    h1, h2, h3 { margin: 0; line-height: 1.25; }
-    h1 { font-size: 24px; }
-    h2 { font-size: 18px; margin-bottom: 12px; }
-    h3 { font-size: 16px; margin-bottom: 10px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--panel); overflow: hidden; display: grid; place-items: center; flex-shrink: 0; }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 760px) { .grid.two { grid-template-columns: 1fr 1fr; } }
-    input, select, textarea { width: 100%; border: 1px solid var(--line); background: #08111f; color: var(--text); border-radius: 10px; padding: 12px; font: inherit; }
-    textarea { min-height: 80px; resize: vertical; }
-    label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 6px; }
-    .btn { border: 0; border-radius: 10px; padding: 12px 14px; font: inherit; font-weight: 700; cursor: pointer; color: white; background: var(--blue); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn.secondary { background: #334155; }
-    .btn.danger { background: var(--red); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; font-size: 14px; }
-    th { color: var(--muted); font-size: 12px; font-weight: 700; background: var(--panel); }
-    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
-    .mobile-list { display: none; gap: 10px; }
-    .record-card { border: 1px solid var(--line); border-radius: 10px; background: #08111f; padding: 12px; display: grid; gap: 10px; }
-    .record-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-    .record-no { font-weight: 800; font-family: monospace; color: var(--text); }
-    .record-name { font-weight: 700; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-    .record-meta { display: grid; gap: 6px; }
-    .record-row { display: grid; grid-template-columns: 88px 1fr; gap: 8px; font-size: 13px; line-height: 1.45; }
-    .record-row span:first-child { color: var(--muted); }
-    .warrant-select-list { display: grid; gap: 10px; }
-    .warrant-option { border: 1px solid var(--line); border-radius: 10px; background: #08111f; padding: 12px; display: grid; gap: 10px; cursor: pointer; }
-    .warrant-option.disabled { opacity: .58; cursor: not-allowed; }
-    .warrant-option input { width: auto; }
-    .warrant-option-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
-    .warrant-option-main { display: flex; align-items: flex-start; gap: 10px; }
-    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
-    .wanted { background: rgba(22,163,74,.15); color: #86efac; border-color: rgba(22,163,74,.35); }
-    .pending-revocation { background: rgba(234,179,8,.15); color: #fde68a; border-color: rgba(234,179,8,.35); }
-    .revoked { background: rgba(220,38,38,.15); color: #fecaca; border-color: rgba(220,38,38,.35); }
-    .sync-pending { background: rgba(234,179,8,.15); color: #fde68a; border-color: rgba(234,179,8,.35); }
-    .sync-synced { background: rgba(22,163,74,.15); color: #86efac; border-color: rgba(22,163,74,.35); }
-    .sync-error { background: rgba(220,38,38,.15); color: #fecaca; border-color: rgba(220,38,38,.35); }
-    .message { padding: 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
-    .message.error { border-color: rgba(220,38,38,.45); color: #fecaca; }
-    .add-entry-btn { width: 100%; margin-top: 14px; border: 1px dashed rgba(148,163,184,.45); border-radius: 14px; padding: 14px; background: rgba(37,99,235,.1); color: #bfdbfe; font: inherit; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .add-entry-btn span { width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: white; display: inline-grid; place-items: center; }
-    .add-panel { scroll-margin-top: 12px; }
-    .icon-btn { width: 42px; height: 42px; padding: 0; flex: 0 0 auto; }
-    .hidden { display: none !important; }
-    .sticky-actions {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 50;
-      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(7, 17, 31, .94);
-      border-top: 1px solid var(--line);
-      backdrop-filter: blur(10px);
-      display: none;
-    }
-    .sticky-actions.show { display: block; }
-    .sticky-inner { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
-    .sticky-count { color: var(--text); font-weight: 700; }
-    .sticky-count small { display: block; color: var(--muted); font-weight: 500; }
-    .confirm-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; padding: 16px; }
-    .confirm-backdrop.show { display: flex; }
-    .confirm-modal { width: min(520px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
-    .summary-list { display: grid; gap: 8px; margin: 12px 0; }
-    .summary-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #08111f; }
-    .summary-row span:first-child { color: var(--muted); }
-    .selected-count-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: rgba(37,99,235,.16); color: #bfdbfe; border: 1px solid rgba(37,99,235,.35); font-size: 13px; font-weight: 700; }
-    .section-gap { display: grid; gap: 14px; }
-    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .section-head h3 { margin: 0; }
-    .count-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 9px; color: #bfdbfe; background: rgba(37,99,235,.14); border: 1px solid rgba(37,99,235,.28); font-size: 12px; font-weight: 700; white-space: nowrap; }
-    .workflow { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 14px; }
-    @media (min-width: 760px) { .workflow { grid-template-columns: repeat(3, 1fr); } }
-    .step { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #08111f; color: var(--muted); }
-    .step strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
-    .history-toggle { width: 100%; justify-content: space-between; background: #1f2937; }
-    .history-body.hidden { display: none !important; }
-    @media (min-width: 761px) { .sticky-actions { display: none !important; } }
-    @media (max-width: 760px) { body { padding-bottom: 86px; } th.optional, td.optional { display: none; } .btn { width: 100%; } .actions { width: 100%; } .summary-row { grid-template-columns: 1fr; } .table-wrap.responsive-table { display: none; } .mobile-list { display: grid; } .record-card .btn { width: 100%; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#050b14">
+    <title>Warrant Tracker | ระบบบันทึกรายการดำเนินการ</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Modern Fonts & Tactical Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #10b981; /* Emerald */
+            --bg-dark: #050b14;
+            --card-bg: #0f172a;
+            --surface-bg: #111827;
+            --border-color: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dark: #64748b;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'IBM Plex Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(180deg, #0b1220 0%, #050a12 100%);
+            color: var(--text-main);
+        }
+
+        /* Custom Scrollbar for Tactical Interface */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050b14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
 </head>
-<body>
-  <div class="wrap">
-    <section class="panel topbar">
-      <div>
-        <h1>จัดการหมายจับ</h1>
-        <div class="muted">บันทึกเหตุที่ทำให้หมายจับสิ้นผล และติดตามงานรอเพิกถอน</div>
-      </div>
-      <div class="user" id="profileBox">
-        <div class="avatar" id="avatar"><i class="fas fa-user"></i></div>
-        <span id="displayName">กำลังเชื่อมต่อ LINE</span>
-      </div>
-    </section>
+<body class="min-h-screen p-3 sm:p-6 md:p-8">
 
-    <section class="panel">
-      <div class="topbar" style="padding:0; background:transparent; border:0">
-        <h2>รายการดำเนินการ</h2>
-        <div class="actions">
-          <button class="btn secondary hidden" id="syncBtn"><i class="fas fa-arrows-rotate"></i>ลองอัปเดตอีกครั้ง</button>
-        </div>
-      </div>
-      <div id="pendingList" class="message" style="max-height:55vh;overflow-y:auto;">กำลังโหลด...</div>
-      <button class="add-entry-btn" id="openAddBtn" type="button">
-        <span><i class="fas fa-plus"></i></span>
-        เพิ่มรายการดำเนินการ
-      </button>
-    </section>
-
-    <section class="panel add-panel hidden" id="addPanel">
-      <div class="topbar" style="padding:0; background:transparent; border:0; margin-bottom:12px">
-        <h2>เพิ่มรายการดำเนินการ</h2>
-        <button class="btn secondary icon-btn" id="closeAddBtn" type="button" aria-label="ปิดฟอร์มเพิ่มรายการ"><i class="fas fa-xmark"></i></button>
-      </div>
-      <div class="workflow">
-        <div class="step"><strong>1. ค้นหาจำเลย</strong><span>กรอกเลขบัตรประชาชน 13 หลัก</span></div>
-        <div class="step"><strong>2. เลือกหมายจับ</strong><span>เลือกเฉพาะหมายจับที่เหตุเดียวกันทำให้สิ้นผล</span></div>
-        <div class="step"><strong>3. บันทึกเหตุ</strong><span>ตรวจสอบก่อนเปลี่ยนสถานะหมายจับ</span></div>
-      </div>
-      <div class="grid two">
-        <div>
-          <label for="id13Input">เลขบัตรประชาชน 13 หลัก</label>
-          <input id="id13Input" inputmode="numeric" maxlength="13" placeholder="กรอกเลข 13 หลัก">
-        </div>
-        <div style="align-self:end" class="actions">
-          <button class="btn" id="searchBtn"><i class="fas fa-search"></i>ค้นหาหมายจับ</button>
-          <button class="btn secondary" id="clearBtn"><i class="fas fa-rotate-left"></i>ล้างข้อมูล</button>
-        </div>
-      </div>
-      <div id="searchMessage" style="margin-top:12px"></div>
-      <div id="warrantResults" style="margin-top:12px"></div>
-
-      <div id="processForm" class="hidden" style="margin-top:16px">
-        <div class="grid two">
-          <div>
-            <label for="reasonSelect">เหตุ</label>
-            <select id="reasonSelect">
-              <option value="มอบตัว">มอบตัว</option>
-              <option value="ตำรวจจับ">ตำรวจจับ</option>
-              <option value="อยู่เรือนจำอื่น">อยู่เรือนจำอื่น</option>
-              <option value="อื่น ๆ">อื่น ๆ</option>
-            </select>
-          </div>
-          <div>
-            <label for="submitToInput">เสนอถึง</label>
-            <input id="submitToInput" placeholder="เช่น ผู้มีอำนาจพิจารณา">
-          </div>
-        </div>
-        <div id="reasonDetailBox" class="hidden" style="margin-top:12px">
-          <label for="reasonDetailInput">รายละเอียดเหตุ</label>
-          <textarea id="reasonDetailInput" placeholder="ระบุรายละเอียดเพิ่มเติม"></textarea>
-        </div>
-        <div class="actions" style="margin-top:12px">
-          <span class="selected-count-chip" id="selectedCountChip"><i class="fas fa-list-check"></i>เลือก 0 หมายจับ</span>
-          <button class="btn" id="saveBtn" disabled><i class="fas fa-clipboard-check"></i>ตรวจสอบก่อนบันทึก</button>
-          <button class="btn secondary" id="cancelFormBtn" type="button"><i class="fas fa-arrow-left"></i>ย้อนกลับ / ยกเลิก</button>
-        </div>
-      </div>
-    </section>
-  </div>
-
-
-  <div class="sticky-actions" id="stickyActions">
-    <div class="sticky-inner">
-      <div class="sticky-count"><span id="stickyCount">เลือก 0 หมายจับ</span><small>สถานะใหม่: สิ้นผลรอเพิกถอน</small></div>
-      <button class="btn" id="stickySaveBtn" disabled><i class="fas fa-clipboard-check"></i>ตรวจสอบ</button>
-    </div>
-  </div>
-
-  <div class="confirm-backdrop" id="confirmBackdrop">
-    <div class="confirm-modal">
-      <h3>ตรวจสอบก่อนบันทึก</h3>
-      <div class="muted">รายการนี้จะเปลี่ยนสถานะหมายจับเป็นสิ้นผลรอเพิกถอน</div>
-      <div class="summary-list" id="confirmSummary"></div>
-      <div class="actions">
-        <button class="btn" id="confirmSaveBtn"><i class="fas fa-floppy-disk"></i>ยืนยันบันทึก</button>
-        <button class="btn secondary" id="cancelConfirmBtn"><i class="fas fa-xmark"></i>ยกเลิก</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="confirm-backdrop" id="revokeBackdrop">
-    <div class="confirm-modal">
-      <h3>ยืนยันการเพิกถอน</h3>
-      <div class="muted">รายการนี้จะถูกบันทึกเป็นสถานะหมายจับเพิกถอน</div>
-      <div class="summary-list" id="revokeSummary"></div>
-      <div class="actions">
-        <button class="btn danger" id="confirmRevokeBtn"><i class="fas fa-ban"></i>ยืนยันเพิกถอน</button>
-        <button class="btn secondary" id="cancelRevokeBtn"><i class="fas fa-xmark"></i>ยกเลิก</button>
-      </div>
-    </div>
-  </div>
-  <script src="https://static.line-scdn.net/liff/edge/versions/2.23.0/sdk.js"></script>
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyXZ5XD9TxcI3BORPJXF5sDWkAx0FEOZE5QVCPCIW422JSVQBki8IqHOO3B5Lkt2Qrz/exec";
-    const LIFF_ID = "2010272973-6qo1suX2";
-    const STATUS_WANTED = "ต้องการตัว";
-    const STATUS_PENDING = "สิ้นผลรอเพิกถอน";
-    const STATUS_REVOKED = "เพิกถอน";
-    const CASE_STATUS_WAITING_FORWARD = "รอส่งต่อ";
-    const CASE_STATUS_FORWARDED = "ส่งต่อแล้ว";
-
-    let lineProfile = { userId: "", displayName: "", pictureUrl: "" };
-    let lineAccessToken = "";
-    let searchResults = [];
-    let pendingRows = [];
-    let revokeRowId = null;
-
-    function escapeHtml(value) {
-      return String(value == null ? "" : value).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
-    }
-
-    function statusBadge(status) {
-      const s = String(status || "-");
-      let cls = "pending-revocation";
-      if (s === STATUS_WANTED) cls = "wanted";
-      if (s === STATUS_REVOKED) cls = "revoked";
-      return `<span class="badge ${cls}">${escapeHtml(s)}</span>`;
-    }
-
-    function syncBadge(status) {
-      const s = String(status || "pending");
-      const cls = s === "synced" ? "sync-synced" : s === "error" ? "sync-error" : "sync-pending";
-      const label = s === "synced" ? "อัปเดตแล้ว" : s === "error" ? "อัปเดตไม่สำเร็จ" : "รออัปเดต";
-      return `<span class="badge ${cls}">${label}</span>`;
-    }
-
-    function syncCell(row) {
-      if ((row.syncStatus || "pending") === "synced" && !row.syncError) return "";
-      return `${syncBadge(row.syncStatus)}${row.syncError ? `<div class="muted">${escapeHtml(row.syncError)}</div>` : ""}`;
-    }
-
-    function setMessage(id, message, isError = false) {
-      document.getElementById(id).innerHTML = message ? `<div class="message ${isError ? "error" : ""}">${escapeHtml(message)}</div>` : "";
-    }
-
-    function recordCard(row, includeAction) {
-      const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
-      const canForward = row.warrantStatus === STATUS_REVOKED && row.caseStatus === CASE_STATUS_WAITING_FORWARD;
-      const updateHtml = syncCell(row);
-      const actionBtnHtml = includeAction
-        ? (canForward
-          ? `<button class="btn secondary" style="width:34px; height:34px; padding:0; border-radius:50%; flex-shrink:0;" onclick="markForwarded(${Number(row.rowId)})" title="ส่งต่อ"><i class="fas fa-share" style="margin:0;"></i></button>`
-          : `<button class="btn danger" style="width:34px; height:34px; padding:0; border-radius:50%; flex-shrink:0;" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"} title="เพิกถอน"><i class="fas fa-ban" style="margin:0;"></i></button>`)
-        : "";
-      return `<article class="record-card">
-        <div class="record-card-head">
-          <div style="flex-grow: 1; min-width: 0;">
-            <div class="record-no">${escapeHtml(row.warrantNo || "")}</div>
-            <div class="record-name">${escapeHtml(row.fullName || "")}</div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-            ${statusBadge(row.warrantStatus)}
-            ${actionBtnHtml}
-          </div>
-        </div>
-        <div class="record-meta">
-          <div class="record-row"><span>เวลา</span><strong>${escapeHtml(row.timestamp || "")}</strong></div>
-          <div class="record-row"><span>เหตุ</span><strong>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</strong></div>
-          <div class="record-row"><span>สถานะสำนวน</span><strong>${escapeHtml(row.caseStatus || "")}</strong></div>
-          ${updateHtml ? `<div class="record-row"><span>ผลอัปเดต</span><strong>${updateHtml}</strong></div>` : ""}
-        </div>
-      </article>`;
-    }
-
-    function warrantOptionCard(w, index) {
-      const selectable = w.status === STATUS_WANTED;
-      return `<label class="warrant-option ${selectable ? "" : "disabled"}">
-        <div class="warrant-option-head">
-          <div class="warrant-option-main">
-            <input type="checkbox" class="warrantCheck" value="${index}" ${selectable ? "" : "disabled"}>
-            <div>
-              <div class="record-no">${escapeHtml(w.warrantNo || "")}</div>
-              <div class="record-name">${escapeHtml(w.fullName || "")}</div>
+    <!-- Container หลักภายนอก -->
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- ส่วนหัว (Header) สไตล์แบนเนอร์ใหม่ตามธีมสีกราเดียนท์ Dark Tactical และปุ่มเสนอศาลใหม่ -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f172a] border border-[#1e293b] p-6 rounded-2xl shadow-2xl text-white relative overflow-hidden">
+            <!-- Background Decorative Grid Glow -->
+            <div class="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex items-center space-x-4 relative z-10">
+                <div class="w-12 h-12 bg-emerald-950/50 border border-emerald-500/30 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-wider text-white">WARRANT TRACKER</h1>
+                    <p class="text-xs text-[#94a3b8] mt-0.5 uppercase tracking-wider font-semibold">ระบบสะสางข้อมูลและเสนอรายงานสิ้นผลหมายจับ • งานธุรการตำรวจศาล</p>
+                </div>
             </div>
-          </div>
-          ${statusBadge(w.status)}
+            
+            <!-- ปุ่มเสนอศาลสไตล์มัลติฟังก์ชั่นยุทธวิธี -->
+            <button onclick="openFormModal()" 
+                    class="flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-emerald-900/20 hover:shadow-emerald-500/10 transition-all duration-200 text-sm shrink-0 border border-emerald-500/20 relative z-10">
+                <i class="fas fa-plus-circle text-base"></i>
+                <span>บันทึกเสนอศาลใหม่</span>
+            </button>
         </div>
-        <div class="record-meta">
-          <div class="record-row"><span>ประกัน</span><strong>${escapeHtml(w.bail || "-")}</strong></div>
+
+        <!-- กล่องข้อมูลสถิติเบื้องต้น (Dashboard Summary) มนโค้งมนและมีมิติมืด -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-4">
+            <div class="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl shadow-lg transition-all hover:border-slate-700">
+                <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> เสนอศาลแล้ว (รอคำสั่ง)
+                </p>
+                <p class="text-xl sm:text-3xl font-black text-amber-500 mt-1 drop-shadow-[0_0_8px_rgba(245,158,11,0.2)]" id="countProposed">0</p>
+            </div>
+            <div class="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl shadow-lg transition-all hover:border-slate-700">
+                <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span> รอส่งต่อสำนวน
+                </p>
+                <p class="text-xl sm:text-3xl font-black text-indigo-400 mt-1 drop-shadow-[0_0_8px_rgba(129,140,248,0.2)]" id="countWaiting">0</p>
+            </div>
+            <div class="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl shadow-lg transition-all hover:border-slate-700">
+                <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> ส่งต่อแล้ว (รอบวันนี้)
+                </p>
+                <p class="text-xl sm:text-3xl font-black text-emerald-400 mt-1 drop-shadow-[0_0_8px_rgba(52,211,153,0.2)]" id="countCompleted">0</p>
+            </div>
         </div>
-      </label>`;
-    }
 
-    async function initLiff() {
-      await liff.init({ liffId: LIFF_ID });
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
-      const profile = await liff.getProfile();
-      lineProfile = profile;
-      lineAccessToken = liff.getAccessToken();
-      document.getElementById("displayName").innerText = profile.displayName;
-      if (profile.pictureUrl) {
-        document.getElementById("avatar").innerHTML = `<img src="${profile.pictureUrl}" alt="Profile">`;
-      }
-    }
+        <!-- แถบสลับแท็บ (Tabs Navigation) ชัดเจนสไตล์ Tactical Toggle -->
+        <div class="flex border-b border-[#1e293b] gap-6">
+            <button onclick="switchTab('active')" id="tabActive" 
+                    class="pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 transition-all focus:outline-none tracking-wide">
+                รายการที่ดำเนินอยู่
+            </button>
+            <button onclick="switchTab('history')" id="tabHistory" 
+                    class="pb-3 text-sm font-medium border-b-2 border-transparent text-[#94a3b8] hover:text-[#f8fafc] transition-all focus:outline-none tracking-wide">
+                ประวัติส่งต่อแล้ว
+            </button>
+        </div>
 
-    async function callGas(action, payload = {}) {
-      if (!lineProfile.userId) throw new Error("ไม่พบ LINE User ID");
-      try {
-        const response = await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({
-            action,
-            userId: lineProfile.userId,
-            page: "manage.html",
-            accessToken: lineAccessToken,
-            displayName: lineProfile.displayName,
-            payload
-          })
-        });
-        const result = await response.json();
-        if (!result.success) throw new Error(result.error || "เกิดข้อผิดพลาด");
-        return result;
-      } catch (err) {
-        if (err.name === "SyntaxError") throw new Error("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ กรุณาลองใหม่");
-        throw err;
-      }
-    }
+        <!-- ตารางแสดงข้อมูลหลักและบอร์ดควบคุม -->
+        <div class="bg-[#0f172a] rounded-2xl shadow-2xl border border-[#1e293b] overflow-hidden">
+            <div class="px-6 py-4 bg-[#111827] border-b border-[#1e293b] flex justify-between items-center flex-wrap gap-2">
+                <span class="text-sm font-bold text-[#f8fafc] tracking-wide uppercase flex items-center gap-2" id="tableTitle">
+                    <i class="fas fa-folder-open text-emerald-400"></i> ตารางตรวจสอบงานธุรการตำรวจศาล
+                </span>
+                <span class="text-xs text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/40 px-3 py-1 rounded-full" id="tableCount">ทั้งหมด 0 รายการ</span>
+            </div>
 
+            <!-- พื้นที่แสดงตารางข้อมูลสไตล์สืบสวนสอบสวน -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="itemsTable">
+                    <thead>
+                        <tr class="bg-[#111827] text-[#94a3b8] text-[11px] font-bold uppercase tracking-wider border-b border-[#1e293b]">
+                            <th class="px-6 py-4">ข้อมูลหมายจับ / จำเลย</th>
+                            <th class="px-6 py-4">เสนอผู้พิพากษา</th>
+                            <th class="px-6 py-4">เหตุที่สิ้นผล</th>
+                            <th class="px-6 py-4">สถานะสำนวน</th>
+                            <th class="px-6 py-4">สถานะหมายจับ</th>
+                            <th class="px-6 py-4 text-right" id="thAction">ดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1e293b] text-sm text-[#f8fafc]" id="itemsList">
+                        <!-- รายการจะถูกสร้างด้วย JavaScript ด้านล่าง -->
+                    </tbody>
+                </table>
+            </div>
 
-    function openAddPanel() {
-      const panel = document.getElementById("addPanel");
-      panel.classList.remove("hidden");
-      document.getElementById("openAddBtn").classList.add("hidden");
-      setTimeout(() => {
-        panel.scrollIntoView({ behavior: "smooth", block: "start" });
-        document.getElementById("id13Input").focus();
-      }, 50);
-    }
+            <!-- กล่องแสดงกรณีไม่มีรายการเหลืออยู่เลย (Empty State) -->
+            <div id="emptyState" class="hidden py-16 text-center">
+                <i class="fas fa-radar text-4xl text-[#64748b] mb-4 animate-pulse"></i>
+                <svg class="mx-auto h-12 w-12 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                <h3 class="mt-4 text-sm font-medium text-white tracking-wide">ไม่มีรายการพ้นระบบ</h3>
+                <p class="mt-1 text-xs text-[#94a3b8]">เมื่อทำรายการส่งต่อไปยังคลังประวัติแล้ว จะแสดงผลในแถบประวัติส่งต่อแล้ว</p>
+            </div>
+        </div>
 
-    function closeAddPanel() {
-      clearForm(true);
-      setMessage("searchMessage", "");
-      document.getElementById("addPanel").classList.add("hidden");
-      document.getElementById("openAddBtn").classList.remove("hidden");
-    }
-    async function searchWarrants() {
-      const id13 = document.getElementById("id13Input").value.trim();
-      if (!/^\d{13}$/.test(id13)) {
-        setMessage("searchMessage", "กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก", true);
-        return;
-      }
-      const searchBtn = document.getElementById("searchBtn");
-      searchBtn.disabled = true;
-      searchBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>กำลังค้นหา`;
-      setMessage("searchMessage", "กำลังค้นหา...");
-      document.getElementById("warrantResults").innerHTML = "";
-      document.getElementById("processForm").classList.add("hidden");
-      try {
-        const result = await callGas("search", { searchType: "id13", keyword: id13 });
-        searchResults = result.data || [];
-        renderSearchResults();
-        setMessage("searchMessage", searchResults.length ? `พบหมายจับ ${searchResults.length} รายการ` : "ไม่พบหมายจับในระบบ");
-      } catch (err) {
-        setMessage("searchMessage", err.message, true);
-      } finally {
-        searchBtn.disabled = false;
-        searchBtn.innerHTML = `<i class="fas fa-search"></i>ค้นหาหมายจับ`;
-      }
-    }
+    </div>
 
-    function renderSearchResults() {
-      if (!searchResults.length) return;
-      let html = `<div class="table-wrap responsive-table"><table><thead><tr><th>เลือก</th><th>เลขที่หมายจับ</th><th>ชื่อสกุล</th><th>ประกัน</th><th>สถานะหมายจับ</th></tr></thead><tbody>`;
-      searchResults.forEach((w, index) => {
-        const selectable = w.status === STATUS_WANTED;
-        html += `<tr>
-          <td><input type="checkbox" class="warrantCheck" value="${index}" ${selectable ? "" : "disabled"}></td>
-          <td>${escapeHtml(w.warrantNo)}</td>
-          <td>${escapeHtml(w.fullName)}</td>
-          <td>${escapeHtml(w.bail || "-")}</td>
-          <td>${statusBadge(w.status)}</td>
-        </tr>`;
-      });
-      html += `</tbody></table></div><div class="mobile-list warrant-select-list">${searchResults.map((w, index) => warrantOptionCard(w, index)).join("")}</div>`;
-      document.getElementById("warrantResults").innerHTML = html;
-      document.getElementById("processForm").classList.remove("hidden");
-      document.querySelectorAll(".warrantCheck").forEach(el => el.addEventListener("change", updateSelectedUi));
-      updateSelectedUi();
-    }
+    <!-- Modal ฟอร์มบันทึกรายการสิ้นผลใหม่ -->
+    <div id="formModal" class="fixed inset-0 bg-[#050b14]/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#0f172a] rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl border border-[#1e293b] transform scale-95 transition-all duration-300" id="formModalCard">
+            
+            <!-- หัวข้อฟอร์มใน Modal ธีมกองปราบยุทธวิธี -->
+            <div class="bg-[#111827] border-b border-[#1e293b] px-6 py-5 text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fas fa-file-invoice text-emerald-400 text-lg"></i>
+                    <span class="font-extrabold tracking-wider text-sm sm:text-base uppercase">บันทึกเสนอรายงานสิ้นผลหมายจับ</span>
+                </div>
+                <!-- ปุ่มปิดกากบาท -->
+                <button onclick="closeFormModal()" class="text-[#94a3b8] hover:text-white transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
 
+            <!-- เนื้อหา Modal -->
+            <div class="p-6 overflow-y-auto max-h-[80vh] space-y-4">
+                
+                <!-- ขั้นตอนที่ 1: ค้นหาข้อมูลจำเลย/หมายจับค้างเก่า -->
+                <div class="bg-[#111827] p-4 rounded-xl border border-[#1e293b] space-y-2">
+                    <label class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                        1. ค้นหาหมายจับค้างเก่า <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="searchQuery" 
+                               class="flex-1 px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white placeholder-slate-600 font-medium"
+                               placeholder="กรอกชื่อจำเลย หรือเลขบัตร 13 หลัก">
+                        <button type="button" onclick="searchWarrants()"
+                                class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-5 py-2 rounded-lg text-sm transition-all flex items-center space-x-2">
+                            <i class="fas fa-search"></i>
+                            <span>ค้นหา</span>
+                        </button>
+                    </div>
+                </div>
 
-    function getSelectedWarrants() {
-      return Array.from(document.querySelectorAll(".warrantCheck:checked")).map(el => searchResults[Number(el.value)]);
-    }
+                <!-- แสดงผลลัพธ์การค้นหาหมายจับและจำเลยเพื่อกดติ๊กเลือก -->
+                <div id="searchResultsSection" class="hidden space-y-3 bg-[#111827] p-4 rounded-xl border border-[#1e293b] shadow-inner">
+                    <div class="flex justify-between items-center pb-2 border-b border-[#1e293b]">
+                        <h4 class="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">ผลการสืบค้นหมายค้างเก่า</h4>
+                        <span class="text-xs text-emerald-400 font-bold bg-emerald-950/60 px-3 py-1 rounded border border-emerald-800/40" id="searchedDefendantName">-</span>
+                    </div>
 
-    function updateSelectedUi() {
-      const count = getSelectedWarrants().length;
-      document.getElementById("selectedCountChip").innerHTML = `<i class="fas fa-list-check"></i>เลือก ${count} หมายจับ`;
-      document.getElementById("stickyCount").innerText = `เลือก ${count} หมายจับ`;
-      document.getElementById("saveBtn").disabled = count === 0;
-      document.getElementById("stickySaveBtn").disabled = count === 0;
-      document.getElementById("stickyActions").classList.toggle("show", count > 0);
-    }
+                    <!-- รายการหมายจับที่มีให้เลือกติ๊กถูก -->
+                    <div class="space-y-2" id="warrantsCheckboxList">
+                        <!-- รายการจะถูกสร้างผ่าน JavaScript -->
+                    </div>
+                    <p class="text-[11px] text-amber-500/90 font-medium"><i class="fas fa-info-circle mr-1"></i> ท่านสามารถเลือกหมายจับพร้อมกันหลายรายการได้ หากสิ้นผลจากพฤติการณ์เดียวกัน</p>
+                </div>
 
-    function openConfirm() {
-      const selected = getSelectedWarrants();
-      if (!selected.length) {
-        setMessage("searchMessage", "กรุณาเลือกหมายจับที่อยู่สถานะต้องการตัวอย่างน้อย 1 รายการ", true);
-        return;
-      }
-      const reason = document.getElementById("reasonSelect").value;
-      const reasonDetail = document.getElementById("reasonDetailInput").value.trim();
-      const submitTo = document.getElementById("submitToInput").value.trim() || "-";
-      if (reason === "อื่น ๆ" && !reasonDetail) {
-        setMessage("searchMessage", "กรุณาระบุรายละเอียดเหตุ", true);
-        return;
-      }
-      const warrantList = selected.map(w => escapeHtml(w.warrantNo)).join(", ");
-      document.getElementById("confirmSummary").innerHTML = `
-        <div class="summary-row"><span>จำนวนหมายจับ</span><strong>${selected.length} รายการ</strong></div>
-        <div class="summary-row"><span>เลขที่หมายจับ</span><strong>${warrantList}</strong></div>
-        <div class="summary-row"><span>เหตุ</span><strong>${escapeHtml(reason)}${reasonDetail ? " - " + escapeHtml(reasonDetail) : ""}</strong></div>
-        <div class="summary-row"><span>เสนอถึง</span><strong>${escapeHtml(submitTo)}</strong></div>
-        <div class="summary-row"><span>สถานะใหม่</span><strong>${statusBadge(STATUS_PENDING)}</strong></div>
-      `;
-      document.getElementById("confirmBackdrop").classList.add("show");
-    }
+                <!-- ฟอร์มกรอกรายละเอียดเสนอศาล (จะเปิดให้กรอกเมื่อค้นพบข้อมูล) -->
+                <form id="warrantForm" onsubmit="handleFormSubmit(event)" class="hidden space-y-4 pt-2">
+                    
+                    <!-- เหตุที่ทำให้หมายจับสิ้นผล -->
+                    <div class="space-y-1.5">
+                        <label for="endReason" class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                            2. เหตุที่ทำให้หมายจับสิ้นผล <span class="text-red-500">*</span>
+                        </label>
+                        <select id="endReason" required
+                                class="w-full px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white">
+                            <option value="" disabled selected>-- เลือกเหตุผลของคดี --</option>
+                            <option value="มอบตัว">จำเลยเข้ามอบตัว</option>
+                            <option value="Break">เจ้าหน้าที่ตำรวจจับกุมได้</option>
+                            <option value="อยู่เรือนจำอื่น">จำเลยถูกควบคุมตัวอยู่เรือนจำอื่น</option>
+                            <option value="อื่นๆ">อื่นๆ (หมดอายุความ / ถอนคำร้องทุกข์ / ถอนหมายจับ)</option>
+                        </select>
+                    </div>
 
-    function closeConfirm() {
-      document.getElementById("confirmBackdrop").classList.remove("show");
-    }
-    async function saveProcess() {
-      const selected = getSelectedWarrants();
-      if (!selected.length) {
-        setMessage("searchMessage", "กรุณาเลือกหมายจับที่อยู่สถานะต้องการตัวอย่างน้อย 1 รายการ", true);
-        return;
-      }
-      const reason = document.getElementById("reasonSelect").value;
-      const reasonDetail = document.getElementById("reasonDetailInput").value.trim();
-      const submitTo = document.getElementById("submitToInput").value.trim();
-      if (reason === "อื่น ๆ" && !reasonDetail) {
-        setMessage("searchMessage", "กรุณาระบุรายละเอียดเหตุ", true);
-        return;
-      }
-      try {
-        document.getElementById("confirmSaveBtn").disabled = true;
-        document.getElementById("confirmSaveBtn").innerHTML = `<i class="fas fa-spinner fa-spin"></i>กำลังบันทึก`;
-        const result = await callGas("addProcess", {
-          selectedWarrants: selected.map(w => ({ warrantNo: w.warrantNo })),
-          reason,
-          reasonDetail,
-          submitTo
-        });
-        closeConfirm();
-        setMessage("searchMessage", `บันทึกสำเร็จ ${result.added || selected.length} รายการ`);
-        clearForm(false);
-        await loadPending();
-        closeAddPanel();
-      } catch (err) {
-        setMessage("searchMessage", err.message, true);
-      } finally {
-        document.getElementById("confirmSaveBtn").disabled = false;
-        document.getElementById("confirmSaveBtn").innerHTML = `<i class="fas fa-floppy-disk"></i>ยืนยันบันทึก`;
-      }
-    }
+                    <!-- เสนอต่อผู้พิพากษา -->
+                    <div class="space-y-1.5">
+                        <label for="proposedTo" class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                            3. เสนอต่อ (ผู้พิพากษาท่านใด) <span class="text-red-500">*</span>
+                        </label>
+                        <select id="proposedTo" required
+                                class="w-full px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white">
+                            <option value="" disabled selected>-- เลือกชื่อผู้พิพากษา --</option>
+                            <option value="ท่านผู้พิพากษา สมศักดิ์ รักยุติธรรม">ท่านผู้พิพากษา สมศักดิ์ รักยุติธรรม</option>
+                            <option value="ท่านผู้พิพากษา วิภาดา ขยันดี">ท่านผู้พิพากษา วิภาดา ขยันดี</option>
+                            <option value="ท่านผู้พิพากษา ประสิทธิ์ ยุติธรรมดี">ท่านผู้พิพากษา ประสิทธิ์ ยุติธรรมดี</option>
+                        </select>
+                    </div>
 
-    async function loadPending() {
-      const box = document.getElementById("pendingList");
-      box.className = "message";
-      box.innerText = "กำลังโหลด...";
-      try {
-        const result = await callGas("getPending");
-        pendingRows = result.data || [];
-        if (!pendingRows.length) {
-          document.getElementById("syncBtn").classList.add("hidden");
-          box.className = "message";
-          box.innerHTML = "ยังไม่มีรายการดำเนินการ เริ่มจากเพิ่มรายการดำเนินการ";
-          return;
+                    <!-- หมายเหตุเพิ่มเติม -->
+                    <div class="space-y-1.5">
+                        <label for="remark" class="block text-xs font-bold text-[#94a3b8] uppercase tracking-wider">
+                            หมายเหตุ / รายละเอียดเพิ่มเติม
+                        </label>
+                        <textarea id="remark" rows="2.5"
+                                  class="w-full px-4 py-2.5 bg-[#050b14] border border-[#1e293b] rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm text-white placeholder-slate-600"
+                                  placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+                    </div>
+
+                    <!-- ปุ่มควบคุมก้นโมดอล -->
+                    <div class="flex items-center space-x-3 pt-4 border-t border-[#1e293b]">
+                        <button type="submit" 
+                                class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center space-x-2">
+                            <i class="fas fa-shield-halved text-base"></i>
+                            <span>ตรวจสอบและบันทึก</span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal แจ้งเตือนคอนเฟิร์มซ้อนเพื่อรีเช็คข้อมูลก่อนกดยืนยันจริง (Confirmation Modal) -->
+    <div id="confirmModal" class="fixed inset-0 bg-[#050b14]/90 backdrop-blur-md flex items-center justify-center p-4 z-[60] hidden opacity-0 transition-all duration-300">
+        <div class="bg-[#0f172a] rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-[#1e293b] transform scale-95 transition-all duration-300" id="confirmModalCard">
+            
+            <!-- หัวเตือนสติเพื่อความรอบคอบ -->
+            <div class="bg-amber-950/20 px-6 py-4 border-b border-amber-900/30 flex items-center space-x-3 text-amber-400">
+                <span class="p-2 rounded-lg bg-amber-950/50 text-amber-400 border border-amber-800/40 shrink-0">
+                    <i class="fas fa-triangle-exclamation text-xl"></i>
+                </span>
+                <div>
+                    <h3 class="font-bold text-[#f8fafc] text-base">ตรวจสอบความถูกต้องอีกครั้ง</h3>
+                    <p class="text-[11px] text-amber-500/90 font-semibold tracking-wide uppercase">โปรดตรวจความถูกต้องสะกดคำก่อนส่งเสนอผู้พิพากษา</p>
+                </div>
+            </div>
+
+            <!-- ส่วนแสดงสรุปข้อมูลที่กรอก -->
+            <div class="p-6 space-y-4 text-sm text-[#f8fafc]">
+                <div class="space-y-3 bg-[#111827] p-4 rounded-xl border border-[#1e293b]">
+                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
+                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">ชื่อจำเลย:</span>
+                        <span class="font-extrabold text-white text-right" id="confirmDefendant">-</span>
+                    </div>
+                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
+                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">หมายจับที่เลือก:</span>
+                        <div class="flex flex-wrap gap-1 justify-end max-w-[200px]" id="confirmWarrantsList">
+                            <!-- รายชื่อหมายจับจะถูกเรนเดอร์ในนี้ -->
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
+                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">เหตุที่สิ้นผล:</span>
+                        <span class="font-extrabold text-emerald-400 text-right" id="confirmReason">-</span>
+                    </div>
+                    <div class="flex justify-between items-start border-b border-[#1e293b] pb-2">
+                        <span class="text-xs text-[#94a3b8] font-bold uppercase shrink-0 w-24">เสนอรายงานต่อ:</span>
+                        <span class="font-semibold text-white text-right" id="confirmProposed">-</span>
+                    </div>
+                    <div class="flex flex-col pt-1">
+                        <span class="text-xs text-[#94a3b8] font-bold uppercase mb-1">หมายเหตุ:</span>
+                        <p class="text-xs text-slate-300 bg-[#050b14] p-3 rounded border border-[#1e293b] italic" id="confirmRemark">-</p>
+                    </div>
+                </div>
+
+                <!-- ข้อสังเกตระมัดระวังทางการปฏิบัติงาน -->
+                <div class="text-[11px] text-rose-400 font-medium leading-relaxed bg-rose-950/20 p-3 rounded-lg border border-rose-900/30 flex items-start space-x-2">
+                    <i class="fas fa-shield-halved shrink-0 mt-0.5 text-rose-500"></i>
+                    <span>คำเตือน: หลังกดยืนยันบันทึก ระบบจะลงข้อมูลสถานะ "เสนอศาลแล้ว" ในแถบตารางทันที</span>
+                </div>
+            </div>
+
+            <!-- ปุ่มย้อนกลับไปแก้ไข หรือ ยืนยันบันทึก -->
+            <div class="px-6 pb-6 pt-1 flex items-center space-x-3">
+                <button type="button" onclick="closeConfirmModal(false)"
+                        class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-[#f8fafc] font-bold py-3 px-4 rounded-xl transition-all text-xs flex items-center justify-center space-x-1.5 border border-[#1e293b]">
+                    <i class="fas fa-edit text-slate-400"></i>
+                    <span>ย้อนแก้ไข</span>
+                </button>
+                <button type="button" onclick="closeConfirmModal(true)"
+                        class="flex-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-3 px-4 rounded-xl transition-all text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-emerald-950/30 border border-emerald-500/20">
+                    <i class="fas fa-check-circle"></i>
+                    <span>ยืนยันบันทึก</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- แจ้งเตือนความสำเร็จ (Toast Alert) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900/95 border border-[#1e293b] text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 backdrop-blur-md">
+        <span class="p-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="toastIcon">
+            <i class="fas fa-check"></i>
+        </span>
+        <span class="text-xs sm:text-sm font-semibold tracking-wide" id="toastText">บันทึกข้อมูลสำเร็จ</span>
+    </div>
+
+    <!-- JavaScript สำหรับควบคุมระบบจำลอง -->
+    <script>
+        // ข้อมูลจำลองตั้งต้นในตารางธุรการ
+        let mockActiveItems = [
+            {
+                id: "w-01",
+                warrantNumber: "จ.452/2567",
+                defendantName: "นายสมชาย แสนดี",
+                endReason: "ตำรวจจับ",
+                proposedTo: "ท่านผู้พิพากษา สมศักดิ์ รักยุติธรรม",
+                caseStatus: "เสนอศาล",
+                warrantStatus: "สิ้นผลรอเพิกถอน",
+                remark: "จับกุมส่งพนักงานสอบสวน สภ.เมืองสระแก้ว"
+            },
+            {
+                id: "w-02",
+                warrantNumber: "จ.12/2568",
+                defendantName: "นางสาวมณี รักษ์โลก",
+                endReason: "มอบตัว",
+                proposedTo: "ท่านผู้พิพากษา วิภาดา ขยันดี",
+                caseStatus: "รอส่งต่อ",
+                warrantStatus: "เพิกถอน",
+                remark: "จำเลยเข้ามาติดต่อขอมอบตัวด้วยตนเองที่ห้องเวรชี้"
+            }
+        ];
+
+        // ฐานข้อมูลสืบค้นหมายจับจำลอง
+        const mockSearchDatabase = [
+            {
+                citizenId: "1234567890123",
+                defendantName: "นายดำรง เกียรติภูมิ",
+                warrants: [
+                    { warrantNumber: "จ.88/2566", charge: "ลักทรัพย์ในเวลากลางคืน" },
+                    { warrantNumber: "จ.89/2566", charge: "บุกรุกเคหสถานยามวิกาล" },
+                    { warrantNumber: "จ.90/2566", charge: "ร่วมกันกรรโชกทรัพย์" }
+                ]
+            },
+            {
+                citizenId: "9876543210987",
+                defendantName: "นางสาวสุดา รักดี",
+                warrants: [
+                    { warrantNumber: "จ.101/2567", charge: "ร่วมกันฉ้อโกงประชาชน" },
+                    { warrantNumber: "จ.102/2567", charge: "นำเข้าข้อมูลอันเป็นเท็จสู่ระบบคอมพิวเตอร์" }
+                ]
+            }
+        ];
+
+        let currentTab = 'active'; // แท็บปัจจุบัน: active หรือ history
+        let currentSearchedDefendant = null; // เก็บข้อมูลจำเลยที่สืบค้นเจอชั่วคราว
+        let pendingDataToSave = null; // ตัวแปรชั่วคราวเพื่อรอการกดยืนยันในหน้าจอป๊อปอัปแจ้งเตือนซ้อน
+
+        // วาดตารางและสถิติเมื่อเปิดหน้าเว็บ
+        window.onload = function() {
+            renderDashboard();
+        };
+
+        // ฟังก์ชันสลับแท็บ
+        function switchTab(tabName) {
+            currentTab = tabName;
+            const tabActive = document.getElementById('tabActive');
+            const tabHistory = document.getElementById('tabHistory');
+
+            if(tabName === 'active') {
+                tabActive.className = "pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 transition-all focus:outline-none tracking-wide";
+                tabHistory.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-[#94a3b8] hover:text-[#f8fafc] transition-all focus:outline-none tracking-wide";
+                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-folder-open text-emerald-400"></i> ตารางตรวจสอบงานธุรการตำรวจศาล';
+                document.getElementById('thAction').classList.remove('hidden');
+            } else {
+                tabActive.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-[#94a3b8] hover:text-[#f8fafc] transition-all focus:outline-none tracking-wide";
+                tabHistory.className = "pb-3 text-sm font-bold border-b-2 border-emerald-500 text-emerald-400 transition-all focus:outline-none tracking-wide";
+                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-history text-emerald-400"></i> ประวัติสำนวนที่ส่งต่อแล้ววันนี้';
+                document.getElementById('thAction').classList.add('hidden');
+            }
+
+            renderDashboard();
         }
-        const activeRows = pendingRows.filter(row => row.caseStatus !== CASE_STATUS_FORWARDED);
-        const historyRows = pendingRows.filter(row => row.caseStatus === CASE_STATUS_FORWARDED && row.warrantStatus === STATUS_REVOKED);
-        const needsStatusUpdate = pendingRows.some(row => row.syncStatus !== "synced");
-        document.getElementById("syncBtn").classList.toggle("hidden", !needsStatusUpdate);
-        const updateHeader = needsStatusUpdate ? `<th>ผลอัปเดต</th>` : "";
-        let html = `<div class="section-gap">`;
 
-        html += `<section>
-          <div class="section-head">
-            <h3>รายการที่ดำเนินอยู่</h3>
-            <span class="count-chip">${activeRows.length} รายการ</span>
-          </div>`;
-        if (!activeRows.length) {
-          html += `<div class="message">ไม่มีรายการที่ดำเนินอยู่</div>`;
-        } else {
-          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะสำนวน</th><th>สถานะหมายจับ</th>${updateHeader}<th>จัดการ</th></tr></thead><tbody>`;
-          activeRows.forEach(row => {
-            const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
-            const canForward = row.warrantStatus === STATUS_REVOKED && row.caseStatus === CASE_STATUS_WAITING_FORWARD;
-            const actionButtons = canForward
-              ? `<button class="btn secondary" style="width:34px; height:34px; padding:0; border-radius:50%;" onclick="markForwarded(${Number(row.rowId)})" title="ส่งต่อ"><i class="fas fa-share"></i></button>`
-              : `<button class="btn danger" style="width:34px; height:34px; padding:0; border-radius:50%;" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"} title="เพิกถอน"><i class="fas fa-ban"></i></button>`;
-            html += `<tr>
-              <td>${escapeHtml(row.timestamp || "")}</td>
-              <td>${escapeHtml(row.warrantNo || "")}</td>
-              <td>${escapeHtml(row.fullName || "")}</td>
-              <td>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</td>
-              <td>${escapeHtml(row.caseStatus || "")}</td>
-              <td>${statusBadge(row.warrantStatus)}</td>
-              ${needsStatusUpdate ? `<td>${syncCell(row)}</td>` : ""}
-              <td><div class="actions">${actionButtons}</div></td>
-            </tr>`;
-          });
-          html += `</tbody></table></div><div class="mobile-list">${activeRows.map(row => recordCard(row, true)).join("")}</div>`;
+        // ฟังก์ชันวาดตารางและตัวเลข Dashboard ใหม่ทุกครั้งที่มีการเปลี่ยนข้อมูล
+        function renderDashboard() {
+            const listContainer = document.getElementById('itemsList');
+            const emptyState = document.getElementById('emptyState');
+            const itemsTable = document.getElementById('itemsTable');
+            
+            // กรองข้อมูลตามแท็บที่เลือก
+            let displayedItems = [];
+            if (currentTab === 'active') {
+                displayedItems = mockActiveItems.filter(item => item.caseStatus !== 'ส่งต่อแล้ว');
+            } else {
+                displayedItems = mockActiveItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว');
+            }
+
+            // คำนวณตัวเลขอ้างอิงสถิติทั้งหมด
+            const prCount = mockActiveItems.filter(item => item.caseStatus === 'เสนอศาล').length;
+            const wCount = mockActiveItems.filter(item => item.caseStatus === 'รอส่งต่อ').length;
+            const completedCount = mockActiveItems.filter(item => item.caseStatus === 'ส่งต่อแล้ว').length;
+
+            document.getElementById('countProposed').innerText = prCount;
+            document.getElementById('countWaiting').innerText = wCount;
+            document.getElementById('countCompleted').innerText = completedCount;
+            document.getElementById('tableCount').innerText = "ทั้งหมด " + displayedItems.length + " รายการ";
+
+            if (displayedItems.length === 0) {
+                itemsTable.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                itemsTable.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            }
+
+            // ล้างหน้าตารางเก่าก่อนเขียนใหม่
+            listContainer.innerHTML = '';
+
+            // วาดแถวข้อมูลใหม่
+            displayedItems.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-[#111827]/50 transition-colors border-b border-[#1e293b]";
+
+                // จัดการ Badge ของสถานะสำนวน (สไตล์เมฆาส่วนควบคุมความมั่นคง)
+                let caseBadge = '';
+                if(item.caseStatus === 'เสนอศาล') {
+                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-950/40 text-amber-400 border border-amber-900/40">เสนอศาลแล้ว</span>';
+                } else if(item.caseStatus === 'รอส่งต่อ') {
+                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-950/40 text-indigo-400 border border-indigo-900/40">รอส่งต่อสำนวน</span>';
+                } else if(item.caseStatus === 'ส่งต่อแล้ว') {
+                    caseBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/40">ส่งต่อสำเร็จแล้ว</span>';
+                }
+
+                // จัดการ Badge ของสถานะหมายจับ
+                let warrantBadge = '';
+                if(item.warrantStatus === 'สิ้นผลรอเพิกถอน') {
+                    warrantBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-950/40 text-rose-400 border border-rose-900/40">สิ้นผลรอเพิกถอน</span>';
+                } else if(item.warrantStatus === 'เพิกถอน') {
+                    warrantBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/40">เพิกถอนแล้ว</span>';
+                }
+
+                let actionButton = '';
+                if(currentTab === 'active') {
+                    if(item.caseStatus === 'เสนอศาล') {
+                        actionButton = `<button onclick="updateWorkflow('${item.id}', 'รอส่งต่อ', 'เพิกถอน')" class="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-lg transition-all font-bold inline-block shadow-md hover:shadow-amber-900/20 active:scale-95">เพิกถอน</button>`;
+                    } else if(item.caseStatus === 'รอส่งต่อ') {
+                        actionButton = `<button onclick="updateWorkflow('${item.id}', 'ส่งต่อแล้ว', 'เพิกถอน')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg transition-all font-bold inline-block shadow-md hover:shadow-emerald-900/20 active:scale-95">ส่งต่อสำนวน</button>`;
+                    }
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-extrabold text-white font-mono tracking-wider">${item.warrantNumber}</div>
+                        <div class="text-xs text-[#94a3b8] mt-1 font-semibold">${item.defendantName}</div>
+                    </td>
+                    <td class="px-6 py-4 text-xs font-bold text-[#94a3b8]">
+                        ${item.proposedTo}
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        <div class="font-bold text-white">${item.endReason}</div>
+                        ${item.remark ? `<div class="text-[11px] text-[#64748b] mt-0.5 italic max-w-xs truncate">${item.remark}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4">${caseBadge}</td>
+                    <td class="px-6 py-4">${warrantBadge}</td>
+                    ${currentTab === 'active' ? `<td class="px-6 py-4 text-right">${actionButton}</td>` : ''}
+                `;
+                listContainer.appendChild(tr);
+            });
         }
-        html += `</section>`;
 
-        html += `<section>
-          <button class="btn secondary history-toggle" type="button" onclick="toggleHistory()">
-            <span>ประวัติรายการดำเนินการ</span>
-            <span class="count-chip">${historyRows.length} รายการ</span>
-          </button>
-          <div class="history-body hidden" id="historyBody" style="margin-top:10px">`;
-        if (!historyRows.length) {
-          html += `<div class="message">ยังไม่มีประวัติรายการดำเนินการ</div>`;
-        } else {
-          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะสำนวน</th><th>สถานะหมายจับ</th>${updateHeader}</tr></thead><tbody>`;
-          historyRows.forEach(row => {
-            html += `<tr>
-              <td>${escapeHtml(row.timestamp || "")}</td>
-              <td>${escapeHtml(row.warrantNo || "")}</td>
-              <td>${escapeHtml(row.fullName || "")}</td>
-              <td>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</td>
-              <td>${escapeHtml(row.caseStatus || "")}</td>
-              <td>${statusBadge(row.warrantStatus)}</td>
-              ${needsStatusUpdate ? `<td>${syncCell(row)}</td>` : ""}
-            </tr>`;
-          });
-          html += `</tbody></table></div><div class="mobile-list">${historyRows.map(row => recordCard(row, false)).join("")}</div>`;
+        // ค้นหาข้อมูลหมายจับค้างเก่าใน Modal
+        function searchWarrants() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if(!query) {
+                showToast("⚠️ กรุณากรอกข้อมูลสืบค้นก่อน", true);
+                return;
+            }
+
+            // ค้นจากฐานข้อมูลสืบค้นจำลอง
+            let found = mockSearchDatabase.find(item => item.citizenId === query || item.defendantName.includes(query));
+
+            // หากสืบค้นไม่พบ จะสุ่มสร้างข้อมูลสมมติขึ้นมาเพื่อให้หน้าจอสามารถทดสอบได้ตลอดเวลา
+            if(!found) {
+                found = {
+                    citizenId: "1100223344556",
+                    defendantName: isNaN(query) ? query : "นายศรายุทธ วงศ์สว่าง (สมมติ)",
+                    warrants: [
+                        { warrantNumber: `จ.315/${new Date().getFullYear() + 542}`, charge: "ร่วมกันกู้ยืมเงินที่เป็นการฉ้อโกงประชาชน" },
+                        { warrantNumber: `จ.316/${new Date().getFullYear() + 543}`, charge: "นำเข้าข้อมูลเท็จสู่ระบบคอมพิวเตอร์" }
+                    ]
+                };
+            }
+
+            currentSearchedDefendant = found;
+
+            // อัปเดตฝั่งรายชื่อและรายการหมายจับเพื่อส่งให้เลือก
+            document.getElementById('searchedDefendantName').innerText = found.defendantName;
+            
+            const listCheckboxDiv = document.getElementById('warrantsCheckboxList');
+            listCheckboxDiv.innerHTML = ''; // ล้างค่าเก่า
+
+            found.warrants.forEach((warrant, index) => {
+                const div = document.createElement('div');
+                div.className = "flex items-start space-x-3 p-3 bg-[#050b14] hover:bg-slate-900 rounded-lg transition-colors cursor-pointer border border-[#1e293b]";
+                div.innerHTML = `
+                    <input type="checkbox" id="chk-${index}" value="${warrant.warrantNumber}" checked
+                           class="mt-1 h-4 w-4 rounded border-slate-700 bg-[#0f172a] text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 focus:ring-0">
+                    <label for="chk-${index}" class="text-xs cursor-pointer block select-none">
+                        <span class="font-extrabold text-white block">หมายจับเลขที่: ${warrant.warrantNumber}</span>
+                        <span class="text-[#94a3b8] font-medium block mt-0.5">ข้อหา: ${warrant.charge}</span>
+                    </label>
+                `;
+                listCheckboxDiv.appendChild(div);
+            });
+
+            // แสดงหน้าผลลัพธ์และแบบฟอร์มรายละเอียด
+            document.getElementById('searchResultsSection').classList.remove('hidden');
+            document.getElementById('warrantForm').classList.remove('hidden');
         }
-        html += `</div></section></div>`;
-        box.className = "section-gap";
-        box.innerHTML = html;
-      } catch (err) {
-        document.getElementById("syncBtn").classList.remove("hidden");
-        box.className = "message error";
-        box.innerText = err.message;
-      }
-    }
-    async function syncNow() {
-      try {
-        await callGas("syncProcessing");
-        await loadPending();
-      } catch (err) {
-        document.getElementById("pendingList").className = "message error";
-        document.getElementById("pendingList").innerText = err.message;
-      }
-    }
 
-    function toggleHistory() {
-      const body = document.getElementById("historyBody");
-      if (body) body.classList.toggle("hidden");
-    }
+        // เมื่อกดยืนยันจากฟอร์มหลัก - จะสกัดค่าแล้วดึงกล่องป๊อปอัปตรวจสอบความถูกต้องขึ้นมา
+        function handleFormSubmit(event) {
+            event.preventDefault();
 
-    function openRevokeConfirm(rowId) {
-      const row = pendingRows.find(item => Number(item.rowId) === Number(rowId));
-      if (!row) return;
-      revokeRowId = Number(rowId);
-      document.getElementById("revokeSummary").innerHTML = `
-        <div class="summary-row"><span>เลขที่หมายจับ</span><strong>${escapeHtml(row.warrantNo || "")}</strong></div>
-        <div class="summary-row"><span>ชื่อสกุล</span><strong>${escapeHtml(row.fullName || "")}</strong></div>
-        <div class="summary-row"><span>เหตุ</span><strong>${escapeHtml(row.reason || "")}${row.reasonDetail ? " - " + escapeHtml(row.reasonDetail) : ""}</strong></div>
-        <div class="summary-row"><span>สถานะใหม่</span><strong>${statusBadge(STATUS_REVOKED)}</strong></div>
-      `;
-      document.getElementById("revokeBackdrop").classList.add("show");
-    }
+            // ดึงค่าหมายจับที่ถูกติ๊กถูกเลือกไว้
+            const selectedWarrants = [];
+            if (currentSearchedDefendant) {
+                currentSearchedDefendant.warrants.forEach((w, index) => {
+                    const chk = document.getElementById(`chk-${index}`);
+                    if (chk && chk.checked) {
+                        selectedWarrants.push(w.warrantNumber);
+                    }
+                });
+            }
 
-    function closeRevokeConfirm() {
-      revokeRowId = null;
-      document.getElementById("revokeBackdrop").classList.remove("show");
-    }
+            if(selectedWarrants.length === 0) {
+                showToast("⚠️ กรุณาเลือกหมายจับอย่างน้อย 1 รายการเพื่อดำเนินบันทึก", true);
+                return;
+            }
 
-    async function markRevoked() {
-      if (!revokeRowId) return;
-      try {
-        document.getElementById("confirmRevokeBtn").disabled = true;
-        document.getElementById("confirmRevokeBtn").innerHTML = `<i class="fas fa-spinner fa-spin"></i>กำลังเพิกถอน`;
-        await callGas("markRevoked", { rowId: revokeRowId });
-        closeRevokeConfirm();
-        await loadPending();
-      } catch (err) {
-        document.getElementById("revokeSummary").innerHTML += `<div class="message error">${escapeHtml(err.message)}</div>`;
-      } finally {
-        document.getElementById("confirmRevokeBtn").disabled = false;
-        document.getElementById("confirmRevokeBtn").innerHTML = `<i class="fas fa-ban"></i>ยืนยันเพิกถอน`;
-      }
-    }
+            const endReason = document.getElementById('endReason').value;
+            const proposedTo = document.getElementById('proposedTo').value;
+            const remark = document.getElementById('remark').value;
 
-    async function markForwarded(rowId) {
-      if (!confirm("ยืนยันส่งต่อสำนวนรายการนี้?")) return;
-      try {
-        await callGas("markForwarded", { rowId });
-        await loadPending();
-      } catch (err) {
-        document.getElementById("pendingList").className = "message error";
-        document.getElementById("pendingList").innerText = err.message;
-      }
-    }
+            // บันทึกค่าไว้ที่ตัวแปรสำรองกลางชั่วคราว เพื่อรอรับสิทธิ์ยืนยันจากหน้าป๊อปอัป
+            pendingDataToSave = {
+                defendantName: currentSearchedDefendant.defendantName,
+                selectedWarrants: selectedWarrants,
+                endReason: endReason,
+                proposedTo: proposedTo,
+                remark: remark || "ไม่มีข้อมูลหมายเหตุเพิ่มเติม"
+            };
 
-    function clearForm(clearId = true) {
-      if (clearId) document.getElementById("id13Input").value = "";
-      document.getElementById("warrantResults").innerHTML = "";
-      document.getElementById("processForm").classList.add("hidden");
-      document.getElementById("submitToInput").value = "";
-      document.getElementById("reasonDetailInput").value = "";
-      searchResults = [];
-      document.getElementById("saveBtn").disabled = true;
-      document.getElementById("stickySaveBtn").disabled = true;
-      document.getElementById("stickyActions").classList.remove("show");
-    }
+            // แสดงค่าในหน้าป๊อปอัปรีเช็คซ้อน
+            document.getElementById('confirmDefendant').innerText = pendingDataToSave.defendantName;
+            document.getElementById('confirmReason').innerText = pendingDataToSave.endReason;
+            document.getElementById('confirmProposed').innerText = pendingDataToSave.proposedTo;
+            document.getElementById('confirmRemark').innerText = pendingDataToSave.remark;
 
-    document.getElementById("openAddBtn").addEventListener("click", openAddPanel);
-    document.getElementById("closeAddBtn").addEventListener("click", closeAddPanel);
-    document.getElementById("cancelFormBtn").addEventListener("click", closeAddPanel);
-    document.getElementById("searchBtn").addEventListener("click", searchWarrants);
-    document.getElementById("clearBtn").addEventListener("click", () => { clearForm(true); setMessage("searchMessage", ""); });
-    document.getElementById("saveBtn").addEventListener("click", openConfirm);
-    document.getElementById("stickySaveBtn").addEventListener("click", openConfirm);
-    document.getElementById("confirmSaveBtn").addEventListener("click", saveProcess);
-    document.getElementById("cancelConfirmBtn").addEventListener("click", closeConfirm);
-    document.getElementById("confirmRevokeBtn").addEventListener("click", markRevoked);
-    document.getElementById("cancelRevokeBtn").addEventListener("click", closeRevokeConfirm);
-    document.getElementById("syncBtn").addEventListener("click", syncNow);
-    document.getElementById("id13Input").addEventListener("keydown", e => { if (e.key === "Enter") searchWarrants(); });
-    document.getElementById("id13Input").addEventListener("input", e => {
-      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 13);
-    });
-    document.getElementById("reasonSelect").addEventListener("change", e => {
-      document.getElementById("reasonDetailBox").classList.toggle("hidden", e.target.value !== "อื่น ๆ");
-    });
+            // แสดงรายการหมายจับที่เลือกลงในแถบ Badge สรุปผล
+            const confirmWarrantsList = document.getElementById('confirmWarrantsList');
+            confirmWarrantsList.innerHTML = '';
+            pendingDataToSave.selectedWarrants.forEach(warrantNum => {
+                const span = document.createElement('span');
+                span.className = "inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-950/40 text-amber-400 border border-amber-900/40";
+                span.innerText = warrantNum;
+                confirmWarrantsList.appendChild(span);
+            });
 
-    window.addEventListener("DOMContentLoaded", async () => {
-      try {
-        await initLiff();
-        await loadPending();
-      } catch (err) {
-        document.getElementById("displayName").innerText = "เชื่อมต่อ LINE ไม่สำเร็จ";
-        document.getElementById("pendingList").className = "message error";
-        document.getElementById("pendingList").innerText = err.message;
-      }
-    });
-  </script>
+            // เปิดกล่อง Confirm Modal ขึ้นมาซ้อนบนสุด
+            openConfirmModal();
+        }
+
+        // คุมสถานะแสดง Confirm Modal
+        function openConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            const card = document.getElementById('confirmModalCard');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        // ปิดกล่อง Confirm Modal พร้อมจัดการตรรกะกดยืนยันบันทึก หรือ ย้อนกลับไปแก้ไข
+        function closeConfirmModal(isConfirmed = false) {
+            const modal = document.getElementById('confirmModal');
+            const card = document.getElementById('confirmModalCard');
+
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+
+                if (isConfirmed && pendingDataToSave) {
+                    // กรณีเจ้าหน้าที่เลือกกดยืนยัน บันทึกเข้าระบบหลัก
+                    pendingDataToSave.selectedWarrants.forEach(warrantNum => {
+                        const data = {
+                            id: "w-" + Math.random().toString(36).substr(2, 9),
+                            warrantNumber: warrantNum,
+                            defendantName: pendingDataToSave.defendantName,
+                            endReason: pendingDataToSave.endReason,
+                            proposedTo: pendingDataToSave.proposedTo,
+                            caseStatus: "เสนอศาล",
+                            warrantStatus: "สิ้นผลรอเพิกถอน",
+                            remark: pendingDataToSave.remark
+                        };
+                        mockActiveItems.unshift(data);
+                    });
+
+                    showToast(`เสนอรายงานสิ้นผลจำนวน ${pendingDataToSave.selectedWarrants.length} รายการเรียบร้อยแล้ว`, false);
+                    renderDashboard();
+                    
+                    // เคลียร์ค่าฟอร์มทั้งหมดและปิดหน้าต่างกรอกงานหลัก
+                    closeFormModal();
+                    pendingDataToSave = null;
+                } else {
+                    // กรณีกดปุ่ม "ย้อนกลับไปแก้ไข"
+                    pendingDataToSave = null; 
+                    showToast("ℹ️ ย้อนกลับมายังฟอร์มเดิมเพื่อแก้ไขรายละเอียด", false);
+                }
+            }, 300);
+        }
+
+        // อัปเดตกระบวนการธุรการ
+        function updateWorkflow(itemId, nextCaseStatus, nextWarrantStatus) {
+            const target = mockActiveItems.find(i => i.id === itemId);
+            if(target) {
+                target.caseStatus = nextCaseStatus;
+                target.warrantStatus = nextWarrantStatus;
+                
+                let msg = '';
+                if(nextCaseStatus === 'รอส่งต่อ') {
+                    msg = `ผู้พิพากษาลงนามเพิกถอนหมายจับเลขที่ ${target.warrantNumber} เรียบร้อย`;
+                } else if(nextCaseStatus === 'ส่งต่อแล้ว') {
+                    msg = `ส่งต่อสำนวน ${target.warrantNumber} และบันทึกประวัติสำเร็จ`;
+                }
+                
+                showToast(msg, false);
+                renderDashboard();
+            }
+        }
+
+        // เปิดและปิด Modal กรอกข้อมูลตัวแม่
+        function openFormModal() {
+            const modal = document.getElementById('formModal');
+            const card = document.getElementById('formModalCard');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeFormModal() {
+            const modal = document.getElementById('formModal');
+            const card = document.getElementById('formModalCard');
+
+            modal.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // ล้างค่าในหน้าจอค้นหาและฟอร์มหลักหลังจากทำรายการสำเร็จหรือยกเลิกการบันทึก
+                document.getElementById('searchQuery').value = '';
+                document.getElementById('searchResultsSection').classList.add('hidden');
+                document.getElementById('warrantForm').classList.add('hidden');
+                document.getElementById('warrantForm').reset();
+                currentSearchedDefendant = null;
+            }, 300);
+        }
+
+        // ตัวช่วยแสดงแจ้งเตือนชั่วคราว (Toast)
+        function showToast(text, isWarning = false) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastText = document.getElementById('toastText');
+            
+            toastText.innerText = text;
+
+            if (isWarning) {
+                toastIcon.className = "p-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                toastIcon.innerHTML = `<i class="fas fa-exclamation-triangle"></i>`;
+            } else {
+                toastIcon.className = "p-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                toastIcon.innerHTML = `<i class="fas fa-check"></i>`;
+            }
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
