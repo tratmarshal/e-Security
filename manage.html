@@ -569,8 +569,16 @@
                 if (hasPendingSync) triggerBackgroundSync();
                 
             } catch (error) {
-                // แสดงป๊อปอัปให้ผู้ใช้ลองยิงข้อมูลใหม่อีกรอบ (Error Handling)
-                const userMessage = "ไม่สามารถดึงข้อมูลได้ กรุณาลองใหม่หรือตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                // เดิม: กลืนข้อความ error จริงทิ้งทุกกรณี ทำให้วินิจฉัยปัญหาไม่ได้
+                // แก้ไข: ใช้ข้อความ error จริงจาก backend/callGas ก่อนเสมอ
+                console.error('fetchDataFromGAS failed:', error);
+                let userMessage = (error && error.message) ? error.message : "ไม่สามารถดึงข้อมูลได้";
+
+                // จับเฉพาะกรณี network ขาดจริง ๆ (fetch ไม่ถึงปลายทางเลย) ค่อยใช้ข้อความนี้
+                if (userMessage === "Failed to fetch" || userMessage.indexOf("NetworkError") !== -1) {
+                    userMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                }
+
                 showErrorModal(userMessage, () => fetchDataFromGAS());
             }
         }
@@ -784,7 +792,11 @@
                 lastFailedRequest = null;
                 
             } catch (error) {
-                const userMessage = "ไม่สามารถค้นหาข้อมูลได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                console.error('searchWarrants failed:', error);
+                let userMessage = (error && error.message) ? error.message : "ไม่สามารถค้นหาข้อมูลได้";
+                if (userMessage === "Failed to fetch" || userMessage.indexOf("NetworkError") !== -1) {
+                    userMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                }
                 showErrorModal(userMessage, () => searchWarrants());
             }
         }
@@ -890,7 +902,11 @@
                                 triggerBackgroundSync();
                             }, 100);
                         } catch (error) {
-                            const userMessage = "ไม่สามารถบันทึกรายการได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                            console.error('saveRoutine failed:', error);
+                            let userMessage = (error && error.message) ? error.message : "ไม่สามารถบันทึกรายการได้";
+                            if (userMessage === "Failed to fetch" || userMessage.indexOf("NetworkError") !== -1) {
+                                userMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                            }
                             showErrorModal(userMessage, () => saveRoutine());
                         }
                     };
@@ -919,7 +935,11 @@
                     fetchDataFromGAS();
                     lastFailedRequest = null;
                 } catch(error) {
-                    const userMessage = "ไม่สามารถบันทึกการเพิกถอนได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                    console.error('markRevoked failed:', error);
+                    let userMessage = (error && error.message) ? error.message : "ไม่สามารถบันทึกการเพิกถอนได้";
+                    if (userMessage === "Failed to fetch" || userMessage.indexOf("NetworkError") !== -1) {
+                        userMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                    }
                     showErrorModal(userMessage, () => routine());
                 }
             };
@@ -943,7 +963,11 @@
                     fetchDataFromGAS();
                     lastFailedRequest = null;
                 } catch(error) {
-                    const userMessage = "ไม่สามารถบันทึกการส่งต่อได้ กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่";
+                    console.error('markForwarded failed:', error);
+                    let userMessage = (error && error.message) ? error.message : "ไม่สามารถบันทึกการส่งต่อได้";
+                    if (userMessage === "Failed to fetch" || userMessage.indexOf("NetworkError") !== -1) {
+                        userMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+                    }
                     showErrorModal(userMessage, () => routine());
                 }
             };
