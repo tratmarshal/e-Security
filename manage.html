@@ -332,20 +332,26 @@
 
     async function callGas(action, payload = {}) {
       if (!lineProfile.userId) throw new Error("ไม่พบ LINE User ID");
-      const response = await fetch(GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action,
-          page: "manage.html",
-          accessToken: lineAccessToken,
-          displayName: lineProfile.displayName,
-          payload
-        })
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error || "เกิดข้อผิดพลาด");
-      return result;
+      try {
+        const response = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action,
+            userId: lineProfile.userId,
+            page: "manage.html",
+            accessToken: lineAccessToken,
+            displayName: lineProfile.displayName,
+            payload
+          })
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "เกิดข้อผิดพลาด");
+        return result;
+      } catch (err) {
+        if (err.name === "SyntaxError") throw new Error("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ กรุณาลองใหม่");
+        throw err;
+      }
     }
 
 
