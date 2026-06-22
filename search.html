@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -552,18 +552,22 @@
 
 <script src="https://static.line-scdn.net/liff/edge/versions/2.23.0/sdk.js"></script>
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbyXZ5XD9TxcI3BORPJXF5sDWkAx0FEOZE5QVCPCIW422JSVQBki8IqHOO3B5Lkt2Qrz/exec";
+  // -------------------------------------------------------------
+  // Configuration
+  // -------------------------------------------------------------
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyss_zHh0OcITnBgf86OQCL_TMBbWLuyYkQpI2gyQIzXPYOlW0VLOo5O1i2gs2RC13a/exec";
   const LIFF_ID = "2010272973-QI3DZhXq";          
 
   let lineProfile = { userId: '', displayName: '', pictureUrl: '' };
-  let lineAccessToken = "";
   let currentSearchType = "id13";
   let isAuthorized = false;
 
+  // -------------------------------------------------------------
+  // Loading Overlay
+  // -------------------------------------------------------------
   function showLoading(show, customText = null) {
     const overlay = document.getElementById("loadingOverlay");
     const textElem = document.getElementById("loadingText");
-    
     if (show) {
       if (customText) textElem.innerText = customText.toUpperCase();
       overlay.classList.add("active");
@@ -573,20 +577,21 @@
     }
   }
 
+  // -------------------------------------------------------------
+  // Result Display
+  // -------------------------------------------------------------
   function showResult(type, message, data = null) {
     const resultDiv = document.getElementById("resultArea");
-    
-    // Clear & restart animations
     resultDiv.style.animation = 'none';
     resultDiv.offsetHeight; 
     resultDiv.style.animation = null; 
 
     if (type === "info") {
-      resultDiv.innerHTML = `<div class="info-box"><i class="fas fa-info-circle"></i> ${message}</div>`;
+      resultDiv.innerHTML = `<div class="info-box"><i class="fas fa-info-circle"></i> ${escapeHtml(message)}</div>`;
     } else if (type === "error") {
-      resultDiv.innerHTML = `<div class="error-box"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
+      resultDiv.innerHTML = `<div class="error-box"><i class="fas fa-exclamation-triangle"></i> ${escapeHtml(message)}</div>`;
     } else if (type === "success") {
-      resultDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ${message}</div>`;
+      resultDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ${escapeHtml(message)}</div>`;
     } else if (type === "table" && data) {
       if (data.length === 0) {
         resultDiv.innerHTML = `<div class="info-box"><i class="fas fa-search"></i> ไม่พบข้อมูลในระบบ</div>`;
@@ -607,37 +612,45 @@
       let cardHtml = `<div class="result-cards">`;
       
       for (let row of data) {
+        // ✅ รองรับ property name ที่แตกต่างจาก backend.gs กับ cache.gs
+        //    cache.gs ส่ง: { warrantNumber, defendantName, status, charge, blackCaseNo, redCaseNo, warrantNo, fullName }
+        //    search.html ใช้: { warrantNo, fullName, status, charge, blackCaseNo, redCaseNo }
+        const displayWarrantNo = row.warrantNo || row.warrantNumber || '-';
+        const displayName = row.fullName || row.defendantName || '-';
+        const displayStatus = row.status || '-';
+        const displayCharge = row.charge || '-';
+        const displayBlack = row.blackCaseNo || '-';
+        const displayRed = row.redCaseNo || '-';
+        
         let badgeClass = "neutral";
-        if (row.status) {
-          if (row.status.includes('ต้องการตัว')) {
-            badgeClass = "success";
-          } else if (row.status.includes('สิ้นผลรอเพิกถอน')) {
-            badgeClass = "warning";
-          } else if (row.status.includes('เพิกถอน')) {
-            badgeClass = "danger";
-          }
+        if (displayStatus.includes('ต้องการตัว')) {
+          badgeClass = "success";
+        } else if (displayStatus.includes('สิ้นผลรอเพิกถอน')) {
+          badgeClass = "warning";
+        } else if (displayStatus.includes('เพิกถอน')) {
+          badgeClass = "danger";
         }
 
         html += `
           <tr>
-            <td style="font-weight: 700; color: var(--text-main); font-family: monospace;">${escapeHtml(row.warrantNo || '-')}</td>
-            <td>${escapeHtml(row.fullName || '-')}</td>
+            <td style="font-weight: 700; color: var(--text-main); font-family: monospace;">${escapeHtml(displayWarrantNo)}</td>
+            <td>${escapeHtml(displayName)}</td>
             <td>
-              <span class="badge ${badgeClass}">${escapeHtml(row.status || '-')}</span>
+              <span class="badge ${badgeClass}">${escapeHtml(displayStatus)}</span>
             </td>
           </tr>
         `;
         cardHtml += `
           <article class="result-card">
             <div class="result-card-head">
-              <div class="warrant-number">${escapeHtml(row.warrantNo || '-')}</div>
-              <span class="badge ${badgeClass}">${escapeHtml(row.status || '-')}</span>
+              <div class="warrant-number">${escapeHtml(displayWarrantNo)}</div>
+              <span class="badge ${badgeClass}">${escapeHtml(displayStatus)}</span>
             </div>
-            <div class="person-name">${escapeHtml(row.fullName || '-')}</div>
+            <div class="person-name">${escapeHtml(displayName)}</div>
             <div class="meta-grid">
-              <div class="meta-row"><span>คดีดำ</span><strong>${escapeHtml(row.blackCaseNo || '-')}</strong></div>
-              <div class="meta-row"><span>คดีแดง</span><strong>${escapeHtml(row.redCaseNo || '-')}</strong></div>
-              <div class="meta-row"><span>ความผิด</span><strong>${escapeHtml(row.charge || '-')}</strong></div>
+              <div class="meta-row"><span>คดีดำ</span><strong>${escapeHtml(displayBlack)}</strong></div>
+              <div class="meta-row"><span>คดีแดง</span><strong>${escapeHtml(displayRed)}</strong></div>
+              <div class="meta-row"><span>ความผิด</span><strong>${escapeHtml(displayCharge)}</strong></div>
             </div>
           </article>
         `;
@@ -648,18 +661,22 @@
       resultDiv.innerHTML = html + cardHtml;
     }
   }
+
   function escapeHtml(str) {
     if (str == null) return '';
     return String(str).replace(/[&<>"']/g, function(m) {
-      if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
-      if (m === '"') return '&quot;';
+      if (m === '&') return '&';
+      if (m === '<') return '<';
+      if (m === '>') return '>';
+      if (m === '"') return '"';
       if (m === "'") return '&#39;';
       return m;
     });
   }
 
+  // -------------------------------------------------------------
+  // Debug / Auth Error Display
+  // -------------------------------------------------------------
   function showDebugUserId(message, userIdValue = null) {
     const userIdToShow = escapeHtml(userIdValue || lineProfile.userId || "ไม่สามารถดึง User ID ได้");
     const safeMessage = escapeHtml(message);
@@ -704,6 +721,9 @@
     };
   }
 
+  // -------------------------------------------------------------
+  // API Gateway — Compatible with backend.gs
+  // -------------------------------------------------------------
   async function callGas(action, payload = {}) {
     if (!GAS_URL || !GAS_URL.startsWith("https://script.google.com/macros/s/") || !GAS_URL.endsWith("/exec")) {
       showDebugUserId("ความล้มเหลวของการตั้งค่า (GAS_URL)", "กรุณาติดต่อชุดสืบสวนควบคุม");
@@ -719,20 +739,44 @@
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: action,
-          accessToken: lineAccessToken,
+          userId: lineProfile.userId,
           displayName: lineProfile.displayName,
           page: "search.html",
-          ...payload
+          // ✅ backend.gs expects payload in nested object:
+          //    data.payload = search parameters
+          //    data.action = "search"
+          //    data.userId = LINE userId
+          payload: payload
         })
       });
-      return await response.json();
+      const json = await response.json();
+      
+      // ✅ backend.gs returns { success: false, error: "Unauthorized user" } for unknown users
+      //    Handle this and show debug card to collect User ID
+      if (json && json.success === false) {
+        if (json.error === "Unauthorized user") {
+          showDebugUserId(
+            "ยังไม่ได้รับอนุญาตให้เข้าใช้ระบบ",
+            lineProfile.userId
+          );
+          throw new Error(json.error);
+        }
+      }
+      
+      return json;
     } catch(err) {
       console.error("callGas error:", err);
-      showResult("error", "การเชื่อมต่อเครือข่ายล้มเหลว กรุณาดำเนินการตรวจค้นใหม่อีกครั้ง");
+      // ✅ Don't show network error if we already showed debug card for auth
+      if (err.message !== "Unauthorized user" && err.message !== "Not logged in") {
+        showResult("error", "การเชื่อมต่อเครือข่ายล้มเหลว กรุณาดำเนินการตรวจค้นใหม่อีกครั้ง");
+      }
       throw err;
     }
   }
 
+  // -------------------------------------------------------------
+  // Search Logic
+  // -------------------------------------------------------------
   async function performSearch() {
     const searchInput = document.getElementById("searchInput");
     let keyword = searchInput.value.trim();
@@ -757,14 +801,19 @@
     
     showLoading(true, "Querying Database Central...");
     try {
+      // ✅ backend.gs searchWarrant(query) → accepts just keyword
+      //    It auto-detects searchType (id13 if 13 digits, name otherwise)
+      //    So we just pass keyword, but also send searchType for logging
       const result = await callGas("search", {
-        searchType: currentSearchType,
         keyword: keyword
       });
       
       if (result && result.success === false) {
-        showResult("error", result.error || result.message || "เกิดความผิดพลาดในการเข้าถึงสารบบ");
+        showResult("error", result.error || result.message || "เกิดความผิดพลาดในการเข้าถึงสารบรรณ");
       } else {
+        // ✅ backend.gs searchWarrant returns { success: true, data: [...] }
+        //    data items use these fields from cache.gs loadWarrantSearchFromSheets_:
+        //    { warrantNumber, defendantName, status, charge, blackCaseNo, redCaseNo, warrantNo, fullName }
         showResult("table", "", result.data || []);
       }
     } catch(err) {
@@ -774,6 +823,9 @@
     }
   }
 
+  // -------------------------------------------------------------
+  // LINE LIFF Initialization
+  // -------------------------------------------------------------
   function initLiff() {
     return new Promise((resolve, reject) => {
       liff.init({ liffId: LIFF_ID }, () => {
@@ -782,7 +834,6 @@
             lineProfile.userId = profile.userId;
             lineProfile.displayName = profile.displayName;
             lineProfile.pictureUrl = profile.pictureUrl || "";
-            lineAccessToken = liff.getAccessToken();
             
             document.getElementById("userName").innerText = profile.displayName;
             
@@ -812,7 +863,9 @@
     });
   }
 
+  // -------------------------------------------------------------
   // Event Listeners
+  // -------------------------------------------------------------
   document.getElementById("searchBtn").addEventListener("click", performSearch);
   
   document.getElementById("searchInput").addEventListener("keypress", function(e) {
@@ -841,7 +894,7 @@
         input.placeholder = "กรอกชื่อ-สกุล (เช่น สมชาย จริงใจ)";
       }
       
-      input.value = ""; // Auto clean form when mode switches
+      input.value = "";
       input.focus();
     });
   });
@@ -852,11 +905,12 @@
     }
   });
 
-  // Init Application
+  // -------------------------------------------------------------
+  // Application Init
+  // -------------------------------------------------------------
   window.addEventListener("DOMContentLoaded", async () => {
     try {
       await initLiff();
-      // Removed default showResult info-box call so the bottom area remains clean and empty initially
     } catch (err) {
       console.error("Init error:", err);
       showDebugUserId("การเชื่อมต่อฐานข้อมูลความมั่นคงจำกัดสิทธิ์", "กรุณาลงทะเบียนผ่านเบราว์เซอร์ผู้พิทักษ์สันติราษฎร์");
