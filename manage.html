@@ -1197,6 +1197,12 @@
   let lastFailedRequest = null;
 
   // -------------------------------------------------------------
+  // Client Cache (localStorage + 30s TTL for dashboard)
+  // -------------------------------------------------------------
+  function cacheGet(key) { try { var raw = localStorage.getItem('wtm_' + key); if (!raw) return null; var obj = JSON.parse(raw); return Date.now() < obj.exp ? obj.data : null; } catch(e) { return null; } }
+  function cacheSet(key, data, ttl) { try { localStorage.setItem('wtm_' + key, JSON.stringify({ data: data, exp: Date.now() + (ttl || 30000) })); } catch(e) {} }
+
+  // -------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------
   window.onload = function() { initializeLiff(); };
@@ -1238,26 +1244,35 @@
   function loginWithLine() { liff.login(); }
 
   // -------------------------------------------------------------
-  // API
+  // API (with exponential backoff)
   // -------------------------------------------------------------
-  function callGas(action, payload) {
-    return new Promise((resolve, reject) => {
-      showLoading(true);
-      if (!currentUser.userId) {
-        showLoading(false);
-        reject(new Error("ไม่พบสิทธิ์ผู้ใช้งาน"));
-        return;
-      }
-      const requestData = { action, userId: currentUser.userId, displayName: currentUser.displayName, page: "manage", payload: payload || {} };
-      fetch(GAS_URL, {
+  async function callGas(action, payload, retryCount) {
+    if (retryCount === undefined) retryCount = 0;
+    showLoading(true);
+    if (!currentUser.userId) { showLoading(false); throw new Error("ไม่พบสิทธิ์ผู้ใช้งาน"); }
+    const requestData = { action, userId: currentUser.userId, displayName: currentUser.displayName, page: "manage", payload: payload || {} };
+    try {
+      const res = await fetch(GAS_URL, {
         method: "POST", mode: "cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(requestData)
-      })
-      .then(res => { if (!res.ok) throw new Error("เซิร์ฟเวอร์ขัดข้อง"); return res.json(); })
-      .then(json => { showLoading(false); if (json.success) resolve(json); else reject(new Error(json.error || "ระบบปฏิเสธคำขอ")); })
-      .catch(error => { showLoading(false); reject(error); });
-    });
+      });
+      if (!res.ok) throw new Error("เซิร์ฟเวอร์ขัดข้อง");
+      const json = await res.json();
+      showLoading(false);
+      if (json.success) return json;
+      throw new Error(json.error || "ระบบปฏิเสธคำขอ");
+    } catch(error) {
+      showLoading(false);
+      console.error('callGas error:', error);
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log("Retry " + (retryCount+1) + "/3 in " + delay + "ms");
+        await new Promise(r => setTimeout(r, delay));
+        return callGas(action, payload, retryCount + 1);
+      }
+      throw error;
+    }
   }
 
   function triggerBackgroundSync() {
@@ -1269,7 +1284,7 @@
   }
 
   // -------------------------------------------------------------
-  // Data
+  // Data (with client cache)
   // -------------------------------------------------------------
   async function fetchDataFromGAS() {
     try {
@@ -1287,9 +1302,20 @@
         </tr>
       `).join('');
 
+      // Check client cache
+      const cached = cacheGet('pending_' + currentTab);
+      if (cached) {
+        masterItems = cached;
+        renderDashboard();
+        // Still refresh in background
+        setTimeout(() => refreshDataFromGAS(), 10);
+        return;
+      }
+
       lastFailedRequest = { fn: fetchDataFromGAS, args: [] };
       const response = await callGas("getPending", {});
       masterItems = response.data || [];
+      cacheSet('pending_' + currentTab, masterItems);
       renderDashboard();
       lastFailedRequest = null;
       if (masterItems.some(item => item.syncStatus === "pending")) triggerBackgroundSync();
@@ -1299,6 +1325,17 @@
       if (msg === "Failed to fetch") msg = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
       showErrorModal(msg, () => fetchDataFromGAS());
     }
+  }
+
+  // Background refresh (bypass cache)
+  async function refreshDataFromGAS() {
+    try {
+      const response = await callGas("getPending", {});
+      masterItems = response.data || [];
+      cacheSet('pending_' + currentTab, masterItems);
+      renderDashboard();
+      if (masterItems.some(item => item.syncStatus === "pending")) triggerBackgroundSync();
+    } catch(e) { console.log("Background refresh failed", e); }
   }
 
   // -------------------------------------------------------------
