@@ -880,6 +880,9 @@
             card.classList.add('scale-95');
             
             setTimeout(async () => {
+                // ✅ Important: ซ่อน modal ด้วย hidden class ก่อนทำงานอื่นเสมอ
+                // ป้องกัน modal โปร่งใสแต่ยังบังการคลิกด้านล่าง
+                modal.classList.add('hidden');
 
                 if (isConfirmed && pendingDataToSave) {
                     const payloadToSave = { ...pendingDataToSave };
@@ -894,7 +897,7 @@
                             pendingDataToSave = null;
                             lastFailedRequest = null;
                             
-                            // ปิดทั้ง confirmModal และ formModal ทันทีก่อน fetch data
+                            // ปิด formModal ด้วย
                             closeFormModal();
                             
                             // ดึงข้อมูลใหม่หลังจากปิด modal
@@ -913,8 +916,8 @@
                     };
                     saveRoutine();
                 } else {
-                    pendingDataToSave = null; 
-                    showToast("ย้อนกลับมายังหน้าต่างร่างเพื่อดำเนินการแก้ไขแล้ว");
+                    // ✅ ย้อนกลับไปแก้ไข: ไม่ล้าง pendingDataToSave เพื่อให้ข้อมูลคงอยู่
+                    // ไม่ต้อง showToast เพราะย้อนกลับไปแก้ไขไม่ใช่ action สำคัญ
                 }
             }, 300);
         }
