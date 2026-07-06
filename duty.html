@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- LINE LIFF SDK สำหรับรันระบบบน GitHub Pages -->
+    <!-- LINE LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     
     <script>
@@ -48,7 +48,6 @@
         body {
             font-family: 'Sarabun', sans-serif;
         }
-        /* Smooth transition for theme change */
         .theme-transition {
             transition: background-color 0.5s ease, border-color 0.5s ease, color 0.3s ease;
         }
@@ -56,9 +55,8 @@
 </head>
 <body class="bg-[#f4f7f5] min-h-screen theme-transition flex flex-col justify-between">
 
-    <!-- ---------------- หน้าจอโหลดเข้าใช้งานและการตรวจสอบสิทธิ์จริง (LIFF & Backend Checking) ---------------- -->
+    <!-- หน้าจอโหลดเข้าใช้งานและการตรวจสอบสิทธิ์จริง -->
     <div id="auth-loading-overlay" class="fixed inset-0 z-[100] bg-wvo-green-900 flex flex-col items-center justify-center p-6 text-center">
-        <!-- โลโก้ อผศ. ขนาดใหญ่ในหน้าโหลด -->
         <div class="mb-6 p-4 bg-white/10 rounded-full border border-wvo-gold-400/30 animate-pulse">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 22C17.1761 20.668 21 15.968 21 10.378V4.378L12 1.378L3 4.378V10.378C3 15.968 6.8239 20.668 12 22Z" fill="#1b5e20"/>
@@ -70,14 +68,12 @@
         <h2 id="loading-title" class="text-xl font-bold text-white mb-2">กำลังตรวจสอบการเชื่อมต่อ LINE...</h2>
         <p id="loading-subtitle" class="text-xs text-wvo-green-100 max-w-xs">กรุณารอสักครู่ ระบบกำลังนำท่านเข้าสู่ระบบรักษาความปลอดภัย อผศ.</p>
         
-        <!-- แอนิเมชันสถานะกำลังโหลด -->
         <div id="loading-spinner" class="mt-8 flex space-x-2">
             <div class="w-3.5 h-3.5 bg-wvo-gold-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
             <div class="w-3.5 h-3.5 bg-wvo-orange-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
             <div class="w-3.5 h-3.5 bg-white rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
         </div>
 
-        <!-- หน้าจอแสดงความผิดพลาดเมื่อไม่มีสิทธิ์ หรือ LIFF ขัดข้อง (Error Area) -->
         <div id="auth-error-box" class="hidden mt-6 bg-red-950/60 border border-red-500/50 rounded-2xl p-5 max-w-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -85,7 +81,6 @@
             <h3 id="error-title" class="text-sm font-bold text-red-200">ไม่สามารถเชื่อมต่อระบบรักษาความปลอดภัยได้</h3>
             <p id="auth-error-desc" class="text-xs text-red-300/80 mt-1.5 leading-relaxed">ไม่พบบัญชี LINE นี้ในระบบฐานข้อมูลสิทธิ์ (ชีท e-Security แท็บ USER) กรุณาแจ้งผู้ดูแลระบบเพื่อลงทะเบียนสิทธิ์ก่อนปฏิบัติงาน</p>
             
-            <!-- ปุ่มดำเนินการเมื่อเกิดข้อผิดพลาด (รวมปุ่มข้ามเข้าโหมดทดสอบ) -->
             <div class="mt-4 flex flex-col space-y-2">
                 <div class="flex justify-center space-x-2">
                     <button onclick="window.location.reload();" class="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition">ลองใหม่อีกครั้ง</button>
@@ -100,11 +95,10 @@
         </div>
     </div>
 
-    <!-- ส่วนหัวของเว็บไซต์ (Header Theme อผศ.) -->
+    <!-- ส่วนหัวของเว็บไซต์ -->
     <header id="site-header" class="bg-white shadow-sm border-b border-wvo-green-100 py-4 px-6 theme-transition">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <!-- โลโก้ อผศ. -->
                 <div class="p-2 bg-wvo-green-100 rounded-xl text-wvo-green-500 relative flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-wvo-green-500" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 22C17.1761 20.668 21 15.968 21 10.378V4.378L12 1.378L3 4.378V10.378C3 15.968 6.8239 20.668 12 22Z" fill="#1b5e20"/>
@@ -115,14 +109,12 @@
                 </div>
                 <div>
                     <h1 id="header-title" class="text-base sm:text-lg font-bold text-wvo-green-700 leading-tight theme-transition">ศูนย์รักษาความปลอดภัย ศาลจังหวัดตราด</h1>
-                    <!-- แสดงโปรไฟล์ LINE ของผู้ใช้งานที่ล็อกอินเข้ามาจริง -->
                     <div class="flex items-center space-x-1.5 mt-0.5">
                         <img id="user-avatar" src="" class="w-5 h-5 rounded-full border border-wvo-gold-400 hidden" alt="LINE Profile">
                         <p id="user-welcome" class="text-[10px] text-slate-500 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition">กำลังโหลดข้อมูลผู้ใช้งาน...</p>
                     </div>
                 </div>
             </div>
-            <!-- แสดงวันเวลาปัจจุบันแบบ Realtime -->
             <div class="text-right hidden sm:block">
                 <div id="live-date" class="text-sm font-semibold text-slate-700 theme-transition"></div>
                 <div id="live-clock" class="text-xs text-wvo-green-500 font-medium"></div>
@@ -130,9 +122,8 @@
         </div>
     </header>
 
-    <!-- เนื้อหาหลัก (Main Content) -->
+    <!-- เนื้อหาหลัก -->
     <main class="max-w-md w-full mx-auto p-4 sm:p-6 flex-grow flex flex-col justify-center">
-        <!-- การ์ดฟอร์มบันทึกเวลา -->
         <div id="main-card" class="bg-white rounded-2xl shadow-xl border border-wvo-green-50/50 p-6 theme-transition">
             
             <div class="text-center mb-6">
@@ -142,8 +133,6 @@
             </div>
 
             <form id="shift-log-form" onsubmit="event.preventDefault(); showConfirmationModal();">
-               
-                <!-- ข้อมูลผู้ปฏิบัติงาน -->
                 <div class="space-y-4 mb-6">
                     <div>
                         <label id="label-guard-id" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">รหัสพนักงาน รปภ. <span class="text-xs text-slate-400 font-normal">(ดึงข้อมูลอัตโนมัติจาก LINE)</span></label>
@@ -172,12 +161,11 @@
                     </div>
                 </div>
 
-                <!-- 1. Toggle เลือกผลัด (กลางวัน / กลางคืน) -->
+                <!-- 1. เลือกผลัด -->
                 <div class="mb-6">
                     <span id="label-shift" class="block text-sm font-semibold text-slate-700 mb-2 theme-transition">เลือกผลัดปฏิบัติงาน <span class="text-red-500">*</span></span>
                     
                     <div class="bg-slate-100 p-1.5 rounded-xl flex relative">
-                        <!-- ตัวเลือกผลัดกลางวัน -->
                         <label class="w-1/2 flex items-center justify-center py-2.5 rounded-lg cursor-pointer z-10 transition-all duration-300" id="label-day">
                             <input type="radio" name="shift-toggle" value="กลางวัน" checked class="sr-only" onchange="toggleShiftTheme('day')">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-wvo-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -186,7 +174,6 @@
                             <span class="text-sm font-bold text-wvo-green-700" id="text-day">กลางวัน</span>
                         </label>
                         
-                        <!-- ตัวเลือกผลัดกลางคืน -->
                         <label class="w-1/2 flex items-center justify-center py-2.5 rounded-lg cursor-pointer z-10 transition-all duration-300" id="label-night">
                             <input type="radio" name="shift-toggle" value="กลางคืน" class="sr-only" onchange="toggleShiftTheme('night')">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -195,17 +182,15 @@
                             <span class="text-sm font-semibold text-slate-500" id="text-night">กลางคืน</span>
                         </label>
                         
-                        <!-- พื้นหลังแอนิเมชันสำหรับปุ่มที่เลือก -->
                         <div id="toggle-bg" class="absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-md transition-all duration-300 ease-out"></div>
                     </div>
                     
-                    <!-- คำอธิบายเพิ่มเติมเวลาของผลัด -->
                     <div class="mt-2 text-right">
                         <span id="shift-time-desc" class="text-xs text-wvo-orange-500 font-semibold bg-orange-50 px-2.5 py-1 rounded-md transition-colors duration-300">เวลาปฏิบัติงาน: 07:00 น. - 19:00 น.</span>
                     </div>
                 </div>
 
-                <!-- 2. ช่องเลือกจุด (Dropdown) -->
+                <!-- 2. ช่องเลือกจุด -->
                 <div class="mb-6">
                     <label id="label-location" for="location-select" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">จุดปฏิบัติงาน / จุดตรวจ <span class="text-red-500">*</span></label>
                     <div class="relative">
@@ -219,7 +204,6 @@
                             <option value="ป้อมยามทางออก ทิศใต้">ป้อมยามทางออก ทิศใต้</option>
                             <option value="ห้องตรวจระบบรักษาความปลอดภัยวงจรปิด (CCTV Control Room)">ห้องควบคุมสัญญาณเตือนภัย (CCTV)</option>
                         </select>
-                        <!-- ไอคอนสามเหลี่ยม Dropdown -->
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
                             <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                 <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
@@ -228,7 +212,16 @@
                     </div>
                 </div>
 
-                <!-- 3. ปุ่มบันทึกตามสไตล์ อผศ. -->
+                <!-- 3. ช่องกรอกหมายเหตุ/บันทึกเพิ่มเติม (เพิ่มเข้ามาใหม่เพื่อใช้ร่วมกับ noteInput) -->
+                <div class="mb-6">
+                    <label id="label-note" for="noteInput" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">หมายเหตุ / บันทึกเพิ่มเติม <span class="text-xs text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                    <div class="relative">
+                        <textarea id="noteInput" rows="2" placeholder="ระบุเหตุการณ์ปกติ หรือระบุรายงานเพิ่มเติมพิเศษ..."
+                            class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition text-sm text-slate-800 theme-transition placeholder-slate-400 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- 4. ปุ่มบันทึกตามสไตล์ อผศ. -->
                 <button type="submit" id="submit-btn"
                     class="w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-wvo-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -239,7 +232,7 @@
             </form>
         </div>
 
-        <!-- รายการบันทึกประวัติการสแกนในเซสชันนี้ -->
+        <!-- รายการบันทึกประวัติการสแกน -->
         <div id="history-card" class="mt-6 bg-white rounded-2xl p-4 shadow-md border border-slate-100 theme-transition">
             <h3 id="history-title" class="text-sm font-bold text-wvo-green-700 mb-3 flex items-center theme-transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-wvo-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -253,19 +246,16 @@
         </div>
     </main>
 
-    <!-- ส่วนท้าย (Footer) -->
+    <!-- ส่วนท้าย -->
     <footer id="footer-text" class="text-center py-4 text-xs text-wvo-green-700/60 font-medium theme-transition">
         &copy; 2026 ระบบรายงานตัวรักษาสถานการณ์ • สำนักงานรักษาความปลอดภัย อผศ.
     </footer>
 
-    <!-- ---------------- MODAL ตรวจสอบข้อมูลก่อนยืนยัน (สไตล์ทหาร/อผศ.) ---------------- -->
+    <!-- MODAL ตรวจสอบข้อมูลก่อนยืนยัน -->
     <div id="confirm-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <!-- แผ่นหลังมืดโปร่งแสง (Backdrop) -->
         <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity duration-300" onclick="closeConfirmationModal()"></div>
         
-        <!-- ตัวกล่อง Modal -->
         <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl border border-wvo-green-100 transform scale-95 transition-all duration-300 z-10">
-            <!-- หัวข้อ Modal ตามธีมของ อผศ. -->
             <div id="modal-header" class="p-5 text-white text-center flex flex-col items-center justify-center relative bg-gradient-to-r from-wvo-green-600 to-wvo-green-700">
                 <div class="absolute top-0 inset-x-0 h-1 bg-wvo-gold-400"></div>
                 <div id="modal-icon-container" class="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-white/20 border border-wvo-gold-400">
@@ -277,7 +267,6 @@
                 <p class="text-xs text-wvo-gold-400 mt-0.5 font-medium">เพื่อความถูกต้องตามระเบียบรักษาความปลอดภัย</p>
             </div>
 
-            <!-- รายละเอียดของข้อมูลที่รอกดบันทึก -->
             <div class="p-5 space-y-3 text-sm">
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-500 font-semibold">รหัสพนักงาน:</span>
@@ -295,13 +284,17 @@
                     <span class="text-slate-500 font-semibold">จุดปฏิบัติงาน:</span>
                     <span id="confirm-location" class="font-bold text-wvo-green-700 text-right max-w-[180px] truncate"></span>
                 </div>
+                <!-- แสดงตำแหน่งพิกัด GPS เพื่อความโปร่งใสแก่ผู้ใช้งาน -->
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-500 font-semibold">พิกัด GPS:</span>
+                    <span id="confirm-gps" class="font-bold text-xs truncate max-w-[180px]">กำลังระบุพิกัด...</span>
+                </div>
                 <div class="flex justify-between items-center py-2">
                     <span class="text-slate-500 font-semibold">เวลาในระบบ:</span>
                     <span id="confirm-time" class="font-bold text-wvo-orange-500"></span>
                 </div>
             </div>
 
-            <!-- ปุ่มดำเนินการภายใน Modal -->
             <div class="bg-slate-50 p-4 flex space-x-3 border-t border-slate-100">
                 <button type="button" onclick="closeConfirmationModal()" 
                     class="w-1/2 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-100 transition">
@@ -315,7 +308,7 @@
         </div>
     </div>
 
-    <!-- ---------------- TOAST ข้อความแจ้งเตือนเมื่อลงทะเบียนสำเร็จ ---------------- -->
+    <!-- TOAST ข้อความแจ้งเตือนเมื่อลงทะเบียนสำเร็จ -->
     <div id="toast-success" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none">
         <div class="bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 border border-wvo-gold-400">
             <div class="bg-wvo-gold-400 p-1 rounded-full text-wvo-green-800">
@@ -332,47 +325,53 @@
 
 
     <script>
-        // ==================== CONFIGURATION (ตั้งค่าเพื่อนำไปใช้งานจริงบน GITHUB) ====================
-        // ใส่ LIFF ID ที่สร้างขึ้นจากบัญชี LINE Developers ของคุณ
+        // ==================== CONFIGURATION ====================
+        // กรุณาแทนที่ด้วยรหัส LIFF ID จริงที่ท่านลงทะเบียนไว้บน LINE Developers Console
         const LIFF_ID = "2010616678-GGszdIBe"; 
-        // ใส่ Web App URL ที่ได้จาก Google Apps Script (e-Security)
+        // กรุณาแทนที่ด้วย URL ของ Web App จากการ Deploy (เผยแพร่) Google Apps Script จริง
         const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwVN29XxpaPbu6G3ptgHz_LXVO9m9U6GLGsrxxP1nDSrMPgwEnsZb3WiJingmFkEt7iUw/exec";
-        // วางไว้ด้านบนสุดของส่วน <script> ร่วมกับตัวแปร LIFF ตัวอื่นๆ
+        // ========================================================
+
         let userLatitude = null;
         let userLongitude = null;
-        // ====================================================================================
-
         let localLogs = [];
         let currentLineUser = {
             userId: "",
             displayName: "",
             pictureUrl: ""
         };
-        // ฟังก์ชันสำหรับเรียกพิกัด GPS
-function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                userLatitude = position.coords.latitude;
-                userLongitude = position.coords.longitude;
-                console.log("ดึงพิกัดสำเร็จ:", userLatitude, userLongitude);
-            }, 
-            function(error) {
-                console.error("ไม่สามารถดึงพิกัดได้:", error.message);
-                // สามารถใส่ข้อความแจ้งเตือนผู้ใช้ตรงนี้ได้หากต้องการบังคับเปิด GPS
-            },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-        );
-    } else {
-        console.error("เบราว์เซอร์นี้ไม่รองรับการระบุพิกัด");
-    }
-}
 
-// เรียกใช้ฟังก์ชันนี้ในขั้นตอน window.onload หรือหลังจาก initLiff สำเร็จ
-// ตัวอย่าง:
-// window.addEventListener("DOMContentLoaded", function() {
-//     getLocation(); 
-// });
+        // ฟังก์ชันดึงพิกัด GPS อัตโนมัติแบบแม่นยำสูง
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+                        console.log("ดึงพิกัด GPS สำเร็จ:", userLatitude, userLongitude);
+                        
+                        // เติมพิกัดในกล่องยืนยัน หากเปิด Modal ค้างไว้
+                        const confirmGpsEl = document.getElementById('confirm-gps');
+                        if (confirmGpsEl) {
+                            confirmGpsEl.innerText = `${userLatitude.toFixed(5)}, ${userLongitude.toFixed(5)}`;
+                            confirmGpsEl.className = "font-bold text-xs text-wvo-green-600";
+                        }
+                    }, 
+                    function(error) {
+                        console.warn("ไม่สามารถเข้าถึงพิกัด GPS ได้:", error.message);
+                        const confirmGpsEl = document.getElementById('confirm-gps');
+                        if (confirmGpsEl) {
+                            confirmGpsEl.innerText = "ไม่ได้ระบุ (โปรดอนุญาต GPS)";
+                            confirmGpsEl.className = "font-bold text-xs text-red-500 animate-pulse";
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                );
+            } else {
+                console.error("เบราว์เซอร์นี้ไม่สนับสนุนฟังก์ชันค้นหาพิกัด Geolocation");
+            }
+        }
+
         // แสดงวันเวลาปัจจุบันแบบเรียลไทม์
         function updateLiveTime() {
             const now = new Date();
@@ -399,117 +398,104 @@ function getLocation() {
         setInterval(updateLiveTime, 1000);
         updateLiveTime();
 
-        // สั่งเริ่มกระบวนการ LINE LIFF เมื่อเว็บทำงาน
-        window.onload = function() {
-            initializeLiff();
-        };
+        // สั่งให้ดึงพิกัด GPS เผื่อไว้และประมวลผล LIFF เมื่อหน้าเว็บพร้อมใช้งาน
         window.addEventListener("DOMContentLoaded", function() {
-        getLocation(); 
+            getLocation();
+            initializeLiff();
         });
 
-        // เชื่อมโยงและบังคับล็อกอินผ่าน LINE LIFF SDK
+        // ควบคุมระบบ LINE LIFF SDK
         async function initializeLiff() {
             try {
-                // หากยังไม่ได้แก้คีย์ระบบหรือใช้คีย์จำลองเริ่มต้น
-                if (!LIFF_ID || LIFF_ID === "2010616678-GGszdIBe") {
+                if (!LIFF_ID || LIFF_ID === "YOUR_LIFF_ID_HERE") {
                     showAuthError(
-                        "ไม่พบรหัสบริการ LINE LIFF", 
-                        "ตรวจพบว่ายังไม่ได้ตั้งค่า LIFF_ID ในซอร์สโค้ด (บรรทัดที่ 373) กรุณาใส่รหัส LIFF ID จริงเพื่อเชื่อมต่อระบบล็อกอิน หรือเข้าใช้งานระบบผ่าน 'โหมดทดสอบ' ด้านล่าง"
+                        "ไม่พบคีย์บริการ LINE LIFF", 
+                        "ระบบตรวจพบว่ายังไม่ได้รับการติดตั้งรหัส LIFF_ID จริงในไฟล์ซอร์สโค้ด กรุณาใส่รหัสใช้งานจริง หรือเริ่มใช้งานผ่าน 'โหมดทดสอบ' ด้านล่าง"
                     );
                     return;
                 }
 
-                // เรียกใช้ SDK
                 await liff.init({ liffId: LIFF_ID });
                 
                 if (!liff.isLoggedIn()) {
-                    showLoadingStatus("กำลังเปลี่ยนเส้นทางไปล็อกอิน...", "กรุณาล็อกอินผ่าน LINE เพื่อระบุตัวตนของคุณ");
+                    showLoadingStatus("กำลังเปลี่ยนเส้นทางไปล็อกอิน...", "กรุณาดำเนินการเข้าสู่ระบบผ่านแอปพลิเคชัน LINE เพื่อยืนยันสิทธิ์");
                     liff.login();
                 } else {
-                    showLoadingStatus("ยืนยันบัญชี LINE สำเร็จ", "กำลังประมวลผลข้อมูลโปรไฟล์...");
+                    showLoadingStatus("ยืนยันบัญชี LINE สำเร็จ", "กำลังประมวลผลสิทธิ์ใช้งานจากฐานข้อมูล...");
                     const profile = await liff.getProfile();
                     currentLineUser.userId = profile.userId;
                     currentLineUser.displayName = profile.displayName;
                     currentLineUser.pictureUrl = profile.pictureUrl;
 
-                    // ส่งต่อสิทธิ์เพื่อตรวจสอบข้อมูลกับ Google Sheets หลังบ้านทันที
                     verifyUserWithBackend(profile.userId);
                 }
             } catch (error) {
                 console.error("LIFF Initialization failed: ", error);
-                
-                // แปลงข้อความแสดงข้อผิดพลาดให้เป็นภาษาไทยเพื่อให้อ่านและแก้ปัญหาได้ง่ายขึ้น
-                let friendlyMsg = "เกิดข้อผิดพลาดไม่ทราบสาเหตุในการเชื่อมต่อ LINE SDK";
+                let friendlyMsg = "เกิดข้อผิดพลาดในการเริ่มต้นระบบ LINE SDK";
                 if (error.message && error.message.includes("channel not found")) {
-                    friendlyMsg = "ไม่พบบัญชี LINE Channel (Channel Not Found) กรุณาตรวจสอบว่า LIFF ID ที่ตั้งค่าไว้ในโค้ด (บรรทัดที่ 373) ตรงกับใน LINE Developers Console และคุณได้ตั้งค่าประเภทเป็น LINE Login เรียบร้อยแล้ว";
+                    friendlyMsg = "ไม่พบ LINE Channel ID นี้ กรุณาตรวจสอบให้แน่ใจว่าคีย์ LIFF ID ตรงกับตัวเลขที่ตั้งไว้ใน LINE Developers Console";
                 } else if (error.message) {
                     friendlyMsg = error.message;
                 }
-
-                showAuthError(
-                    "ไม่สามารถเริ่มต้นระบบ LINE LIFF ได้", 
-                    friendlyMsg
-                );
+                showAuthError("การเริ่มต้นระบบล้มเหลว", friendlyMsg);
             }
         }
 
-        // ปรับแก้ข้อความระหว่างทำการตรวจสอบในหน้าต่าง Loading
         function showLoadingStatus(title, subtitle) {
             document.getElementById('loading-title').innerText = title;
             document.getElementById('loading-subtitle').innerText = subtitle;
         }
 
-        // เชื่อมต่อสิทธิ์กับระบบฐานข้อมูล Google Sheets (แท็บ USER) จริงๆ
+        // เชื่อมต่อสิทธิ์ผู้ใช้กับระบบฐานข้อมูล Google Sheets แท็บ USER
         async function verifyUserWithBackend(userId) {
-            showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "กำลังตรวจสอบสิทธิ์ของท่านในระบบฐานข้อมูล อผศ. ประจำการ...");
+            showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "ระบบกำลังดึงรายชื่อสิทธิ์ผู้ดูแลรักษาความปลอดภัยจากเซิร์ฟเวอร์ อผศ. ประจำการ...");
 
-            if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL === "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
+            if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL === "YOUR_WEB_APP_URL_HERE") {
                 showAuthError(
-                    "ยังไม่ได้เชื่อมต่อระบบฐานข้อมูลหลังบ้าน", 
-                    "โค้ดไฟล์ปัจจุบันยังไม่ได้ระบุที่อยู่ของ Google Sheets Web App ในซอร์สโค้ด ท่านสามารถทดลองใช้งานและตรวจแบบฟอร์มได้โดยคลิกที่ปุ่ม 'เข้าใช้งานด้วยโหมดทดสอบ' ด้านล่าง"
+                    "ขาดการระบุที่อยู่ฐานข้อมูลหลัก", 
+                    "ซอร์สโค้ดปัจจุบันยังขาดข้อมูล GOOGLE_SHEETS_WEBAPP_URL ของ Google Apps Script คุณสามารถกดใช้งาน 'โหมดทดสอบ' เพื่อดูผลลัพธ์โครงสร้างหน้าจอเบื้องต้น"
                 );
                 return;
             }
 
             try {
-                // ยิงดึงสิทธิ์แบบ GET ป้องกันปัญหาระบบ CORS บน GitHub Pages
+                // เรียก API หลังบ้านผ่าน GET เพื่อป้องกันการบล็อก CORS ของเบราว์เซอร์
                 const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&userId=${userId}`, {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json'
                     }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`การเรียกฐานข้อมูลไม่สำเร็จ รหัสสถานะ: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result && result.status === "success" && result.data) {
                     const guardData = result.data;
                     
-                    // นำข้อมูลจริงจากชีทมาป้อนลง Input
-                    document.getElementById('guard-id').value = guardData.guardId;
-                    document.getElementById('guard-name').value = guardData.name;
+                    document.getElementById('guard-id').value = guardData.guardId || "";
+                    document.getElementById('guard-name').value = guardData.name || "";
                     
-                    // แสดงโปรไฟล์ LINE มุมขวาบน
                     updateProfileHeader(currentLineUser.displayName, currentLineUser.pictureUrl);
-                    
-                    // นำหน้า Loading ออกเพื่อเปิดสิทธิ์การใช้งาน
                     document.getElementById('auth-loading-overlay').classList.add('hidden');
                 } else {
-                    // ไม่พบสิทธิ์ผู้ใช้งาน
                     showAuthError(
-                        "ไม่พบบัญชีผู้ใช้งานในระบบฐานข้อมูล",
-                        `ไม่พบสิทธิ์ของ LINE User ID: "${userId}" ในแท็บ USER (ชีท e-Security) กรุณาประสานงานเจ้าหน้าที่ผู้ดูแลเพื่อลงทะเบียนบันทึกสิทธิ์ก่อนปฏิบัติงานจริง`
+                        "ไม่พบบัญชีในฐานข้อมูลเจ้าหน้าที่",
+                        `ไม่พบข้อมูลการลงทะเบียนสิทธิ์ของ LINE ID: "${userId}" ในแถบข้อมูล USER กรุณาติดต่อฝ่ายเทคโนโลยีสารสนเทศของหน่วยเพื่อทำการเพิ่มสิทธิ์เข้าสู่ระบบ`
                     );
                 }
             } catch (err) {
                 console.error("Backend validation error: ", err);
                 showAuthError(
-                    "การเชื่อมต่อระบบขัดข้อง", 
-                    "ไม่สามารถติดต่อเซิร์ฟเวอร์หลังบ้าน Google Sheets Apps Script ได้ในขณะนี้ โปรดตรวจสอบการ Deploy (เผยแพร่เว็บแอป) ว่าตั้งค่าให้ 'ทุกคน' (Anyone) เข้าถึงได้แล้วหรือไม่"
+                    "ไม่สามารถติดต่อเซิร์ฟเวอร์ฐานข้อมูลได้", 
+                    "ข้อผิดพลาดจากเครือข่าย หรือ URL สคริปต์ทำงานขัดข้อง โปรดปรับสิทธิ์ให้เป็น 'Anyone' (ทุกคน) ภายหลังการ Deploy เว็บแอปของ Google Sheets"
                 );
             }
         }
 
-        // แสดงสไลด์เตือนข้อผิดพลาดพร้อมมอบตัวเลือกโหมดจำลองสถานการณ์ให้นักพัฒนา
         function showAuthError(title, description) {
             document.getElementById('loading-spinner').classList.add('hidden');
             document.getElementById('loading-subtitle').classList.add('hidden');
@@ -519,7 +505,6 @@ function getLocation() {
             document.getElementById('auth-error-box').classList.remove('hidden');
         }
 
-        // ฟังก์ชันสั่ง Logout ออกจากระบบ LINE
         function logoutLine() {
             if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
                 liff.logout();
@@ -527,7 +512,6 @@ function getLocation() {
             window.location.reload();
         }
 
-        // แสดงรูปและโปรไฟล์ LINE ยืนยันบน Header
         function updateProfileHeader(name, avatarUrl) {
             const avatarImg = document.getElementById('user-avatar');
             const welcomeText = document.getElementById('user-welcome');
@@ -539,13 +523,11 @@ function getLocation() {
             welcomeText.innerText = "เจ้าหน้าที่ปฏิบัติการ: " + name;
         }
 
-        // เข้าสู่ระบบจำลองสำหรับการทดสอบหน้าจอแบบ Static / Preview และแก้ปัญหา LIFF ล็อกอินค้าง
         function simulateDeveloperMode() {
             currentLineUser.userId = "U-SimulateLineUserWvo9999";
             currentLineUser.displayName = "พ.ต.ต. ณรงค์ฤทธิ์ ด่านตรวจ (โหมดทดสอบ)";
             currentLineUser.pictureUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200";
 
-            // เติมข้อมูลลงตัวกรอกและปลดล็อกหน้าจอเพื่อให้ทดลองปุ่มได้จริง
             document.getElementById('guard-id').value = "อผศ-9051";
             document.getElementById('guard-name').value = "พ.ต.ต. ณรงค์ฤทธิ์ ด่านตรวจ";
             
@@ -553,12 +535,16 @@ function getLocation() {
             document.getElementById('auth-loading-overlay').classList.add('hidden');
         }
 
-        // ฟังก์ชันเมื่อเปลี่ยนผลัด (สลับสว่าง-มืด พร้อมอัปเดตสีฟอนต์ทั้งหมดเป็นสีขาวในเวรกลางคืน)
+        // ฟังก์ชันเปลี่ยนสีธีมของแต่ละ Element ให้ครอบคลุมทุกจุดในโหมดกลางคืน
         function toggleShiftTheme(shiftType) {
+            const isNight = (shiftType === 'night');
+            
             const body = document.body;
             const siteHeader = document.getElementById('site-header');
             const headerTitle = document.getElementById('header-title');
             const headerDate = document.getElementById('live-date');
+            const liveClock = document.getElementById('live-clock');
+            const userWelcome = document.getElementById('user-welcome');
             
             const mainCard = document.getElementById('main-card');
             const cardTitle = document.getElementById('card-title');
@@ -568,106 +554,127 @@ function getLocation() {
             const labelGuardName = document.getElementById('label-guard-name');
             const labelShift = document.getElementById('label-shift');
             const labelLocation = document.getElementById('label-location');
+            const labelNote = document.getElementById('label-note');
             
             const guardIdInput = document.getElementById('guard-id');
             const guardNameInput = document.getElementById('guard-name');
             const locationSelect = document.getElementById('location-select');
+            const noteInput = document.getElementById('noteInput');
             
+            const submitBtn = document.getElementById('submit-btn');
             const historyCard = document.getElementById('history-card');
             const historyTitle = document.getElementById('history-title');
             const footerText = document.getElementById('footer-text');
             
             const toggleBg = document.getElementById('toggle-bg');
-            const submitBtn = document.getElementById('submit-btn');
             const labelDay = document.getElementById('label-day');
             const labelNight = document.getElementById('label-night');
             const textDay = document.getElementById('text-day');
             const textNight = document.getElementById('text-night');
             const shiftTimeDesc = document.getElementById('shift-time-desc');
 
-            if (shiftType === 'day') {
-                toggleBg.style.left = '6px';
+            if (!isNight) {
+                // ธีมกลางวัน
+                if (toggleBg) toggleBg.style.left = '6px';
                 
-                labelDay.querySelector('svg').setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-orange-500');
-                textDay.className = 'text-sm font-bold text-wvo-green-700';
+                if (labelDay) {
+                    const svg = labelDay.querySelector('svg');
+                    if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-orange-500');
+                }
+                if (textDay) textDay.className = 'text-sm font-bold text-wvo-green-700';
                 
-                labelNight.querySelector('svg').setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
-                textNight.className = 'text-sm font-semibold text-slate-500';
+                if (labelNight) {
+                    const svg = labelNight.querySelector('svg');
+                    if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
+                }
+                if (textNight) textNight.className = 'text-sm font-semibold text-slate-500';
 
-                shiftTimeDesc.innerText = 'เวลาปฏิบัติงาน: 07:00 น. - 19:00 น.';
-                shiftTimeDesc.className = 'text-xs text-wvo-orange-500 font-semibold bg-orange-50 px-2.5 py-1 rounded-md';
+                if (shiftTimeDesc) {
+                    shiftTimeDesc.innerText = 'เวลาปฏิบัติงาน: 07:00 น. - 19:00 น.';
+                    shiftTimeDesc.className = 'text-xs text-wvo-orange-500 font-semibold bg-orange-50 px-2.5 py-1 rounded-md';
+                }
 
-                // คืนค่าธีมสว่าง อผศ. (เขียวทหาร / ขาวครีม)
-                body.className = "bg-[#f4f7f5] min-h-screen theme-transition flex flex-col justify-between";
+                if (body) body.className = "bg-[#f4f7f5] min-h-screen theme-transition flex flex-col justify-between";
+                if (siteHeader) siteHeader.className = "bg-white shadow-sm border-b border-wvo-green-100 py-4 px-6 theme-transition";
+                if (headerTitle) headerTitle.className = "text-base sm:text-lg font-bold text-wvo-green-700 leading-tight theme-transition";
+                if (headerDate) headerDate.className = "text-sm font-semibold text-slate-700 theme-transition";
+                if (liveClock) liveClock.className = "text-xs text-wvo-green-500 font-medium";
+                if (userWelcome) userWelcome.className = "text-[10px] text-slate-500 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition";
                 
-                siteHeader.className = "bg-white shadow-sm border-b border-wvo-green-100 py-4 px-6 theme-transition";
-                headerTitle.className = "text-lg font-bold text-wvo-green-700 leading-tight theme-transition";
-                if(headerDate) headerDate.className = "text-sm font-semibold text-slate-700 theme-transition";
+                if (mainCard) mainCard.className = "bg-white rounded-2xl shadow-xl border border-wvo-green-50/50 p-6 theme-transition";
+                if (cardTitle) cardTitle.className = "text-2xl font-bold text-slate-800 mt-2 theme-transition";
+                if (cardSubtitle) cardSubtitle.className = "text-xs text-slate-500 mt-1 theme-transition";
                 
-                mainCard.className = "bg-white rounded-2xl shadow-xl border border-wvo-green-50/50 p-6 theme-transition";
-                cardTitle.className = "text-2xl font-bold text-slate-800 mt-2 theme-transition";
-                cardSubtitle.className = "text-xs text-slate-500 mt-1 theme-transition";
+                if (labelGuardId) labelGuardId.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
+                if (labelGuardName) labelGuardName.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
+                if (labelShift) labelShift.className = "block text-sm font-semibold text-slate-700 mb-2 theme-transition";
+                if (labelLocation) labelLocation.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
+                if (labelNote) labelNote.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
                 
-                if(labelGuardId) labelGuardId.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
-                if(labelGuardName) labelGuardName.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
-                labelShift.className = "block text-sm font-semibold text-slate-700 mb-2 theme-transition";
-                labelLocation.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
+                if (guardIdInput) guardIdInput.className = "w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition";
+                if (guardNameInput) guardNameInput.className = "w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition";
+                if (locationSelect) locationSelect.className = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition appearance-none text-slate-800 theme-transition";
+                if (noteInput) noteInput.className = "w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition text-sm text-slate-800 theme-transition placeholder-slate-400 resize-none";
                 
-                // สไตล์ช่องกรอกข้อมูล (Locked/Readonly) สีทึบสง่า
-                guardIdInput.className = "w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition";
-                guardNameInput.className = "w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition";
-                locationSelect.className = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition appearance-none text-slate-800 theme-transition";
+                if (submitBtn) submitBtn.className = "w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2";
                 
-                submitBtn.className = "w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2";
-                
-                historyCard.className = "mt-6 bg-white rounded-2xl p-4 shadow-md border border-slate-100 theme-transition";
-                historyTitle.className = "text-sm font-bold text-wvo-green-700 mb-3 flex items-center theme-transition";
-                footerText.className = "text-center py-4 text-xs text-wvo-green-700/60 font-medium theme-transition";
+                if (historyCard) historyCard.className = "mt-6 bg-white rounded-2xl p-4 shadow-md border border-slate-100 theme-transition";
+                if (historyTitle) historyTitle.className = "text-sm font-bold text-wvo-green-700 mb-3 flex items-center theme-transition";
+                if (footerText) footerText.className = "text-center py-4 text-xs text-wvo-green-700/60 font-medium theme-transition";
 
             } else {
-                toggleBg.style.left = 'calc(50% - 0px)';
+                // ธีมกลางคืน (ปรับแก้ทุกส่วนให้อ่านง่าย มี Contrast สูง)
+                if (toggleBg) toggleBg.style.left = 'calc(50% - 6px)';
                 
-                labelDay.querySelector('svg').setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
-                textDay.className = 'text-sm font-semibold text-slate-500';
+                if (labelDay) {
+                    const svg = labelDay.querySelector('svg');
+                    if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
+                }
+                if (textDay) textDay.className = 'text-sm font-semibold text-slate-500';
                 
-                labelNight.querySelector('svg').setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-gold-400');
-                textNight.className = 'text-sm font-bold text-white'; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
+                if (labelNight) {
+                    const svg = labelNight.querySelector('svg');
+                    if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-gold-400');
+                }
+                if (textNight) textNight.className = 'text-sm font-bold text-white';
 
-                shiftTimeDesc.innerText = 'เวลาปฏิบัติงาน: 19:00 น. - 07:00 น.';
-                shiftTimeDesc.className = 'text-xs text-wvo-gold-500 font-semibold bg-yellow-50 px-2.5 py-1 rounded-md';
+                if (shiftTimeDesc) {
+                    shiftTimeDesc.innerText = 'เวลาปฏิบัติงาน: 19:00 น. - 07:00 น.';
+                    shiftTimeDesc.className = 'text-xs text-wvo-gold-500 font-semibold bg-yellow-50 px-2.5 py-1 rounded-md';
+                }
 
-                // คืนค่าธีมทหารมืดสำหรับเวรกลางคืน อผศ. (เขียวปนดำทหาร)
-                body.className = "bg-wvo-green-900 min-h-screen theme-transition flex flex-col justify-between";
+                if (body) body.className = "bg-wvo-green-900 min-h-screen theme-transition flex flex-col justify-between";
+                if (siteHeader) siteHeader.className = "bg-[#112d14] shadow-md border-b border-wvo-green-800 py-4 px-6 theme-transition";
+                if (headerTitle) headerTitle.className = "text-base sm:text-lg font-bold text-white leading-tight theme-transition";
+                if (headerDate) headerDate.className = "text-sm font-semibold text-white theme-transition";
+                if (liveClock) liveClock.className = "text-xs text-wvo-gold-400 font-medium";
+                if (userWelcome) userWelcome.className = "text-[10px] text-wvo-green-100 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition";
                 
-                siteHeader.className = "bg-[#112d14] shadow-md border-b border-wvo-green-800 py-4 px-6 theme-transition";
-                headerTitle.className = "text-lg font-bold text-white leading-tight theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                if(headerDate) headerDate.className = "text-sm font-semibold text-white theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
+                if (mainCard) mainCard.className = "bg-[#112d14] rounded-2xl shadow-2xl border border-wvo-green-800 p-6 theme-transition";
+                if (cardTitle) cardTitle.className = "text-2xl font-bold text-white mt-2 theme-transition";
+                if (cardSubtitle) cardSubtitle.className = "text-xs text-wvo-green-100 mt-1 theme-transition";
                 
-                mainCard.className = "bg-[#112d14] rounded-2xl shadow-2xl border border-wvo-green-800 p-6 theme-transition";
-                cardTitle.className = "text-2xl font-bold text-white mt-2 theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                cardSubtitle.className = "text-xs text-white mt-1 theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
+                if (labelGuardId) labelGuardId.className = "block text-sm font-semibold text-white mb-1 theme-transition";
+                if (labelGuardName) labelGuardName.className = "block text-sm font-semibold text-white mb-1 theme-transition";
+                if (labelShift) labelShift.className = "block text-sm font-semibold text-white mb-2 theme-transition";
+                if (labelLocation) labelLocation.className = "block text-sm font-semibold text-white mb-1 theme-transition";
+                if (labelNote) labelNote.className = "block text-sm font-semibold text-white mb-1 theme-transition";
                 
-                if(labelGuardId) labelGuardId.className = "block text-sm font-semibold text-white mb-1 theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                if(labelGuardName) labelGuardName.className = "block text-sm font-semibold text-white mb-1 theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                labelShift.className = "block text-sm font-semibold text-white mb-2 theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                labelLocation.className = "block text-sm font-semibold text-white mb-1 theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
+                if (guardIdInput) guardIdInput.className = "w-full pl-10 pr-4 py-3 border border-wvo-green-800 rounded-xl bg-wvo-green-950 outline-none transition text-wvo-green-100 font-semibold cursor-not-allowed theme-transition";
+                if (guardNameInput) guardNameInput.className = "w-full pl-10 pr-4 py-3 border border-wvo-green-800 rounded-xl bg-wvo-green-950 outline-none transition text-wvo-green-100 font-semibold cursor-not-allowed theme-transition";
+                if (locationSelect) locationSelect.className = "w-full px-4 py-3 bg-[#173b1b] border border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-orange-500 focus:border-wvo-orange-500 outline-none transition appearance-none text-white theme-transition";
+                if (noteInput) noteInput.className = "w-full px-4 py-2.5 bg-[#173b1b] border border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-orange-500 focus:border-wvo-orange-500 outline-none transition text-sm text-white theme-transition placeholder-wvo-green-100/50 resize-none";
                 
-                // สไตล์ช่องกรอกข้อมูลในเวลากลางคืน (Locked/Readonly) สีมืดเข้าชุด สบายตา
-                guardIdInput.className = "w-full pl-10 pr-4 py-3 border border-wvo-green-800 rounded-xl bg-wvo-green-950 outline-none transition text-white font-semibold cursor-not-allowed theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                guardNameInput.className = "w-full pl-10 pr-4 py-3 border border-wvo-green-800 rounded-xl bg-wvo-green-950 outline-none transition text-white font-semibold cursor-not-allowed theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                locationSelect.className = "w-full px-4 py-3 bg-[#173b1b] border border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-orange-500 focus:border-wvo-orange-500 outline-none transition appearance-none text-white theme-transition";
+                if (submitBtn) submitBtn.className = "w-full py-4 bg-gradient-to-r from-wvo-orange-500 to-wvo-orange-600 text-white font-bold rounded-xl shadow-lg hover:from-wvo-orange-600 hover:to-wvo-orange-700 focus:outline-none focus:ring-4 focus:ring-wvo-orange-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2";
                 
-                submitBtn.className = "w-full py-4 bg-gradient-to-r from-wvo-orange-500 to-wvo-orange-600 text-white font-bold rounded-xl shadow-lg hover:from-wvo-orange-600 hover:to-wvo-orange-700 focus:outline-none focus:ring-4 focus:ring-wvo-orange-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2";
-                
-                historyCard.className = "mt-6 bg-[#112d14] rounded-2xl p-4 shadow-2xl border border-wvo-green-800 theme-transition";
-                historyTitle.className = "text-sm font-bold text-white mb-3 flex items-center theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
-                footerText.className = "text-center py-4 text-xs text-white font-medium theme-transition"; // เปลี่ยนเป็นสีขาวตามเงื่อนไข
+                if (historyCard) historyCard.className = "mt-6 bg-[#112d14] rounded-2xl p-4 shadow-2xl border border-wvo-green-800 theme-transition";
+                if (historyTitle) historyTitle.className = "text-sm font-bold text-white mb-3 flex items-center theme-transition";
+                if (footerText) footerText.className = "text-center py-4 text-xs text-wvo-green-100/60 font-medium theme-transition";
             }
             
             updateLogsUI();
         }
 
-        // แสดง Modal ตรวจทานข้อมูลลงเวลาก่อนกดส่งจริง
         function showConfirmationModal() {
             const guardId = document.getElementById('guard-id').value;
             const guardName = document.getElementById('guard-name').value;
@@ -675,8 +682,12 @@ function getLocation() {
             const locationVal = document.getElementById('location-select').value;
             
             if (!guardId || !guardName || !locationVal) {
-                return; // ไม่ทำงานหากค่าในฟิลด์หรือจุดตรวจที่จำเป็นเป็นค่าว่าง
+                alert("กรุณากรอกข้อมูลและเลือกจุดปฏิบัติงานให้ครบถ้วนก่อนการบันทึก");
+                return;
             }
+
+            // สั่งอัปเดต/เรียกหาพิกัด GPS อีกรอบเมื่อกดส่ง เพื่อให้พิกัดอัปเดตที่สุด
+            getLocation();
 
             const now = new Date();
             const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
@@ -685,6 +696,15 @@ function getLocation() {
             document.getElementById('confirm-name').innerText = guardName;
             document.getElementById('confirm-location').innerText = locationVal;
             document.getElementById('confirm-time').innerText = timeString;
+
+            const confirmGpsEl = document.getElementById('confirm-gps');
+            if (userLatitude && userLongitude) {
+                confirmGpsEl.innerText = `${userLatitude.toFixed(5)}, ${userLongitude.toFixed(5)}`;
+                confirmGpsEl.className = "font-bold text-xs text-wvo-green-600";
+            } else {
+                confirmGpsEl.innerText = "กำลังค้นหาตำแหน่ง / ไม่ได้ระบุ...";
+                confirmGpsEl.className = "font-bold text-xs text-red-500 animate-pulse";
+            }
 
             const confirmShiftEl = document.getElementById('confirm-shift');
             const modalHeader = document.getElementById('modal-header');
@@ -732,71 +752,119 @@ function getLocation() {
             }, 150);
         }
 
-        // ส่งข้อมูลที่ผ่านการยืนยันขึ้นบันทึกบน Google Sheet (หลังบ้าน) จริงๆ
+        // จัดส่งข้อมูลการสแกนรอบสมบูรณ์ไปยัง Google Sheets (Apps Script Web App)
         async function submitFinalLog() {
-    const guardId = document.getElementById('guard-id').value;
-    const guardName = document.getElementById('guard-name').value;
-    const shiftVal = document.querySelector('input[name="shift-toggle"]:checked').value;
-    const locationVal = document.getElementById('location-select').value;
-    
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
-    const logId = 'WVO-' + Math.floor(1000 + Math.random() * 9000);
+            const guardId = document.getElementById('guard-id').value;
+            const guardName = document.getElementById('guard-name').value;
+            const shiftVal = document.querySelector('input[name="shift-toggle"]:checked').value;
+            const locationVal = document.getElementById('location-select').value;
+            const noteVal = document.getElementById('noteInput') ? document.getElementById('noteInput').value : "";
+            
+            if (!guardId || !guardName || !locationVal) {
+                alert("ข้อมูลไม่สมบูรณ์ กรุณาปิดหน้านี้และตรวจสอบช่องกรอกข้อมูลอีกครั้ง");
+                return;
+            }
 
-    // 1. เก็บในเซสชันภายในหน้าเว็บ
-    const newLog = {
-        id: logId,
-        guardId: guardId,
-        name: guardName,
-        shift: shiftVal,
-        location: locationVal,
-        time: timeString
-    };
-    localLogs.unshift(newLog);
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+            const logId = 'WVO-' + Math.floor(1000 + Math.random() * 9000);
 
-    closeConfirmationModal();
-    showToastSuccess();
-    updateLogsUI();
-
-    // 2. ยิงส่งข้อมูลขึ้นระบบ Google Sheet แบบ POST (แก้ไข CORS)
-    if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
-        try {
+            // บันทึกตำแหน่งและแปลงลิ้งก์แผนที่จริง
             let mapsLink = (userLatitude && userLongitude) 
                 ? `https://www.google.com/maps?q=${userLatitude},${userLongitude}` 
-                : "ไม่ได้เปิด GPS / ไม่อนุญาตสิทธิ์";
+                : "ไม่ได้ระบุพิกัด / ปิดการเข้าถึงสิทธิ์";
 
-            let currentNote = document.getElementById("noteInput") ? document.getElementById("noteInput").value : "";
-            let combinedNote = `${currentNote} [พิกัดตรวจ: ${mapsLink}]`.trim();
+            // จัดรวมข้อความบันทึก
+            let combinedNote = noteVal.trim();
+            if (combinedNote) {
+                combinedNote += ` [พิกัดแผนที่: ${mapsLink}]`;
+            } else {
+                combinedNote = `[พิกัดแผนที่: ${mapsLink}]`;
+            }
 
-            // ✅ แก้ไข: ใช้ GET แทน POST เพื่อหลีกเลี่ยง CORS
-            const params = new URLSearchParams({
-                action: "saveDuty",
-                lineUserId: currentLineUser.userId,
+            const newLog = {
+                id: logId,
+                guardId: guardId,
+                name: guardName,
                 shift: shiftVal,
                 location: locationVal,
-                note: combinedNote
-            });
+                time: timeString
+            };
 
-            // ใช้ fetch แบบ GET
-            const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
+            // แสดงสถานะระหว่างบันทึกข้อมูลเพื่อป้องกันการกดส่งซ้ำ
+            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+            const originalBtnText = modalConfirmBtn ? modalConfirmBtn.innerText : "ยืนยันข้อมูลถูกต้อง";
+            if (modalConfirmBtn) {
+                modalConfirmBtn.disabled = true;
+                modalConfirmBtn.innerText = "กำลังจัดส่งข้อมูล...";
+            }
+
+            // ฟังก์ชันเสริมสำหรับเคลียร์ค่าในฟอร์มภายหลังประมวลผลสำเร็จ
+            function applyLocalSuccess() {
+                localLogs.unshift(newLog);
+                closeConfirmationModal();
+                showToastSuccess();
+                updateLogsUI();
+
+                // รีเซ็ตเฉพาะจุดตรวจและช่องหมายเหตุ
+                if (document.getElementById('location-select')) {
+                    document.getElementById('location-select').selectedIndex = 0;
                 }
-            });
+                if (document.getElementById('noteInput')) {
+                    document.getElementById('noteInput').value = "";
+                }
+                
+                // คืนค่าสถานะปุ่มกดยืนยันใน Modal
+                if (modalConfirmBtn) {
+                    modalConfirmBtn.disabled = false;
+                    modalConfirmBtn.innerText = originalBtnText;
+                }
+            }
 
-            const result = await response.json();
-            console.log("บันทึกสำเร็จ:", result);
+            // จัดส่งบันทึกจริงไปยังฐานข้อมูล Google Sheet
+            if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "YOUR_WEB_APP_URL_HERE") {
+                try {
+                    const params = new URLSearchParams({
+                        action: "saveDuty",
+                        lineUserId: currentLineUser.userId,
+                        shift: shiftVal,
+                        location: locationVal,
+                        note: combinedNote,
+                        latitude: userLatitude || "",
+                        longitude: userLongitude || ""
+                    });
 
-        } catch (sheetErr) {
-            console.error("ผิดพลาดขณะจัดส่งบันทึก:", sheetErr);
-            // แสดงข้อความแจ้งเตือนผู้ใช้ว่าบันทึกไม่สำเร็จ
-            alert("ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อ");
+                    const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?${params.toString()}`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`เซิร์ฟเวอร์ตอบรับด้วย HTTP error status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result && result.status === "success") {
+                        applyLocalSuccess();
+                    } else {
+                        throw new Error(result.message || "เซิร์ฟเวอร์ไม่ส่งผลตอบรับที่คาดหมายกลับมา");
+                    }
+
+                } catch (sheetErr) {
+                    console.error("เกิดข้อผิดพลาดในการนำส่งข้อมูล: ", sheetErr);
+                    alert("บันทึกลง Google Sheets ล้มเหลว: " + sheetErr.message + " \n\n(ระบบได้ลงประวัติไว้บนหน้าจอนี้เป็นการชั่วคราวแล้ว)");
+                    // ทำการทำงานแบบออฟไลน์โลคอลเพื่อให้ รปภ. ดำเนินงานต่อไปได้โดยไม่ติดขัด
+                    applyLocalSuccess();
+                }
+            } else {
+                // หากรันภายใต้โหมดจำลองหรือโหมดผู้พัฒนาภายนอก
+                applyLocalSuccess();
+            }
         }
-    }
-    
-    document.getElementById('location-select').selectedIndex = 0;
-}
 
         function showToastSuccess() {
             const toast = document.getElementById('toast-success');
@@ -809,7 +877,7 @@ function getLocation() {
             }, 3500);
         }
 
-        // อัปเดตตารางแสดงประวัติผลการลงเวลาแบบ Realtime ในรอบเซสชันนี้
+        // แสดงรายการบันทึกประวัติภายในหน้ารอบปัจจุบัน
         function updateLogsUI() {
             const container = document.getElementById('logs-container');
             const noLogText = document.getElementById('no-log-text');
