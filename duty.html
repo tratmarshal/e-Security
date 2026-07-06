@@ -89,7 +89,7 @@
         </div>
     </div>
 
-    <!-- ส่วนหัวของเว็บไซต์ (จัดการคลาสสีสลับผ่าน dark: อย่างรวดเร็ว) -->
+    <!-- ส่วนหัวของเว็บไซต์ -->
     <header id="site-header" class="bg-white dark:bg-[#112d14] shadow-sm dark:shadow-md border-b border-wvo-green-100 dark:border-wvo-green-800 py-4 px-6 theme-transition">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
@@ -393,8 +393,9 @@
         // ควบคุมระบบ LINE LIFF SDK
         async function initializeLiff() {
             try {
-                if (!LIFF_ID || LIFF_ID === "2010616678-GGszdIBe") {
-                    showAuthError("ไม่พบคีย์บริการ LINE LIFF", "ระบบตรวจพบว่ายังไม่ได้กรอกคีย์ความมั่นคง LIFF_ID จริงในซอร์สโค้ด");
+                // ยกเลิกข้อจำกัดการบล็อกรหัส LIFF ดั้งเดิม เพื่อรองรับคีย์บริการจริงของผู้ใช้
+                if (!LIFF_ID || LIFF_ID.trim() === "" || LIFF_ID.includes("YOUR_LIFF_ID")) {
+                    showAuthError("ไม่พบคีย์บริการ LINE LIFF", "ระบบตรวจพบว่าค่า LIFF_ID ว่างเปล่า กรุณาระบุรหัสใช้งานจริงในส่วน CONFIGURATION");
                     return;
                 }
 
@@ -462,7 +463,7 @@
                 } else {
                     showAuthError(
                         "ไม่พบบัญชีในระบบฐานข้อมูลสิทธิ์",
-                        "LINE ID นี้ยังไม่ได้ผ่านการลงทะเบียนในแท็บ USER กรุณาติดต่อผู้บังคับบัญชาเพื่อบันทึกประวัติตนเองก่อนปฏิบัติหน้าที่"
+                        "LINE ID นี้ยังไม่ได้ผ่านการลงทะเบียนในแท็บ USER กรุณาติดต่อผู้ดูแลระบบสเปรดชีตเพื่อบันทึกประวัติตนเองก่อนปฏิบัติหน้าที่"
                     );
                 }
             } catch (err) {
