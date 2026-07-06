@@ -424,7 +424,49 @@
             document.getElementById('loading-subtitle').innerText = subtitle;
         }
 
-        // เชื่อมโยงสิทธิ์ผู้ใช้กับระบบหลังบ้านโดยส่งเพียง ID Token (ความปลอดภัยสูงสุด ป้องกันแทรกแซง User ID)
+        // =============================================================
+        // API Gateway Call (แก้ตามต้นแบบเพื่อกัน CORS เสมอด้วย Simple POST)
+        // =============================================================
+        async function callGas(fn, payload, retryCount) {
+            if (retryCount === undefined) retryCount = 0;
+            const controller = new AbortController();
+            const timer = setTimeout(function() { controller.abort(); }, 20000); // ตั้งค่า Timeout 20 วินาที
+            try {
+                const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ text/plain เพื่อกันสัญญาณ Preflight (CORS)
+                    body: JSON.stringify({
+                        fn: fn,
+                        payload: payload
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timer);
+                const json = await res.json();
+                return json;
+            } catch (err) {
+                clearTimeout(timer);
+                // พยายามเรียกส่งซ้ำเมื่อหลุดการเชื่อมต่อเพื่อรักษาสิทธิ์ รปภ.
+                if (err.name === 'AbortError') {
+                    if (retryCount < 3) {
+                        const delay = [500, 1000, 2000][retryCount] || 1000;
+                        console.warn("Timeout, retrying " + (retryCount+1) + " in " + delay + "ms");
+                        await new Promise(function(r) { setTimeout(r, delay); });
+                        return callGas(fn, payload, retryCount + 1);
+                    }
+                    throw new Error("การเชื่อมต่อหมดเวลา กรุณาลองใหม่อีกครั้ง");
+                }
+                if (retryCount < 3) {
+                    const delay = [500, 1000, 2000][retryCount] || 1000;
+                    console.warn("Error, retrying " + (retryCount+1) + " in " + delay + "ms");
+                    await new Promise(function(r) { setTimeout(r, delay); });
+                    return callGas(fn, payload, retryCount + 1);
+                }
+                throw err;
+            }
+        }
+
+        // เชื่อมโยงสิทธิ์ผู้ใช้กับระบบหลังบ้านโดยส่งเพียง ID Token ผ่าน API Gateway
         async function verifyUserWithBackend() {
             showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "ระบบกำลังนำส่ง ID Token เพื่อตรวจสอบความถูกต้องอย่างปลอดภัยกับเซิร์ฟเวอร์หลัก...");
 
@@ -444,19 +486,10 @@
                     return;
                 }
 
-                // ปรับปรุงโดยเพิ่มพารามิเตอร์เพื่อรับประกันการตาม Redirect เสมอ ป้องกันบล็อก CORS
-                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&idToken=${encodeURIComponent(idToken)}`, {
-                    method: "GET",
-                    redirect: "follow"
-                });
+                // ปรับมาใช้สถาปัตยกรรม callGas ร่วมกับ payload ID Token
+                const result = await callGas("getUser", { idToken: idToken });
 
-                if (!response.ok) {
-                    throw new Error(`ตอบกลับไม่สำเร็จ รหัส: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                if (result && result.status === "success" && result.data) {
+                if (result && result.success && result.data) {
                     const guardData = result.data;
                     
                     document.getElementById('guard-id').value = guardData.guardId || "";
@@ -467,12 +500,12 @@
                 } else {
                     showAuthError(
                         "ไม่พบบัญชีในระบบฐานข้อมูลสิทธิ์",
-                        "LINE ID นี้ยังไม่ได้ผ่านการลงทะเบียนในแท็บ USER กรุณาติดต่อผู้ดูแลระบบสเปรดชีตเพื่อบันทึกประวัติตนเองก่อนปฏิบัติหน้าที่"
+                        (result && result.error) ? result.error : "LINE ID นี้ยังไม่ได้ผ่านการลงทะเบียนในแท็บ USER กรุณาติดต่อผู้ดูแลระบบสเปรดชีตเพื่อบันทึกประวัติตนเองก่อนปฏิบัติหน้าที่"
                     );
                 }
             } catch (err) {
                 console.error("Backend validation error: ", err);
-                showAuthError("ขาดการติดต่อสเปรดชีต", "ไม่สามารถตรวจสอบสิทธิ์ได้จากความขัดข้องเครือข่าย หรือสิทธิ์ App ไม่ได้รับสิทธิ์เป็น 'Anyone'");
+                showAuthError("ขาดการติดต่อสเปรดชีต", "ไม่สามารถตรวจสอบสิทธิ์ได้เนื่องจากโครงข่ายติดขัด หรือสิทธิ์ App ปลายทางไม่สมบูรณ์");
             }
         }
 
@@ -635,7 +668,7 @@
             }, 150);
         }
 
-        // นำส่งข้อมูลการบันทึกเวรเข้าสู่ระบบ (ส่งแยก พิกัดละติจูด ลองจิจูด ชัดเจนเพื่อประโยชน์ในการวิเคราะห์ของส่วนกลาง)
+        // นำส่งข้อมูลการบันทึกเวรเข้าสู่ระบบ (ผ่านโครงสร้างพารามิเตอร์ callGas ร่วมกับ API Gateway)
         async function submitFinalLog() {
             const guardId = document.getElementById('guard-id').value;
             const guardName = document.getElementById('guard-name').value;
@@ -699,7 +732,6 @@
                     }
 
                     const payload = {
-                        action: "saveDuty",
                         idToken: idToken,
                         shift: shiftVal,
                         location: locationVal,
@@ -708,26 +740,13 @@
                         longitude: userLongitude ? userLongitude.toString() : ""
                     };
 
-                    // กำหนดค่าการตามข้ามลิงก์ของ Google Apps Script เพื่อป้องกันปัญหา CORS
-                    const response = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "text/plain"
-                        },
-                        redirect: "follow",
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`การบันทึกล้มเหลว สถานะเซิร์ฟเวอร์: ${response.status}`);
-                    }
-
-                    const result = await response.json();
+                    // ใช้ประโยชน์จาก callGas เพื่อทำงานร่วมกับสถาปัตยกรรม saveDuty ปลายทาง
+                    const result = await callGas("saveDuty", payload);
                     
-                    if (result && result.status === "success") {
+                    if (result && result.success) {
                         applyLocalSuccess();
                     } else {
-                        throw new Error(result.message || "เซิร์ฟเวอร์ปฏิเสธการเซฟเนื่องจากความปลอดภัย");
+                        throw new Error((result && result.error) ? result.error : "เซิร์ฟเวอร์ปฏิเสธการเซฟเนื่องจากความปลอดภัย");
                     }
 
                 } catch (sheetErr) {
