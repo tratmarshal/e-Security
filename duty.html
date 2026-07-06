@@ -394,7 +394,7 @@
         async function initializeLiff() {
             try {
                 // ยกเลิกข้อจำกัดการบล็อกรหัส LIFF ดั้งเดิม เพื่อรองรับคีย์บริการจริงของผู้ใช้
-                if (!LIFF_ID || LIFF_ID.trim() === "" || LIFF_ID.includes("YOUR_LIFF_ID")) {
+                if (!LIFF_ID || LIFF_ID.trim() === "" || LIFF_ID.includes("2010616678-GGszdIBe")) {
                     showAuthError("ไม่พบคีย์บริการ LINE LIFF", "ระบบตรวจพบว่าค่า LIFF_ID ว่างเปล่า กรุณาระบุรหัสใช้งานจริงในส่วน CONFIGURATION");
                     return;
                 }
@@ -444,7 +444,11 @@
                     return;
                 }
 
-                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&idToken=${encodeURIComponent(idToken)}`);
+                // ปรับปรุงโดยเพิ่มพารามิเตอร์เพื่อรับประกันการตาม Redirect เสมอ ป้องกันบล็อก CORS
+                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&idToken=${encodeURIComponent(idToken)}`, {
+                    method: "GET",
+                    redirect: "follow"
+                });
 
                 if (!response.ok) {
                     throw new Error(`ตอบกลับไม่สำเร็จ รหัส: ${response.status}`);
@@ -704,11 +708,13 @@
                         longitude: userLongitude ? userLongitude.toString() : ""
                     };
 
+                    // กำหนดค่าการตามข้ามลิงก์ของ Google Apps Script เพื่อป้องกันปัญหา CORS
                     const response = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
                         method: "POST",
                         headers: {
                             "Content-Type": "text/plain"
                         },
+                        redirect: "follow",
                         body: JSON.stringify(payload)
                     });
 
