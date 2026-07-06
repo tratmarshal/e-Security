@@ -394,7 +394,7 @@
         async function initializeLiff() {
             try {
                 // ยกเลิกข้อจำกัดการบล็อกรหัส LIFF ดั้งเดิม เพื่อรองรับคีย์บริการจริงของผู้ใช้
-                if (!LIFF_ID || LIFF_ID.trim() === "" || LIFF_ID.includes("2010616678-GGszdIBe")) {
+                if (!LIFF_ID || LIFF_ID.trim() === "" || LIFF_ID.includes("YOUR_LIFF_ID")) {
                     showAuthError("ไม่พบคีย์บริการ LINE LIFF", "ระบบตรวจพบว่าค่า LIFF_ID ว่างเปล่า กรุณาระบุรหัสใช้งานจริงในส่วน CONFIGURATION");
                     return;
                 }
