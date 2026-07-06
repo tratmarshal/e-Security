@@ -212,7 +212,7 @@
                     </div>
                 </div>
 
-                <!-- 3. ช่องกรอกหมายเหตุ/บันทึกเพิ่มเติม (เพิ่มเข้ามาใหม่เพื่อใช้ร่วมกับ noteInput) -->
+                <!-- 3. ช่องกรอกหมายเหตุ/บันทึกเพิ่มเติม -->
                 <div class="mb-6">
                     <label id="label-note" for="noteInput" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">หมายเหตุ / บันทึกเพิ่มเติม <span class="text-xs text-slate-400 font-normal">(ไม่บังคับ)</span></label>
                     <div class="relative">
@@ -221,7 +221,7 @@
                     </div>
                 </div>
 
-                <!-- 4. ปุ่มบันทึกตามสไตล์ อผศ. -->
+                <!-- 4. ปุ่มบันทึก -->
                 <button type="submit" id="submit-btn"
                     class="w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-wvo-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -323,12 +323,9 @@
         </div>
     </div>
 
-
     <script>
         // ==================== CONFIGURATION ====================
-        // กรุณาแทนที่ด้วยรหัส LIFF ID จริงที่ท่านลงทะเบียนไว้บน LINE Developers Console
         const LIFF_ID = "2010616678-GGszdIBe"; 
-        // กรุณาแทนที่ด้วย URL ของ Web App จากการ Deploy (เผยแพร่) Google Apps Script จริง
         const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwVN29XxpaPbu6G3ptgHz_LXVO9m9U6GLGsrxxP1nDSrMPgwEnsZb3WiJingmFkEt7iUw/exec";
         // ========================================================
 
@@ -341,6 +338,17 @@
             pictureUrl: ""
         };
 
+        // ฟังก์ชันป้องกันช่องโหว่ XSS ด้วยการล้างสัญลักษณ์พิเศษ (HTML Entity Escaping)
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         // ฟังก์ชันดึงพิกัด GPS อัตโนมัติแบบแม่นยำสูง
         function getLocation() {
             if (navigator.geolocation) {
@@ -350,7 +358,6 @@
                         userLongitude = position.coords.longitude;
                         console.log("ดึงพิกัด GPS สำเร็จ:", userLatitude, userLongitude);
                         
-                        // เติมพิกัดในกล่องยืนยัน หากเปิด Modal ค้างไว้
                         const confirmGpsEl = document.getElementById('confirm-gps');
                         if (confirmGpsEl) {
                             confirmGpsEl.innerText = `${userLatitude.toFixed(5)}, ${userLongitude.toFixed(5)}`;
@@ -398,7 +405,6 @@
         setInterval(updateLiveTime, 1000);
         updateLiveTime();
 
-        // สั่งให้ดึงพิกัด GPS เผื่อไว้และประมวลผล LIFF เมื่อหน้าเว็บพร้อมใช้งาน
         window.addEventListener("DOMContentLoaded", function() {
             getLocation();
             initializeLiff();
@@ -446,11 +452,11 @@
             document.getElementById('loading-subtitle').innerText = subtitle;
         }
 
-        // เชื่อมต่อสิทธิ์ผู้ใช้กับระบบฐานข้อมูล Google Sheets แท็บ USER
+        // เชื่อมต่อสิทธิ์ผู้ใช้กับระบบฐานข้อมูล Google Sheets แท็บ USER โดยส่ง ID Token ไปตรวจย้อนกลับ
         async function verifyUserWithBackend(userId) {
             showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "ระบบกำลังดึงรายชื่อสิทธิ์ผู้ดูแลรักษาความปลอดภัยจากเซิร์ฟเวอร์ อผศ. ประจำการ...");
 
-            if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL === "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
+            if (!GOOGLE_SHEETS_WEBAPP_URL) {
                 showAuthError(
                     "ขาดการระบุที่อยู่ฐานข้อมูลหลัก", 
                     "ซอร์สโค้ดปัจจุบันยังขาดข้อมูล GOOGLE_SHEETS_WEBAPP_URL ของ Google Apps Script คุณสามารถกดใช้งาน 'โหมดทดสอบ' เพื่อดูผลลัพธ์โครงสร้างหน้าจอเบื้องต้น"
@@ -459,8 +465,12 @@
             }
 
             try {
-                // เรียก API หลังบ้านผ่าน GET เพื่อป้องกันการบล็อก CORS ของเบราว์เซอร์
-                 const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&userId=${userId}`);
+                let idTokenParam = "";
+                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                    idTokenParam = `&idToken=${encodeURIComponent(liff.getIDToken())}`;
+                }
+
+                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&userId=${encodeURIComponent(userId)}${idTokenParam}`);
 
                 if (!response.ok) {
                     throw new Error(`การเรียกฐานข้อมูลไม่สำเร็จ รหัสสถานะ: ${response.status}`);
@@ -479,14 +489,14 @@
                 } else {
                     showAuthError(
                         "ไม่พบบัญชีในฐานข้อมูลเจ้าหน้าที่",
-                        `ไม่พบข้อมูลการลงทะเบียนสิทธิ์ของ LINE ID: "${userId}" ในแถบข้อมูล USER กรุณาติดต่อฝ่ายเทคโนโลยีสารสนเทศของหน่วยเพื่อทำการเพิ่มสิทธิ์เข้าสู่ระบบ`
+                        `ไม่พบข้อมูลการลงทะเบียนสิทธิ์ของ LINE ID ในแถบข้อมูล USER กรุณาติดต่อฝ่ายเทคโนโลยีสารสนเทศของหน่วยเพื่อทำการเพิ่มสิทธิ์เข้าสู่ระบบ`
                     );
                 }
             } catch (err) {
                 console.error("Backend validation error: ", err);
                 showAuthError(
                     "ไม่สามารถติดต่อเซิร์ฟเวอร์ฐานข้อมูลได้", 
-                    "ข้อผิดพลาดจากเครือข่าย หรือ URL สคริปต์ทำงานขัดข้อง โปรดปรับสิทธิ์ให้เป็น 'Anyone' (ทุกคน) ภายหลังการ Deploy เว็บแอปของ Google Sheets"
+                    "ข้อผิดพลาดจากเครือข่าย หรือ URL สคริปต์ทำงานขัดข้อง โปรดปรับสิทธิ์การเผยแพร่ App เป็น 'Anyone' (ทุกคน) และกด Deploy ใหม่"
                 );
             }
         }
@@ -530,7 +540,7 @@
             document.getElementById('auth-loading-overlay').classList.add('hidden');
         }
 
-        // ฟังก์ชันเปลี่ยนสีธีมของแต่ละ Element ให้ครอบคลุมทุกจุดในโหมดกลางคืน
+        // ฟังก์ชันเปลี่ยนสีธีมตามผลัดปฏิบัติงาน
         function toggleShiftTheme(shiftType) {
             const isNight = (shiftType === 'night');
             
@@ -571,13 +581,11 @@
             if (!isNight) {
                 // ธีมกลางวัน
                 if (toggleBg) toggleBg.style.left = '6px';
-                
                 if (labelDay) {
                     const svg = labelDay.querySelector('svg');
                     if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-orange-500');
                 }
                 if (textDay) textDay.className = 'text-sm font-bold text-wvo-green-700';
-                
                 if (labelNight) {
                     const svg = labelNight.querySelector('svg');
                     if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
@@ -618,15 +626,13 @@
                 if (footerText) footerText.className = "text-center py-4 text-xs text-wvo-green-700/60 font-medium theme-transition";
 
             } else {
-                // ธีมกลางคืน (ปรับแก้ทุกส่วนให้อ่านง่าย มี Contrast สูง)
+                // ธีมกลางคืน
                 if (toggleBg) toggleBg.style.left = 'calc(50% - 6px)';
-                
                 if (labelDay) {
                     const svg = labelDay.querySelector('svg');
                     if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
                 }
                 if (textDay) textDay.className = 'text-sm font-semibold text-slate-500';
-                
                 if (labelNight) {
                     const svg = labelNight.querySelector('svg');
                     if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-gold-400');
@@ -681,7 +687,6 @@
                 return;
             }
 
-            // สั่งอัปเดต/เรียกหาพิกัด GPS อีกรอบเมื่อกดส่ง เพื่อให้พิกัดอัปเดตที่สุด
             getLocation();
 
             const now = new Date();
@@ -747,7 +752,7 @@
             }, 150);
         }
 
-        // จัดส่งข้อมูลการสแกนรอบสมบูรณ์ไปยัง Google Sheets (Apps Script Web App)
+        // ส่งข้อมูลการรายงานตัวไปยังเซิร์ฟเวอร์แบบ POST ปลอดภัย ไม่เกิดข้อผิดพลาด CORS
         async function submitFinalLog() {
             const guardId = document.getElementById('guard-id').value;
             const guardName = document.getElementById('guard-name').value;
@@ -760,16 +765,16 @@
                 return;
             }
 
+            getLocation();
+
             const now = new Date();
             const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
             const logId = 'WVO-' + Math.floor(1000 + Math.random() * 9000);
 
-            // บันทึกตำแหน่งและแปลงลิ้งก์แผนที่จริง
             let mapsLink = (userLatitude && userLongitude) 
                 ? `https://www.google.com/maps?q=${userLatitude},${userLongitude}` 
                 : "ไม่ได้ระบุพิกัด / ปิดการเข้าถึงสิทธิ์";
 
-            // จัดรวมข้อความบันทึก
             let combinedNote = noteVal.trim();
             if (combinedNote) {
                 combinedNote += ` [พิกัดแผนที่: ${mapsLink}]`;
@@ -786,7 +791,6 @@
                 time: timeString
             };
 
-            // แสดงสถานะระหว่างบันทึกข้อมูลเพื่อป้องกันการกดส่งซ้ำ
             const modalConfirmBtn = document.getElementById('modal-confirm-btn');
             const originalBtnText = modalConfirmBtn ? modalConfirmBtn.innerText : "ยืนยันข้อมูลถูกต้อง";
             if (modalConfirmBtn) {
@@ -794,14 +798,12 @@
                 modalConfirmBtn.innerText = "กำลังจัดส่งข้อมูล...";
             }
 
-            // ฟังก์ชันเสริมสำหรับเคลียร์ค่าในฟอร์มภายหลังประมวลผลสำเร็จ
             function applyLocalSuccess() {
                 localLogs.unshift(newLog);
                 closeConfirmationModal();
                 showToastSuccess();
                 updateLogsUI();
 
-                // รีเซ็ตเฉพาะจุดตรวจและช่องหมายเหตุ
                 if (document.getElementById('location-select')) {
                     document.getElementById('location-select').selectedIndex = 0;
                 }
@@ -809,29 +811,39 @@
                     document.getElementById('noteInput').value = "";
                 }
                 
-                // คืนค่าสถานะปุ่มกดยืนยันใน Modal
                 if (modalConfirmBtn) {
                     modalConfirmBtn.disabled = false;
                     modalConfirmBtn.innerText = originalBtnText;
                 }
             }
 
-            // จัดส่งบันทึกจริงไปยังฐานข้อมูล Google Sheet
             if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
                 try {
-                    const params = new URLSearchParams({
+                    let idToken = null;
+                    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                        idToken = liff.getIDToken();
+                    }
+
+                    // ปรับโครงสร้างเพื่อจัดส่งเป็น POST JSON ปลอดภัย
+                    const payload = {
                         action: "saveDuty",
                         lineUserId: currentLineUser.userId,
+                        idToken: idToken,
                         shift: shiftVal,
                         location: locationVal,
                         note: combinedNote,
                         latitude: userLatitude || "",
                         longitude: userLongitude || ""
-                    });
+                    };
 
-                    // แก้ไข: เรียก fetch แบบ GET พื้นฐาน ไม่มี custom header และไม่มี options อื่นๆ
-                    // เพื่อให้ระบบของเบราว์เซอร์ทำกระบวนการ Redirect (302) ไปยัง CDN ของ Google ได้อย่างปลอดภัย
-                    const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?${params.toString()}`);
+                    // นำส่งด้วย POST และ Content-Type: text/plain เพื่อเลี่ยงกระบวนการ Preflight OPTIONS ของ CORS
+                    const response = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "text/plain"
+                        },
+                        body: JSON.stringify(payload)
+                    });
 
                     if (!response.ok) {
                         throw new Error(`เซิร์ฟเวอร์ตอบรับด้วย HTTP error status: ${response.status}`);
@@ -848,11 +860,9 @@
                 } catch (sheetErr) {
                     console.error("เกิดข้อผิดพลาดในการนำส่งข้อมูล: ", sheetErr);
                     alert("บันทึกลง Google Sheets ล้มเหลว: " + sheetErr.message + " \n\n(ระบบได้ลงประวัติไว้บนหน้าจอนี้เป็นการชั่วคราวแล้ว)");
-                    // ทำการทำงานแบบออฟไลน์โลคอลเพื่อให้ รปภ. ดำเนินงานต่อไปได้โดยไม่ติดขัด
                     applyLocalSuccess();
                 }
             } else {
-                // หากรันภายใต้โหมดจำลองหรือโหมดผู้พัฒนาภายนอก
                 applyLocalSuccess();
             }
         }
@@ -868,7 +878,7 @@
             }, 3500);
         }
 
-        // แสดงรายการบันทึกประวัติภายในหน้ารอบปัจจุบัน
+        // แสดงรายการบันทึกประวัติการสแกนในผลัดปัจจุบัน พร้อมการทำ HTML Escape เพื่อป้องกันช่องโหว่ XSS
         function updateLogsUI() {
             const container = document.getElementById('logs-container');
             const noLogText = document.getElementById('no-log-text');
@@ -892,19 +902,27 @@
                 const accentTextColor = isNightMode ? 'text-wvo-gold-400' : 'text-slate-400';
                 const timeTextColor = isNightMode ? 'text-wvo-green-100' : 'text-slate-700';
 
+                // ป้องกัน XSS ด้วยการกรองค่าก่อนแสดงผลผ่านฟังก์ชัน Escape
+                const escapedId = escapeHTML(log.id);
+                const escapedGuardId = escapeHTML(log.guardId);
+                const escapedName = escapeHTML(log.name);
+                const escapedShift = escapeHTML(log.shift);
+                const escapedLocation = escapeHTML(log.location);
+                const escapedTime = escapeHTML(log.time);
+
                 const logItem = document.createElement('div');
                 logItem.className = `p-3 border rounded-xl flex justify-between items-center text-xs transition shadow-sm ${logItemBg}`;
                 logItem.innerHTML = `
                     <div class="space-y-1">
                         <div class="flex items-center space-x-1.5">
-                            <span class="font-bold ${mainTextColor}">[${log.guardId}] ${log.name}</span>
-                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${shiftColor}">${log.shift}</span>
+                            <span class="font-bold ${mainTextColor}">[${escapedGuardId}] ${escapedName}</span>
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${shiftColor}">${escapedShift}</span>
                         </div>
-                        <p class="font-medium ${subTextColor}">จุด: ${log.location}</p>
+                        <p class="font-medium ${subTextColor}">จุด: ${escapedLocation}</p>
                     </div>
                     <div class="text-right">
-                        <span class="block font-mono text-[10px] ${accentTextColor}">${log.id}</span>
-                        <span class="font-bold ${timeTextColor}">${log.time}</span>
+                        <span class="block font-mono text-[10px] ${accentTextColor}">${escapedId}</span>
+                        <span class="font-bold ${timeTextColor}">${escapedTime}</span>
                     </div>
                 `;
                 container.appendChild(logItem);
