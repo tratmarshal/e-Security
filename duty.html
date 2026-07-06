@@ -407,7 +407,7 @@
         // ควบคุมระบบ LINE LIFF SDK
         async function initializeLiff() {
             try {
-                if (!LIFF_ID || LIFF_ID === "YOUR_LIFF_ID_HERE") {
+                if (!LIFF_ID || LIFF_ID === "2010616678-GGszdIBe") {
                     showAuthError(
                         "ไม่พบคีย์บริการ LINE LIFF", 
                         "ระบบตรวจพบว่ายังไม่ได้รับการติดตั้งรหัส LIFF_ID จริงในไฟล์ซอร์สโค้ด กรุณาใส่รหัสใช้งานจริง หรือเริ่มใช้งานผ่าน 'โหมดทดสอบ' ด้านล่าง"
@@ -450,7 +450,7 @@
         async function verifyUserWithBackend(userId) {
             showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "ระบบกำลังดึงรายชื่อสิทธิ์ผู้ดูแลรักษาความปลอดภัยจากเซิร์ฟเวอร์ อผศ. ประจำการ...");
 
-            if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL === "YOUR_WEB_APP_URL_HERE") {
+            if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL === "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
                 showAuthError(
                     "ขาดการระบุที่อยู่ฐานข้อมูลหลัก", 
                     "ซอร์สโค้ดปัจจุบันยังขาดข้อมูล GOOGLE_SHEETS_WEBAPP_URL ของ Google Apps Script คุณสามารถกดใช้งาน 'โหมดทดสอบ' เพื่อดูผลลัพธ์โครงสร้างหน้าจอเบื้องต้น"
@@ -460,12 +460,7 @@
 
             try {
                 // เรียก API หลังบ้านผ่าน GET เพื่อป้องกันการบล็อก CORS ของเบราว์เซอร์
-                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&userId=${userId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
+                 const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&userId=${userId}`);
 
                 if (!response.ok) {
                     throw new Error(`การเรียกฐานข้อมูลไม่สำเร็จ รหัสสถานะ: ${response.status}`);
@@ -822,7 +817,7 @@
             }
 
             // จัดส่งบันทึกจริงไปยังฐานข้อมูล Google Sheet
-            if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "YOUR_WEB_APP_URL_HERE") {
+            if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
                 try {
                     const params = new URLSearchParams({
                         action: "saveDuty",
@@ -834,13 +829,9 @@
                         longitude: userLongitude || ""
                     });
 
-                    const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?${params.toString()}`, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
+                    // แก้ไข: เรียก fetch แบบ GET พื้นฐาน ไม่มี custom header และไม่มี options อื่นๆ
+                    // เพื่อให้ระบบของเบราว์เซอร์ทำกระบวนการ Redirect (302) ไปยัง CDN ของ Google ได้อย่างปลอดภัย
+                    const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?${params.toString()}`);
 
                     if (!response.ok) {
                         throw new Error(`เซิร์ฟเวอร์ตอบรับด้วย HTTP error status: ${response.status}`);
