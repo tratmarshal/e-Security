@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="theme-transition">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,7 @@
     
     <script>
         tailwind.config = {
+            darkMode: 'class', // ใช้คลาสกำหนด Dark Mode เพื่อความรวดเร็วในการเรนเดอร์ร่วมกับสวิตช์ผลัดเวร
             theme: {
                 extend: {
                     colors: {
@@ -49,11 +50,11 @@
             font-family: 'Sarabun', sans-serif;
         }
         .theme-transition {
-            transition: background-color 0.5s ease, border-color 0.5s ease, color 0.3s ease;
+            transition: background-color 0.4s ease, border-color 0.4s ease, color 0.2s ease;
         }
     </style>
 </head>
-<body class="bg-[#f4f7f5] min-h-screen theme-transition flex flex-col justify-between">
+<body class="bg-[#f4f7f5] dark:bg-wvo-green-900 min-h-screen theme-transition flex flex-col justify-between">
 
     <!-- หน้าจอโหลดเข้าใช้งานและการตรวจสอบสิทธิ์จริง -->
     <div id="auth-loading-overlay" class="fixed inset-0 z-[100] bg-wvo-green-900 flex flex-col items-center justify-center p-6 text-center">
@@ -79,24 +80,17 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <h3 id="error-title" class="text-sm font-bold text-red-200">ไม่สามารถเชื่อมต่อระบบรักษาความปลอดภัยได้</h3>
-            <p id="auth-error-desc" class="text-xs text-red-300/80 mt-1.5 leading-relaxed">ไม่พบบัญชี LINE นี้ในระบบฐานข้อมูลสิทธิ์ (ชีท e-Security แท็บ USER) กรุณาแจ้งผู้ดูแลระบบเพื่อลงทะเบียนสิทธิ์ก่อนปฏิบัติงาน</p>
+            <p id="auth-error-desc" class="text-xs text-red-300/80 mt-1.5 leading-relaxed">ไม่พบบัญชี LINE นี้ในระบบฐานข้อมูลสิทธิ์ (แท็บ USER) กรุณาตรวจสอบการลงทะเบียนกับผู้บังคับบัญชาเวรยาม</p>
             
-            <div class="mt-4 flex flex-col space-y-2">
-                <div class="flex justify-center space-x-2">
-                    <button onclick="window.location.reload();" class="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition">ลองใหม่อีกครั้ง</button>
-                    <button onclick="logoutLine();" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-700 transition">ออกจากระบบ LINE</button>
-                </div>
-                <div class="border-t border-red-500/30 pt-3 mt-1">
-                    <button onclick="simulateDeveloperMode();" class="w-full py-2 bg-wvo-gold-500 hover:bg-wvo-gold-400 text-wvo-green-900 rounded-lg text-xs font-bold transition shadow animate-pulse">
-                        ⚠️ เข้าใช้งานด้วยโหมดทดสอบ (Developer Demo)
-                    </button>
-                </div>
+            <div class="mt-4 flex justify-center space-x-2">
+                <button onclick="window.location.reload();" class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition">ลองใหม่อีกครั้ง</button>
+                <button onclick="logoutLine();" class="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition">ออกจากระบบ LINE</button>
             </div>
         </div>
     </div>
 
-    <!-- ส่วนหัวของเว็บไซต์ -->
-    <header id="site-header" class="bg-white shadow-sm border-b border-wvo-green-100 py-4 px-6 theme-transition">
+    <!-- ส่วนหัวของเว็บไซต์ (จัดการคลาสสีสลับผ่าน dark: อย่างรวดเร็ว) -->
+    <header id="site-header" class="bg-white dark:bg-[#112d14] shadow-sm dark:shadow-md border-b border-wvo-green-100 dark:border-wvo-green-800 py-4 px-6 theme-transition">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <div class="p-2 bg-wvo-green-100 rounded-xl text-wvo-green-500 relative flex items-center justify-center">
@@ -108,64 +102,65 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 id="header-title" class="text-base sm:text-lg font-bold text-wvo-green-700 leading-tight theme-transition">ศูนย์รักษาความปลอดภัย ศาลจังหวัดตราด</h1>
+                    <h1 id="header-title" class="text-base sm:text-lg font-bold text-wvo-green-700 dark:text-white leading-tight theme-transition">ศูนย์รักษาความปลอดภัย ศาลจังหวัดตราด</h1>
                     <div class="flex items-center space-x-1.5 mt-0.5">
                         <img id="user-avatar" src="" class="w-5 h-5 rounded-full border border-wvo-gold-400 hidden" alt="LINE Profile">
-                        <p id="user-welcome" class="text-[10px] text-slate-500 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition">กำลังโหลดข้อมูลผู้ใช้งาน...</p>
+                        <p id="user-welcome" class="text-[10px] text-slate-500 dark:text-wvo-green-100 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition">กำลังโหลดข้อมูลผู้ใช้งาน...</p>
                     </div>
                 </div>
             </div>
             <div class="text-right hidden sm:block">
-                <div id="live-date" class="text-sm font-semibold text-slate-700 theme-transition"></div>
-                <div id="live-clock" class="text-xs text-wvo-green-500 font-medium"></div>
+                <div id="live-date" class="text-sm font-semibold text-slate-700 dark:text-white theme-transition"></div>
+                <div id="live-clock" class="text-xs text-wvo-green-500 dark:text-wvo-gold-400 font-medium"></div>
             </div>
         </div>
     </header>
 
     <!-- เนื้อหาหลัก -->
     <main class="max-w-md w-full mx-auto p-4 sm:p-6 flex-grow flex flex-col justify-center">
-        <div id="main-card" class="bg-white rounded-2xl shadow-xl border border-wvo-green-50/50 p-6 theme-transition">
+        <div id="main-card" class="bg-white dark:bg-[#112d14] rounded-2xl shadow-xl dark:shadow-2xl border border-wvo-green-50/50 dark:border-wvo-green-800 p-6 theme-transition">
             
             <div class="text-center mb-6">
                 <span class="bg-wvo-green-50 text-wvo-green-500 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-wvo-green-100">ฝ่ายปฏิบัติการรักษาความปลอดภัย</span>
-                <h2 id="card-title" class="text-2xl font-bold text-slate-800 mt-2 theme-transition">บันทึกเวลาปฏิบัติงาน</h2>
-                <p id="card-subtitle" class="text-xs text-slate-500 mt-1 theme-transition">ข้อมูลสิทธิ์เจ้าหน้าที่ยืนยันผ่าน LINE เรียบร้อยแล้ว</p>
+                <h2 id="card-title" class="text-2xl font-bold text-slate-800 dark:text-white mt-2 theme-transition">บันทึกเวลาปฏิบัติงาน</h2>
+                <p id="card-subtitle" class="text-xs text-slate-500 dark:text-wvo-green-100 mt-1 theme-transition">ข้อมูลสิทธิ์เจ้าหน้าที่ยืนยันผ่าน LINE เรียบร้อยแล้ว</p>
             </div>
 
             <form id="shift-log-form" onsubmit="event.preventDefault(); showConfirmationModal();">
                 <div class="space-y-4 mb-6">
                     <div>
-                        <label id="label-guard-id" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">รหัสพนักงาน รปภ. <span class="text-xs text-slate-400 font-normal">(ดึงข้อมูลอัตโนมัติจาก LINE)</span></label>
+                        <label id="label-guard-id" class="block text-sm font-semibold text-slate-700 dark:text-white mb-1 theme-transition">รหัสพนักงาน รปภ. <span class="text-xs text-slate-400 font-normal">(ดึงข้อมูลอัตโนมัติจาก LINE)</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                                 </svg>
                             </span>
-                            <input type="text" id="guard-id" readonly required placeholder="กำลังดึงข้อมูล..."
-                                class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition">
+                            <!-- ป้องกันการโฟกัสบนอุปกรณ์พกพา และป้องกันป๊อปอัปแป้นพิมพ์เสมือนด้วย pointer-events-none, tabindex -1 -->
+                            <input type="text" id="guard-id" readonly tabindex="-1" onfocus="this.blur();" required placeholder="กำลังดึงข้อมูล..."
+                                class="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-wvo-green-800 rounded-xl bg-slate-100 dark:bg-wvo-green-950 outline-none transition text-slate-500 dark:text-wvo-green-100 font-semibold cursor-not-allowed pointer-events-none theme-transition">
                         </div>
                     </div>
                     
                     <div>
-                        <label id="label-guard-name" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">ชื่อ - นามสกุล <span class="text-xs text-slate-400 font-normal">(ดึงข้อมูลอัตโนมัติจาก LINE)</span></label>
+                        <label id="label-guard-name" class="block text-sm font-semibold text-slate-700 dark:text-white mb-1 theme-transition">ชื่อ - นามสกุล <span class="text-xs text-slate-400 font-normal">(ดึงข้อมูลอัตโนมัติจาก LINE)</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                             </span>
-                            <input type="text" id="guard-name" readonly required placeholder="กำลังดึงข้อมูล..."
-                                class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition">
+                            <input type="text" id="guard-name" readonly tabindex="-1" onfocus="this.blur();" required placeholder="กำลังดึงข้อมูล..."
+                                class="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-wvo-green-800 rounded-xl bg-slate-100 dark:bg-wvo-green-950 outline-none transition text-slate-500 dark:text-wvo-green-100 font-semibold cursor-not-allowed pointer-events-none theme-transition">
                         </div>
                     </div>
                 </div>
 
                 <!-- 1. เลือกผลัด -->
                 <div class="mb-6">
-                    <span id="label-shift" class="block text-sm font-semibold text-slate-700 mb-2 theme-transition">เลือกผลัดปฏิบัติงาน <span class="text-red-500">*</span></span>
+                    <span id="label-shift" class="block text-sm font-semibold text-slate-700 dark:text-white mb-2 theme-transition">เลือกผลัดปฏิบัติงาน <span class="text-red-500">*</span></span>
                     
-                    <div class="bg-slate-100 p-1.5 rounded-xl flex relative">
+                    <div class="bg-slate-100 dark:bg-wvo-green-950 p-1.5 rounded-xl flex relative">
                         <label class="w-1/2 flex items-center justify-center py-2.5 rounded-lg cursor-pointer z-10 transition-all duration-300" id="label-day">
                             <input type="radio" name="shift-toggle" value="กลางวัน" checked class="sr-only" onchange="toggleShiftTheme('day')">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-wvo-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -182,7 +177,7 @@
                             <span class="text-sm font-semibold text-slate-500" id="text-night">กลางคืน</span>
                         </label>
                         
-                        <div id="toggle-bg" class="absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-md transition-all duration-300 ease-out"></div>
+                        <div id="toggle-bg" class="absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white dark:bg-[#173b1b] rounded-lg shadow-md transition-all duration-300 ease-out"></div>
                     </div>
                     
                     <div class="mt-2 text-right">
@@ -192,17 +187,17 @@
 
                 <!-- 2. ช่องเลือกจุด -->
                 <div class="mb-6">
-                    <label id="label-location" for="location-select" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">จุดปฏิบัติงาน / จุดตรวจ <span class="text-red-500">*</span></label>
+                    <label id="label-location" for="location-select" class="block text-sm font-semibold text-slate-700 dark:text-white mb-1 theme-transition">จุดปฏิบัติงาน / จุดตรวจ <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="location-select" required
-                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition appearance-none text-slate-800 theme-transition">
+                            class="w-full px-4 py-3 bg-white dark:bg-[#173b1b] border border-slate-200 dark:border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-green-500 dark:focus:ring-wvo-orange-500 focus:border-wvo-green-500 dark:focus:border-wvo-orange-500 outline-none transition appearance-none text-slate-800 dark:text-white theme-transition">
                             <option value="" disabled selected>-- เลือกจุดตรวจของ อผศ. --</option>
                             <option value="กองอำนวยการรักษาความปลอดภัย (HQ)">กองอำนวยการรักษาความปลอดภัย (HQ)</option>
                             <option value="อาคารสงเคราะห์ 1 (จุดทางเข้าหลัก)">อาคารสงเคราะห์ 1 (จุดทางเข้าหลัก)</option>
                             <option value="จุดตรวจคลังพัสดุและโรงงาน">จุดตรวจคลังพัสดุและโรงงาน</option>
                             <option value="อาคารเฉลิมพระเกียรติ (ชั้น 1)">อาคารเฉลิมพระเกียรติ (ชั้น 1)</option>
                             <option value="ป้อมยามทางออก ทิศใต้">ป้อมยามทางออก ทิศใต้</option>
-                            <option value="ห้องตรวจระบบรักษาความปลอดภัยวงจรปิด (CCTV Control Room)">ห้องควบคุมสัญญาณเตือนภัย (CCTV)</option>
+                            <option value="ห้องควบคุมสัญญาณเตือนภัย (CCTV)">ห้องควบคุมสัญญาณเตือนภัย (CCTV)</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
                             <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -212,18 +207,18 @@
                     </div>
                 </div>
 
-                <!-- 3. ช่องกรอกหมายเหตุ/บันทึกเพิ่มเติม -->
+                <!-- 3. ช่องกรอกหมายเหตุ -->
                 <div class="mb-6">
-                    <label id="label-note" for="noteInput" class="block text-sm font-semibold text-slate-700 mb-1 theme-transition">หมายเหตุ / บันทึกเพิ่มเติม <span class="text-xs text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                    <label id="label-note" for="noteInput" class="block text-sm font-semibold text-slate-700 dark:text-white mb-1 theme-transition">หมายเหตุ / บันทึกเพิ่มเติม <span class="text-xs text-slate-400 font-normal">(ไม่บังคับ)</span></label>
                     <div class="relative">
                         <textarea id="noteInput" rows="2" placeholder="ระบุเหตุการณ์ปกติ หรือระบุรายงานเพิ่มเติมพิเศษ..."
-                            class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition text-sm text-slate-800 theme-transition placeholder-slate-400 resize-none"></textarea>
+                            class="w-full px-4 py-2.5 bg-white dark:bg-[#173b1b] border border-slate-200 dark:border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-green-500 dark:focus:ring-wvo-orange-500 focus:border-wvo-green-500 dark:focus:border-wvo-orange-500 outline-none transition text-sm text-slate-800 dark:text-white theme-transition placeholder-slate-400 dark:placeholder-wvo-green-100/50 resize-none"></textarea>
                     </div>
                 </div>
 
                 <!-- 4. ปุ่มบันทึก -->
                 <button type="submit" id="submit-btn"
-                    class="w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2">
+                    class="w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 dark:from-wvo-orange-500 dark:to-wvo-orange-600 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 dark:hover:from-wvo-orange-600 dark:hover:to-wvo-orange-700 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 dark:focus:ring-wvo-orange-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-wvo-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                     </svg>
@@ -233,21 +228,21 @@
         </div>
 
         <!-- รายการบันทึกประวัติการสแกน -->
-        <div id="history-card" class="mt-6 bg-white rounded-2xl p-4 shadow-md border border-slate-100 theme-transition">
-            <h3 id="history-title" class="text-sm font-bold text-wvo-green-700 mb-3 flex items-center theme-transition">
+        <div id="history-card" class="mt-6 bg-white dark:bg-[#112d14] rounded-2xl p-4 shadow-md dark:shadow-2xl border border-slate-100 dark:border-wvo-green-800 theme-transition">
+            <h3 id="history-title" class="text-sm font-bold text-wvo-green-700 dark:text-white mb-3 flex items-center theme-transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-wvo-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
                 ประวัติลงเวลาประจำผลัดวันนี้
             </h3>
             <div id="logs-container" class="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                <p id="no-log-text" class="text-xs text-slate-400 text-center py-4">ยังไม่พบบันทึกการรายงานตัวรอบปัจจุบัน</p>
+                <p id="no-log-text" class="text-xs text-slate-400 dark:text-wvo-green-100/50 text-center py-4">ยังไม่พบบันทึกการรายงานตัวรอบปัจจุบัน</p>
             </div>
         </div>
     </main>
 
     <!-- ส่วนท้าย -->
-    <footer id="footer-text" class="text-center py-4 text-xs text-wvo-green-700/60 font-medium theme-transition">
+    <footer id="footer-text" class="text-center py-4 text-xs text-wvo-green-700/60 dark:text-wvo-green-100/60 font-medium theme-transition">
         &copy; 2026 ระบบรายงานตัวรักษาสถานการณ์ • สำนักงานรักษาความปลอดภัย อผศ.
     </footer>
 
@@ -255,7 +250,7 @@
     <div id="confirm-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity duration-300" onclick="closeConfirmationModal()"></div>
         
-        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl border border-wvo-green-100 transform scale-95 transition-all duration-300 z-10">
+        <div class="bg-white dark:bg-[#112d14] rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl border border-wvo-green-100 dark:border-wvo-green-800 transform scale-95 transition-all duration-300 z-10">
             <div id="modal-header" class="p-5 text-white text-center flex flex-col items-center justify-center relative bg-gradient-to-r from-wvo-green-600 to-wvo-green-700">
                 <div class="absolute top-0 inset-x-0 h-1 bg-wvo-gold-400"></div>
                 <div id="modal-icon-container" class="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-white/20 border border-wvo-gold-400">
@@ -267,41 +262,41 @@
                 <p class="text-xs text-wvo-gold-400 mt-0.5 font-medium">เพื่อความถูกต้องตามระเบียบรักษาความปลอดภัย</p>
             </div>
 
-            <div class="p-5 space-y-3 text-sm">
-                <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span class="text-slate-500 font-semibold">รหัสพนักงาน:</span>
-                    <span id="confirm-id" class="font-bold text-wvo-green-700"></span>
+            <div class="p-5 space-y-3 text-sm dark:text-white">
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-wvo-green-800">
+                    <span class="text-slate-500 dark:text-slate-400 font-semibold">รหัสพนักงาน:</span>
+                    <span id="confirm-id" class="font-bold text-wvo-green-700 dark:text-wvo-gold-400"></span>
                 </div>
-                <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span class="text-slate-500 font-semibold">ชื่อ - นามสกุล:</span>
-                    <span id="confirm-name" class="font-bold text-slate-800"></span>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-wvo-green-800">
+                    <span class="text-slate-500 dark:text-slate-400 font-semibold">ชื่อ - นามสกุล:</span>
+                    <span id="confirm-name" class="font-bold text-slate-800 dark:text-white"></span>
                 </div>
-                <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span class="text-slate-500 font-semibold">ผลัดทำงาน:</span>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-wvo-green-800">
+                    <span class="text-slate-500 dark:text-slate-400 font-semibold">ผลัดทำงาน:</span>
                     <span id="confirm-shift" class="font-bold px-2.5 py-1 rounded-full text-xs"></span>
                 </div>
-                <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span class="text-slate-500 font-semibold">จุดปฏิบัติงาน:</span>
-                    <span id="confirm-location" class="font-bold text-wvo-green-700 text-right max-w-[180px] truncate"></span>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-wvo-green-800">
+                    <span class="text-slate-500 dark:text-slate-400 font-semibold">จุดปฏิบัติงาน:</span>
+                    <span id="confirm-location" class="font-bold text-wvo-green-700 dark:text-white text-right max-w-[180px] truncate"></span>
                 </div>
                 <!-- แสดงตำแหน่งพิกัด GPS เพื่อความโปร่งใสแก่ผู้ใช้งาน -->
-                <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span class="text-slate-500 font-semibold">พิกัด GPS:</span>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-wvo-green-800">
+                    <span class="text-slate-500 dark:text-slate-400 font-semibold">พิกัด GPS:</span>
                     <span id="confirm-gps" class="font-bold text-xs truncate max-w-[180px]">กำลังระบุพิกัด...</span>
                 </div>
                 <div class="flex justify-between items-center py-2">
-                    <span class="text-slate-500 font-semibold">เวลาในระบบ:</span>
-                    <span id="confirm-time" class="font-bold text-wvo-orange-500"></span>
+                    <span class="text-slate-500 dark:text-slate-400 font-semibold">เวลาในระบบ:</span>
+                    <span id="confirm-time" class="font-bold text-wvo-orange-500 dark:text-wvo-gold-400"></span>
                 </div>
             </div>
 
-            <div class="bg-slate-50 p-4 flex space-x-3 border-t border-slate-100">
+            <div class="bg-slate-50 dark:bg-wvo-green-950 p-4 flex space-x-3 border-t border-slate-100 dark:border-wvo-green-800">
                 <button type="button" onclick="closeConfirmationModal()" 
-                    class="w-1/2 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-100 transition">
+                    class="w-1/2 py-2.5 bg-white dark:bg-[#173b1b] border border-slate-200 dark:border-wvo-green-700 text-slate-600 dark:text-slate-300 rounded-xl font-semibold hover:bg-slate-100 transition">
                     กลับไปแก้ไข
                 </button>
                 <button type="button" onclick="submitFinalLog()" id="modal-confirm-btn"
-                    class="w-1/2 py-2.5 bg-wvo-green-600 hover:bg-wvo-green-700 text-white rounded-xl font-bold transition shadow-md">
+                    class="w-1/2 py-2.5 bg-wvo-green-600 dark:bg-wvo-orange-500 hover:bg-wvo-green-700 dark:hover:bg-wvo-orange-600 text-white rounded-xl font-bold transition shadow-md">
                     ยืนยันข้อมูลถูกต้อง
                 </button>
             </div>
@@ -310,7 +305,7 @@
 
     <!-- TOAST ข้อความแจ้งเตือนเมื่อลงทะเบียนสำเร็จ -->
     <div id="toast-success" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none">
-        <div class="bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 border border-wvo-gold-400">
+        <div class="bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 dark:from-wvo-orange-500 dark:to-wvo-orange-600 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 border border-wvo-gold-400">
             <div class="bg-wvo-gold-400 p-1 rounded-full text-wvo-green-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -338,7 +333,7 @@
             pictureUrl: ""
         };
 
-        // ฟังก์ชันป้องกันช่องโหว่ XSS ด้วยการล้างสัญลักษณ์พิเศษ (HTML Entity Escaping)
+        // ฟังก์ชันป้องกันช่องโหว่ XSS (HTML Entity Escaping)
         function escapeHTML(str) {
             if (!str) return '';
             return str.toString()
@@ -349,52 +344,38 @@
                 .replace(/'/g, "&#039;");
         }
 
-        // ฟังก์ชันดึงพิกัด GPS อัตโนมัติแบบแม่นยำสูง
+        // ดึงพิกัด GPS เฉพาะเมื่อมีความจำเป็น ปรับปรุง Timeout เพื่อความลื่นไหลของ LINE UI
         function getLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
                         userLatitude = position.coords.latitude;
                         userLongitude = position.coords.longitude;
-                        console.log("ดึงพิกัด GPS สำเร็จ:", userLatitude, userLongitude);
+                        console.log("พิกัดดึงสำเร็จ:", userLatitude, userLongitude);
                         
                         const confirmGpsEl = document.getElementById('confirm-gps');
                         if (confirmGpsEl) {
                             confirmGpsEl.innerText = `${userLatitude.toFixed(5)}, ${userLongitude.toFixed(5)}`;
-                            confirmGpsEl.className = "font-bold text-xs text-wvo-green-600";
+                            confirmGpsEl.className = "font-bold text-xs text-wvo-green-600 dark:text-wvo-gold-400";
                         }
                     }, 
                     function(error) {
                         console.warn("ไม่สามารถเข้าถึงพิกัด GPS ได้:", error.message);
                         const confirmGpsEl = document.getElementById('confirm-gps');
                         if (confirmGpsEl) {
-                            confirmGpsEl.innerText = "ไม่ได้ระบุ (โปรดอนุญาต GPS)";
+                            confirmGpsEl.innerText = "ไม่ได้ระบุ (โปรดอนุญาตสิทธิ์แผนที่)";
                             confirmGpsEl.className = "font-bold text-xs text-red-500 animate-pulse";
                         }
                     },
-                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
                 );
-            } else {
-                console.error("เบราว์เซอร์นี้ไม่สนับสนุนฟังก์ชันค้นหาพิกัด Geolocation");
             }
         }
 
-        // แสดงวันเวลาปัจจุบันแบบเรียลไทม์
         function updateLiveTime() {
             const now = new Date();
-            const dateOptions = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                locale: 'th-TH' 
-            };
-            const timeOptions = { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit', 
-                hour12: false 
-            };
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', locale: 'th-TH' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
             
             const liveDateEl = document.getElementById('live-date');
             const liveClockEl = document.getElementById('live-clock');
@@ -406,7 +387,6 @@
         updateLiveTime();
 
         window.addEventListener("DOMContentLoaded", function() {
-            getLocation();
             initializeLiff();
         });
 
@@ -414,36 +394,27 @@
         async function initializeLiff() {
             try {
                 if (!LIFF_ID || LIFF_ID === "2010616678-GGszdIBe") {
-                    showAuthError(
-                        "ไม่พบคีย์บริการ LINE LIFF", 
-                        "ระบบตรวจพบว่ายังไม่ได้รับการติดตั้งรหัส LIFF_ID จริงในไฟล์ซอร์สโค้ด กรุณาใส่รหัสใช้งานจริง หรือเริ่มใช้งานผ่าน 'โหมดทดสอบ' ด้านล่าง"
-                    );
+                    showAuthError("ไม่พบคีย์บริการ LINE LIFF", "ระบบตรวจพบว่ายังไม่ได้กรอกคีย์ความมั่นคง LIFF_ID จริงในซอร์สโค้ด");
                     return;
                 }
 
                 await liff.init({ liffId: LIFF_ID });
                 
                 if (!liff.isLoggedIn()) {
-                    showLoadingStatus("กำลังเปลี่ยนเส้นทางไปล็อกอิน...", "กรุณาดำเนินการเข้าสู่ระบบผ่านแอปพลิเคชัน LINE เพื่อยืนยันสิทธิ์");
+                    showLoadingStatus("กำลังเปลี่ยนไปหน้าล็อกอิน...", "กรุณาดำเนินการเข้าสู่ระบบผ่าน LINE เพื่อตรวจสอบสิทธิ์เจ้าหน้าที่");
                     liff.login();
                 } else {
-                    showLoadingStatus("ยืนยันบัญชี LINE สำเร็จ", "กำลังประมวลผลสิทธิ์ใช้งานจากฐานข้อมูล...");
+                    showLoadingStatus("ยืนยันบัญชี LINE สำเร็จ", "กำลังดึงข้อมูลสิทธิ์และประมวลผลความปลอดภัย...");
                     const profile = await liff.getProfile();
                     currentLineUser.userId = profile.userId;
                     currentLineUser.displayName = profile.displayName;
                     currentLineUser.pictureUrl = profile.pictureUrl;
 
-                    verifyUserWithBackend(profile.userId);
+                    verifyUserWithBackend();
                 }
             } catch (error) {
                 console.error("LIFF Initialization failed: ", error);
-                let friendlyMsg = "เกิดข้อผิดพลาดในการเริ่มต้นระบบ LINE SDK";
-                if (error.message && error.message.includes("channel not found")) {
-                    friendlyMsg = "ไม่พบ LINE Channel ID นี้ กรุณาตรวจสอบให้แน่ใจว่าคีย์ LIFF ID ตรงกับตัวเลขที่ตั้งไว้ใน LINE Developers Console";
-                } else if (error.message) {
-                    friendlyMsg = error.message;
-                }
-                showAuthError("การเริ่มต้นระบบล้มเหลว", friendlyMsg);
+                showAuthError("การเริ่มต้นระบบล้มเหลว", error.message || "เกิดข้อผิดพลาดในการดึงความเชื่อมโยงกับ LINE Developer SDK");
             }
         }
 
@@ -452,28 +423,30 @@
             document.getElementById('loading-subtitle').innerText = subtitle;
         }
 
-        // เชื่อมต่อสิทธิ์ผู้ใช้กับระบบฐานข้อมูล Google Sheets แท็บ USER โดยส่ง ID Token ไปตรวจย้อนกลับ
-        async function verifyUserWithBackend(userId) {
-            showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "ระบบกำลังดึงรายชื่อสิทธิ์ผู้ดูแลรักษาความปลอดภัยจากเซิร์ฟเวอร์ อผศ. ประจำการ...");
+        // เชื่อมโยงสิทธิ์ผู้ใช้กับระบบหลังบ้านโดยส่งเพียง ID Token (ความปลอดภัยสูงสุด ป้องกันแทรกแซง User ID)
+        async function verifyUserWithBackend() {
+            showLoadingStatus("กำลังยืนยันสิทธิ์ รปภ...", "ระบบกำลังนำส่ง ID Token เพื่อตรวจสอบความถูกต้องอย่างปลอดภัยกับเซิร์ฟเวอร์หลัก...");
 
             if (!GOOGLE_SHEETS_WEBAPP_URL) {
-                showAuthError(
-                    "ขาดการระบุที่อยู่ฐานข้อมูลหลัก", 
-                    "ซอร์สโค้ดปัจจุบันยังขาดข้อมูล GOOGLE_SHEETS_WEBAPP_URL ของ Google Apps Script คุณสามารถกดใช้งาน 'โหมดทดสอบ' เพื่อดูผลลัพธ์โครงสร้างหน้าจอเบื้องต้น"
-                );
+                showAuthError("ขาดที่อยู่เซิร์ฟเวอร์", "ซอร์สโค้ดปัจจุบันยังขาดข้อมูลระบุตำแหน่ง GOOGLE_SHEETS_WEBAPP_URL");
                 return;
             }
 
             try {
-                let idTokenParam = "";
+                let idToken = null;
                 if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    idTokenParam = `&idToken=${encodeURIComponent(liff.getIDToken())}`;
+                    idToken = liff.getIDToken();
                 }
 
-                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&userId=${encodeURIComponent(userId)}${idTokenParam}`);
+                if (!idToken) {
+                    showAuthError("สิทธิ์ไม่ถูกต้อง", "ไม่พบ ID Token สำหรับยืนยันตนผ่าน LINE LIFF");
+                    return;
+                }
+
+                const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?action=getUser&idToken=${encodeURIComponent(idToken)}`);
 
                 if (!response.ok) {
-                    throw new Error(`การเรียกฐานข้อมูลไม่สำเร็จ รหัสสถานะ: ${response.status}`);
+                    throw new Error(`ตอบกลับไม่สำเร็จ รหัส: ${response.status}`);
                 }
 
                 const result = await response.json();
@@ -488,16 +461,13 @@
                     document.getElementById('auth-loading-overlay').classList.add('hidden');
                 } else {
                     showAuthError(
-                        "ไม่พบบัญชีในฐานข้อมูลเจ้าหน้าที่",
-                        `ไม่พบข้อมูลการลงทะเบียนสิทธิ์ของ LINE ID ในแถบข้อมูล USER กรุณาติดต่อฝ่ายเทคโนโลยีสารสนเทศของหน่วยเพื่อทำการเพิ่มสิทธิ์เข้าสู่ระบบ`
+                        "ไม่พบบัญชีในระบบฐานข้อมูลสิทธิ์",
+                        "LINE ID นี้ยังไม่ได้ผ่านการลงทะเบียนในแท็บ USER กรุณาติดต่อผู้บังคับบัญชาเพื่อบันทึกประวัติตนเองก่อนปฏิบัติหน้าที่"
                     );
                 }
             } catch (err) {
                 console.error("Backend validation error: ", err);
-                showAuthError(
-                    "ไม่สามารถติดต่อเซิร์ฟเวอร์ฐานข้อมูลได้", 
-                    "ข้อผิดพลาดจากเครือข่าย หรือ URL สคริปต์ทำงานขัดข้อง โปรดปรับสิทธิ์การเผยแพร่ App เป็น 'Anyone' (ทุกคน) และกด Deploy ใหม่"
-                );
+                showAuthError("ขาดการติดต่อสเปรดชีต", "ไม่สามารถตรวจสอบสิทธิ์ได้จากความขัดข้องเครือข่าย หรือสิทธิ์ App ไม่ได้รับสิทธิ์เป็น 'Anyone'");
             }
         }
 
@@ -525,51 +495,18 @@
                 avatarImg.src = avatarUrl;
                 avatarImg.classList.remove('hidden');
             }
-            welcomeText.innerText = "เจ้าหน้าที่ปฏิบัติการ: " + name;
+            welcomeText.innerText = "เจ้าหน้าที่เวรยาม: " + name;
         }
 
-        function simulateDeveloperMode() {
-            currentLineUser.userId = "U-SimulateLineUserWvo9999";
-            currentLineUser.displayName = "พ.ต.ต. ณรงค์ฤทธิ์ ด่านตรวจ (โหมดทดสอบ)";
-            currentLineUser.pictureUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200";
-
-            document.getElementById('guard-id').value = "อผศ-9051";
-            document.getElementById('guard-name').value = "พ.ต.ต. ณรงค์ฤทธิ์ ด่านตรวจ";
-            
-            updateProfileHeader(currentLineUser.displayName, currentLineUser.pictureUrl);
-            document.getElementById('auth-loading-overlay').classList.add('hidden');
-        }
-
-        // ฟังก์ชันเปลี่ยนสีธีมตามผลัดปฏิบัติงาน
+        // ปรับเปลี่ยนธีมด้วยการสลับคลาส 'dark' ผ่าน Tailwind (รวดเร็วและใช้พลังงานหน่วยประมวลผลน้อยกว่าการสลับ element ทีละตัว)
         function toggleShiftTheme(shiftType) {
             const isNight = (shiftType === 'night');
             
-            const body = document.body;
-            const siteHeader = document.getElementById('site-header');
-            const headerTitle = document.getElementById('header-title');
-            const headerDate = document.getElementById('live-date');
-            const liveClock = document.getElementById('live-clock');
-            const userWelcome = document.getElementById('user-welcome');
-            
-            const mainCard = document.getElementById('main-card');
-            const cardTitle = document.getElementById('card-title');
-            const cardSubtitle = document.getElementById('card-subtitle');
-            
-            const labelGuardId = document.getElementById('label-guard-id');
-            const labelGuardName = document.getElementById('label-guard-name');
-            const labelShift = document.getElementById('label-shift');
-            const labelLocation = document.getElementById('label-location');
-            const labelNote = document.getElementById('label-note');
-            
-            const guardIdInput = document.getElementById('guard-id');
-            const guardNameInput = document.getElementById('guard-name');
-            const locationSelect = document.getElementById('location-select');
-            const noteInput = document.getElementById('noteInput');
-            
-            const submitBtn = document.getElementById('submit-btn');
-            const historyCard = document.getElementById('history-card');
-            const historyTitle = document.getElementById('history-title');
-            const footerText = document.getElementById('footer-text');
+            if (isNight) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
             
             const toggleBg = document.getElementById('toggle-bg');
             const labelDay = document.getElementById('label-day');
@@ -579,7 +516,6 @@
             const shiftTimeDesc = document.getElementById('shift-time-desc');
 
             if (!isNight) {
-                // ธีมกลางวัน
                 if (toggleBg) toggleBg.style.left = '6px';
                 if (labelDay) {
                     const svg = labelDay.querySelector('svg');
@@ -596,37 +532,7 @@
                     shiftTimeDesc.innerText = 'เวลาปฏิบัติงาน: 07:00 น. - 19:00 น.';
                     shiftTimeDesc.className = 'text-xs text-wvo-orange-500 font-semibold bg-orange-50 px-2.5 py-1 rounded-md';
                 }
-
-                if (body) body.className = "bg-[#f4f7f5] min-h-screen theme-transition flex flex-col justify-between";
-                if (siteHeader) siteHeader.className = "bg-white shadow-sm border-b border-wvo-green-100 py-4 px-6 theme-transition";
-                if (headerTitle) headerTitle.className = "text-base sm:text-lg font-bold text-wvo-green-700 leading-tight theme-transition";
-                if (headerDate) headerDate.className = "text-sm font-semibold text-slate-700 theme-transition";
-                if (liveClock) liveClock.className = "text-xs text-wvo-green-500 font-medium";
-                if (userWelcome) userWelcome.className = "text-[10px] text-slate-500 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition";
-                
-                if (mainCard) mainCard.className = "bg-white rounded-2xl shadow-xl border border-wvo-green-50/50 p-6 theme-transition";
-                if (cardTitle) cardTitle.className = "text-2xl font-bold text-slate-800 mt-2 theme-transition";
-                if (cardSubtitle) cardSubtitle.className = "text-xs text-slate-500 mt-1 theme-transition";
-                
-                if (labelGuardId) labelGuardId.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
-                if (labelGuardName) labelGuardName.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
-                if (labelShift) labelShift.className = "block text-sm font-semibold text-slate-700 mb-2 theme-transition";
-                if (labelLocation) labelLocation.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
-                if (labelNote) labelNote.className = "block text-sm font-semibold text-slate-700 mb-1 theme-transition";
-                
-                if (guardIdInput) guardIdInput.className = "w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition";
-                if (guardNameInput) guardNameInput.className = "w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-100 outline-none transition text-slate-500 font-semibold cursor-not-allowed theme-transition";
-                if (locationSelect) locationSelect.className = "w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition appearance-none text-slate-800 theme-transition";
-                if (noteInput) noteInput.className = "w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-wvo-green-500 focus:border-wvo-green-500 outline-none transition text-sm text-slate-800 theme-transition placeholder-slate-400 resize-none";
-                
-                if (submitBtn) submitBtn.className = "w-full py-4 bg-gradient-to-r from-wvo-green-600 to-wvo-green-700 text-white font-bold rounded-xl shadow-lg hover:from-wvo-green-700 hover:to-wvo-green-800 focus:outline-none focus:ring-4 focus:ring-wvo-green-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2";
-                
-                if (historyCard) historyCard.className = "mt-6 bg-white rounded-2xl p-4 shadow-md border border-slate-100 theme-transition";
-                if (historyTitle) historyTitle.className = "text-sm font-bold text-wvo-green-700 mb-3 flex items-center theme-transition";
-                if (footerText) footerText.className = "text-center py-4 text-xs text-wvo-green-700/60 font-medium theme-transition";
-
             } else {
-                // ธีมกลางคืน
                 if (toggleBg) toggleBg.style.left = 'calc(50% - 6px)';
                 if (labelDay) {
                     const svg = labelDay.querySelector('svg');
@@ -643,34 +549,6 @@
                     shiftTimeDesc.innerText = 'เวลาปฏิบัติงาน: 19:00 น. - 07:00 น.';
                     shiftTimeDesc.className = 'text-xs text-wvo-gold-500 font-semibold bg-yellow-50 px-2.5 py-1 rounded-md';
                 }
-
-                if (body) body.className = "bg-wvo-green-900 min-h-screen theme-transition flex flex-col justify-between";
-                if (siteHeader) siteHeader.className = "bg-[#112d14] shadow-md border-b border-wvo-green-800 py-4 px-6 theme-transition";
-                if (headerTitle) headerTitle.className = "text-base sm:text-lg font-bold text-white leading-tight theme-transition";
-                if (headerDate) headerDate.className = "text-sm font-semibold text-white theme-transition";
-                if (liveClock) liveClock.className = "text-xs text-wvo-gold-400 font-medium";
-                if (userWelcome) userWelcome.className = "text-[10px] text-wvo-green-100 font-semibold truncate max-w-[150px] sm:max-w-none theme-transition";
-                
-                if (mainCard) mainCard.className = "bg-[#112d14] rounded-2xl shadow-2xl border border-wvo-green-800 p-6 theme-transition";
-                if (cardTitle) cardTitle.className = "text-2xl font-bold text-white mt-2 theme-transition";
-                if (cardSubtitle) cardSubtitle.className = "text-xs text-wvo-green-100 mt-1 theme-transition";
-                
-                if (labelGuardId) labelGuardId.className = "block text-sm font-semibold text-white mb-1 theme-transition";
-                if (labelGuardName) labelGuardName.className = "block text-sm font-semibold text-white mb-1 theme-transition";
-                if (labelShift) labelShift.className = "block text-sm font-semibold text-white mb-2 theme-transition";
-                if (labelLocation) labelLocation.className = "block text-sm font-semibold text-white mb-1 theme-transition";
-                if (labelNote) labelNote.className = "block text-sm font-semibold text-white mb-1 theme-transition";
-                
-                if (guardIdInput) guardIdInput.className = "w-full pl-10 pr-4 py-3 border border-wvo-green-800 rounded-xl bg-wvo-green-950 outline-none transition text-wvo-green-100 font-semibold cursor-not-allowed theme-transition";
-                if (guardNameInput) guardNameInput.className = "w-full pl-10 pr-4 py-3 border border-wvo-green-800 rounded-xl bg-wvo-green-950 outline-none transition text-wvo-green-100 font-semibold cursor-not-allowed theme-transition";
-                if (locationSelect) locationSelect.className = "w-full px-4 py-3 bg-[#173b1b] border border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-orange-500 focus:border-wvo-orange-500 outline-none transition appearance-none text-white theme-transition";
-                if (noteInput) noteInput.className = "w-full px-4 py-2.5 bg-[#173b1b] border border-wvo-green-700 rounded-xl focus:ring-2 focus:ring-wvo-orange-500 focus:border-wvo-orange-500 outline-none transition text-sm text-white theme-transition placeholder-wvo-green-100/50 resize-none";
-                
-                if (submitBtn) submitBtn.className = "w-full py-4 bg-gradient-to-r from-wvo-orange-500 to-wvo-orange-600 text-white font-bold rounded-xl shadow-lg hover:from-wvo-orange-600 hover:to-wvo-orange-700 focus:outline-none focus:ring-4 focus:ring-wvo-orange-200 transform active:scale-[0.98] transition duration-150 flex items-center justify-center space-x-2";
-                
-                if (historyCard) historyCard.className = "mt-6 bg-[#112d14] rounded-2xl p-4 shadow-2xl border border-wvo-green-800 theme-transition";
-                if (historyTitle) historyTitle.className = "text-sm font-bold text-white mb-3 flex items-center theme-transition";
-                if (footerText) footerText.className = "text-center py-4 text-xs text-wvo-green-100/60 font-medium theme-transition";
             }
             
             updateLogsUI();
@@ -700,7 +578,7 @@
             const confirmGpsEl = document.getElementById('confirm-gps');
             if (userLatitude && userLongitude) {
                 confirmGpsEl.innerText = `${userLatitude.toFixed(5)}, ${userLongitude.toFixed(5)}`;
-                confirmGpsEl.className = "font-bold text-xs text-wvo-green-600";
+                confirmGpsEl.className = "font-bold text-xs text-wvo-green-600 dark:text-wvo-gold-400";
             } else {
                 confirmGpsEl.innerText = "กำลังค้นหาตำแหน่ง / ไม่ได้ระบุ...";
                 confirmGpsEl.className = "font-bold text-xs text-red-500 animate-pulse";
@@ -714,7 +592,7 @@
             confirmShiftEl.innerText = shiftVal;
 
             if (shiftVal === 'กลางวัน') {
-                confirmShiftEl.className = "font-bold px-2.5 py-1 rounded-full text-xs bg-wvo-orange-50 text-wvo-orange-600 border border-wvo-orange-100";
+                confirmShiftEl.className = "font-bold px-2.5 py-1 rounded-full text-xs bg-wvo-orange-50 text-wvo-orange-600 border border-wvo-orange-100 dark:bg-wvo-green-950 dark:text-white";
                 modalHeader.className = "p-5 text-white text-center flex flex-col items-center justify-center relative bg-gradient-to-r from-wvo-green-600 to-wvo-green-700";
                 modalConfirmBtn.className = "w-1/2 py-2.5 bg-wvo-green-600 hover:bg-wvo-green-700 text-white rounded-xl font-bold transition shadow-md";
                 
@@ -724,7 +602,7 @@
                     </svg>
                 `;
             } else {
-                confirmShiftEl.className = "font-bold px-2.5 py-1 rounded-full text-xs bg-wvo-green-100 text-wvo-green-800 border border-wvo-green-200";
+                confirmShiftEl.className = "font-bold px-2.5 py-1 rounded-full text-xs bg-wvo-green-100 text-wvo-green-800 border border-wvo-green-200 dark:bg-wvo-orange-500 dark:text-white";
                 modalHeader.className = "p-5 text-white text-center flex flex-col items-center justify-center relative bg-gradient-to-r from-wvo-green-700 to-wvo-green-900";
                 modalConfirmBtn.className = "w-1/2 py-2.5 bg-wvo-orange-500 hover:bg-wvo-orange-600 text-white rounded-xl font-bold transition shadow-md";
                 
@@ -738,21 +616,21 @@
             const modal = document.getElementById('confirm-modal');
             modal.classList.remove('hidden');
             setTimeout(() => {
-                modal.querySelector('.bg-white').classList.remove('scale-95');
-                modal.querySelector('.bg-white').classList.add('scale-100');
+                modal.querySelector('.bg-white, .dark\\:bg-\\[\\#112d14\\]').classList.remove('scale-95');
+                modal.querySelector('.bg-white, .dark\\:bg-\\[\\#112d14\\]').classList.add('scale-100');
             }, 10);
         }
 
         function closeConfirmationModal() {
             const modal = document.getElementById('confirm-modal');
-            modal.querySelector('.bg-white').classList.remove('scale-100');
-            modal.querySelector('.bg-white').classList.add('scale-95');
+            modal.querySelector('.bg-white, .dark\\:bg-\\[\\#112d14\\]').classList.remove('scale-100');
+            modal.querySelector('.bg-white, .dark\\:bg-\\[\\#112d14\\]').classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 150);
         }
 
-        // ส่งข้อมูลการรายงานตัวไปยังเซิร์ฟเวอร์แบบ POST ปลอดภัย ไม่เกิดข้อผิดพลาด CORS
+        // นำส่งข้อมูลการบันทึกเวรเข้าสู่ระบบ (ส่งแยก พิกัดละติจูด ลองจิจูด ชัดเจนเพื่อประโยชน์ในการวิเคราะห์ของส่วนกลาง)
         async function submitFinalLog() {
             const guardId = document.getElementById('guard-id').value;
             const guardName = document.getElementById('guard-name').value;
@@ -761,26 +639,13 @@
             const noteVal = document.getElementById('noteInput') ? document.getElementById('noteInput').value : "";
             
             if (!guardId || !guardName || !locationVal) {
-                alert("ข้อมูลไม่สมบูรณ์ กรุณาปิดหน้านี้และตรวจสอบช่องกรอกข้อมูลอีกครั้ง");
+                alert("ข้อมูลไม่ครบถ้วน กรุณาตรวจสอบกระบวนการและลองอีกครั้ง");
                 return;
             }
-
-            getLocation();
 
             const now = new Date();
             const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
             const logId = 'WVO-' + Math.floor(1000 + Math.random() * 9000);
-
-            let mapsLink = (userLatitude && userLongitude) 
-                ? `https://www.google.com/maps?q=${userLatitude},${userLongitude}` 
-                : "ไม่ได้ระบุพิกัด / ปิดการเข้าถึงสิทธิ์";
-
-            let combinedNote = noteVal.trim();
-            if (combinedNote) {
-                combinedNote += ` [พิกัดแผนที่: ${mapsLink}]`;
-            } else {
-                combinedNote = `[พิกัดแผนที่: ${mapsLink}]`;
-            }
 
             const newLog = {
                 id: logId,
@@ -795,7 +660,7 @@
             const originalBtnText = modalConfirmBtn ? modalConfirmBtn.innerText : "ยืนยันข้อมูลถูกต้อง";
             if (modalConfirmBtn) {
                 modalConfirmBtn.disabled = true;
-                modalConfirmBtn.innerText = "กำลังจัดส่งข้อมูล...";
+                modalConfirmBtn.innerText = "กำลังนำส่งรายงาน...";
             }
 
             function applyLocalSuccess() {
@@ -817,26 +682,27 @@
                 }
             }
 
-            if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
+            if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL.trim() !== "") {
                 try {
                     let idToken = null;
                     if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
                         idToken = liff.getIDToken();
                     }
 
-                    // ปรับโครงสร้างเพื่อจัดส่งเป็น POST JSON ปลอดภัย
+                    if (!idToken) {
+                        throw new Error("ไม่พบ LINE ID Token ในเซสชันปัจจุบัน");
+                    }
+
                     const payload = {
                         action: "saveDuty",
-                        lineUserId: currentLineUser.userId,
                         idToken: idToken,
                         shift: shiftVal,
                         location: locationVal,
-                        note: combinedNote,
-                        latitude: userLatitude || "",
-                        longitude: userLongitude || ""
+                        note: noteVal.trim(),
+                        latitude: userLatitude ? userLatitude.toString() : "",
+                        longitude: userLongitude ? userLongitude.toString() : ""
                     };
 
-                    // นำส่งด้วย POST และ Content-Type: text/plain เพื่อเลี่ยงกระบวนการ Preflight OPTIONS ของ CORS
                     const response = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
                         method: "POST",
                         headers: {
@@ -846,7 +712,7 @@
                     });
 
                     if (!response.ok) {
-                        throw new Error(`เซิร์ฟเวอร์ตอบรับด้วย HTTP error status: ${response.status}`);
+                        throw new Error(`การบันทึกล้มเหลว สถานะเซิร์ฟเวอร์: ${response.status}`);
                     }
 
                     const result = await response.json();
@@ -854,12 +720,12 @@
                     if (result && result.status === "success") {
                         applyLocalSuccess();
                     } else {
-                        throw new Error(result.message || "เซิร์ฟเวอร์ไม่ส่งผลตอบรับที่คาดหมายกลับมา");
+                        throw new Error(result.message || "เซิร์ฟเวอร์ปฏิเสธการเซฟเนื่องจากความปลอดภัย");
                     }
 
                 } catch (sheetErr) {
                     console.error("เกิดข้อผิดพลาดในการนำส่งข้อมูล: ", sheetErr);
-                    alert("บันทึกลง Google Sheets ล้มเหลว: " + sheetErr.message + " \n\n(ระบบได้ลงประวัติไว้บนหน้าจอนี้เป็นการชั่วคราวแล้ว)");
+                    alert("บันทึกลงสเปรดชีตล้มเหลว: " + sheetErr.message + " \n\n(ระบบได้บันทึกประวัติไว้บนหน้าจอนี้ชั่วคราวแล้ว)");
                     applyLocalSuccess();
                 }
             } else {
@@ -891,7 +757,7 @@
             noLogText.style.display = 'none';
             container.innerHTML = '';
 
-            const isNightMode = document.querySelector('input[name="shift-toggle"]:checked').value === 'กลางคืน';
+            const isNightMode = document.documentElement.classList.contains('dark');
 
             localLogs.forEach(log => {
                 const shiftColor = log.shift === 'กลางวัน' ? 'bg-wvo-orange-50 text-wvo-orange-600 border border-wvo-orange-100' : 'bg-wvo-green-100 text-wvo-green-800 border border-wvo-green-200';
@@ -902,7 +768,7 @@
                 const accentTextColor = isNightMode ? 'text-wvo-gold-400' : 'text-slate-400';
                 const timeTextColor = isNightMode ? 'text-wvo-green-100' : 'text-slate-700';
 
-                // ป้องกัน XSS ด้วยการกรองค่าก่อนแสดงผลผ่านฟังก์ชัน Escape
+                // ป้องกัน XSS
                 const escapedId = escapeHTML(log.id);
                 const escapedGuardId = escapeHTML(log.guardId);
                 const escapedName = escapeHTML(log.name);
@@ -918,7 +784,7 @@
                             <span class="font-bold ${mainTextColor}">[${escapedGuardId}] ${escapedName}</span>
                             <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${shiftColor}">${escapedShift}</span>
                         </div>
-                        <p class="font-medium ${subTextColor}">จุด: ${escapedLocation}</p>
+                        <p class="font-medium ${subTextColor}">จุดตรวจ: ${escapedLocation}</p>
                     </div>
                     <div class="text-right">
                         <span class="block font-mono text-[10px] ${accentTextColor}">${escapedId}</span>
