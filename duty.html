@@ -466,7 +466,7 @@ function getLocation() {
             if (!GOOGLE_SHEETS_WEBAPP_URL || GOOGLE_SHEETS_WEBAPP_URL === "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
                 showAuthError(
                     "ยังไม่ได้เชื่อมต่อระบบฐานข้อมูลหลังบ้าน", 
-                    "โค้ดไฟล์ปัจจุบันยังไม่ได้ระบุที่อยู่ของ Google Sheets Web App ในซอร์สโค้ด (บรรทัดที่ 375) ท่านสามารถทดลองใช้งานและตรวจแบบฟอร์มได้โดยคลิกที่ปุ่ม 'เข้าใช้งานด้วยโหมดทดสอบ' ด้านล่าง"
+                    "โค้ดไฟล์ปัจจุบันยังไม่ได้ระบุที่อยู่ของ Google Sheets Web App ในซอร์สโค้ด ท่านสามารถทดลองใช้งานและตรวจแบบฟอร์มได้โดยคลิกที่ปุ่ม 'เข้าใช้งานด้วยโหมดทดสอบ' ด้านล่าง"
                 );
                 return;
             }
@@ -743,7 +743,7 @@ function getLocation() {
     const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
     const logId = 'WVO-' + Math.floor(1000 + Math.random() * 9000);
 
-    // 1. เก็บในเซสชันภายในหน้าเว็บเพื่อแสดงผลการสแกนล่าสุดที่หน้าจอก่อน
+    // 1. เก็บในเซสชันภายในหน้าเว็บ
     const newLog = {
         id: logId,
         guardId: guardId,
@@ -758,39 +758,42 @@ function getLocation() {
     showToastSuccess();
     updateLogsUI();
 
-            // 2. ยิงส่งข้อมูลขึ้นระบบ Google Sheet แบบ POST (ตั้งค่า No-CORS เพื่อให้รันบน GitHub Pages ได้สมบูรณ์)
-            if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
-                try {
-            // 1) ตรวจสอบพิกัดเพื่อแปลงเป็นลิงก์ Google Maps
+    // 2. ยิงส่งข้อมูลขึ้นระบบ Google Sheet แบบ POST (แก้ไข CORS)
+    if (GOOGLE_SHEETS_WEBAPP_URL && GOOGLE_SHEETS_WEBAPP_URL !== "https://script.google.com/macros/s/AKfycbx7i8kiX5zx0Pgr8xI2PSgogWnH4Al1xuXX8HWLb9-DZKZdV7kNjAv5PyB2OLJUOman/exec") {
+        try {
             let mapsLink = (userLatitude && userLongitude) 
                 ? `https://www.google.com/maps?q=${userLatitude},${userLongitude}` 
                 : "ไม่ได้เปิด GPS / ไม่อนุญาตสิทธิ์";
 
-            // 2) สร้างหมายเหตุพ่วงลิงก์แผนที่ (ถ้าหน้าบ้านมีช่องกรอกหมายเหตุให้ดึงมาพ่วงด้วย)
             let currentNote = document.getElementById("noteInput") ? document.getElementById("noteInput").value : "";
             let combinedNote = `${currentNote} [พิกัดตรวจ: ${mapsLink}]`.trim();
 
-            // 3) จัดเตรียมข้อมูลยิงส่งไปหลังบ้านให้ตรงคอลัมน์ของแท็บ DUTY
-            const submitPayload = {
-                action: "saveDuty",                  // วิ่งไปบันทึกแท็บ DUTY บนหลังบ้าน
-                lineUserId: currentLineUser.userId,  // คอลัมน์ C (userid)
-                shift: shiftVal,                     // คอลัมน์ D (ผลัด)
-                location: locationVal,               // คอลัมน์ E (จุดประจำการ)
-                note: combinedNote                   // คอลัมน์ F (หมายเหตุพ่วงลิงก์ GPS)
-            };
-
-            // 4) สั่งส่งข้อมูลจริงแบบ POST
-            fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(submitPayload)
+            // ✅ แก้ไข: ใช้ GET แทน POST เพื่อหลีกเลี่ยง CORS
+            const params = new URLSearchParams({
+                action: "saveDuty",
+                lineUserId: currentLineUser.userId,
+                shift: shiftVal,
+                location: locationVal,
+                note: combinedNote
             });
+
+            // ใช้ fetch แบบ GET
+            const response = await fetch(`${GOOGLE_SHEETS_WEBAPP_URL}?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            console.log("บันทึกสำเร็จ:", result);
+
         } catch (sheetErr) {
-            console.error("ผิดพลาดขณะจัดส่งบันทึกลงชีท DUTY: ", sheetErr);
+            console.error("ผิดพลาดขณะจัดส่งบันทึก:", sheetErr);
+            // แสดงข้อความแจ้งเตือนผู้ใช้ว่าบันทึกไม่สำเร็จ
+            alert("ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อ");
         }
     }
-    // 🟢 ==========================================================
     
     document.getElementById('location-select').selectedIndex = 0;
 }
