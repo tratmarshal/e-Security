@@ -8,7 +8,7 @@
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 
-  <!-- Google Apps Script API (for google.script.run) -->
+    <!-- Google Apps Script API (for google.script.run) -->
   <script src="https://apis.google.com/js/api.js"></script>
 
   <!-- SweetAlert2 -->
@@ -18,8 +18,84 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- ... content ... -->
-  
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">กำลังโหลด...</p>
+  </div>
+
+  <!-- Main Container -->
+  <div id="app" class="container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1>📋 ลงเวลาปฏิบัติงาน</h1>
+      <p class="subtitle">ระบบลงเวลาสำหรับเจ้าหน้าที่ รปภ. อผศ.</p>
+    </header>
+
+    <!-- User Info Section (shown after verification) -->
+    <section id="userInfoSection" class="user-info-section" style="display:none;">
+      <div class="user-card">
+        <div class="user-avatar">👤</div>
+        <div class="user-details">
+          <p class="user-name" id="userName">-</p>
+          <p class="user-id" id="userEmployeeId">รหัส: -</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Unauthorized Message -->
+    <section id="unauthorizedSection" class="unauthorized-section" style="display:none;">
+      <div class="error-card">
+        <div class="error-icon">⛔</div>
+        <h2>ยังไม่ได้ลงทะเบียน</h2>
+        <p>ไม่พบข้อมูลผู้ใช้งานในระบบ</p>
+        <p class="error-hint">กรุณาติดต่อผู้ดูแลระบบ</p>
+      </div>
+    </section>
+
+    <!-- Duty Form -->
+    <form id="dutyForm" class="duty-form" style="display:none;">
+
+      <!-- Shift Toggle -->
+      <div class="form-group">
+        <label class="form-label">ผลัดปฏิบัติงาน</label>
+        <div class="toggle-group" id="shiftToggle">
+          <button type="button" class="toggle-btn active" data-value="กลางวัน">☀️ กลางวัน</button>
+          <button type="button" class="toggle-btn" data-value="กลางคืน">🌙 กลางคืน</button>
+        </div>
+        <input type="hidden" id="shiftInput" value="กลางวัน" />
+      </div>
+
+      <!-- Duty Point Dropdown -->
+      <div class="form-group">
+        <label class="form-label" for="dutyPointSelect">จุดประจำการ</label>
+        <select id="dutyPointSelect" class="form-select" required>
+          <option value="">-- กรุณาเลือก --</option>
+        </select>
+        <div class="validation-error" id="dutyPointError"></div>
+      </div>
+
+      <!-- Note -->
+      <div class="form-group">
+        <label class="form-label" for="noteInput">หมายเหตุ <span class="optional">(ไม่บังคับ)</span></label>
+        <textarea id="noteInput" class="form-textarea" rows="2" placeholder="เพิ่มเติมหมายเหตุ (ถ้ามี)"></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span class="btn-text">บันทึกข้อมูล</span>
+        <span class="btn-spinner" style="display:none;"></span>
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>e-Security &bull; อผศ.</p>
+    </footer>
+  </div>
+
   <!-- ====== JavaScript Files ====== -->
   <script src="utils.js"></script>
   <script src="config.js"></script>
