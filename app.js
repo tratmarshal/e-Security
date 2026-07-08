@@ -1,293 +1,138 @@
-/**
- * e-Security - Main Application Logic
- */
+(function() {
+  var CONFIG = window.CONFIG;
+  var api = window.api;
+  var liffApp = window.liffApp;
+  var modal = window.modal;
 
-// ============================================================================
-// DOM References
-// ============================================================================
+  var loadingOverlay = document.getElementById('loadingOverlay');
+  var appContainer = document.getElementById('app');
+  var userInfoDiv = document.getElementById('userInfo');
+  var dutyForm = document.getElementById('dutyForm');
+  var dutyPointSelect = document.getElementById('dutyPoint');
+  var saveBtn = document.getElementById('saveBtn');
 
-function getDOM() {
-  return {
-    loadingOverlay: document.getElementById('loadingOverlay'),
-    userInfoSection: document.getElementById('userInfoSection'),
-    unauthorizedSection: document.getElementById('unauthorizedSection'),
-    dutyForm: document.getElementById('dutyForm'),
-    userName: document.getElementById('userName'),
-    userEmployeeId: document.getElementById('userEmployeeId'),
-    shiftToggle: document.getElementById('shiftToggle'),
-    shiftInput: document.getElementById('shiftInput'),
-    dutyPointSelect: document.getElementById('dutyPointSelect'),
-    noteInput: document.getElementById('noteInput'),
-    submitBtn: document.getElementById('submitBtn'),
-    dutyPointError: document.getElementById('dutyPointError'),
+  var currentUser = {
+    userId: null,
+    displayName: null,
+    pictureUrl: null,
+    name: null,
+    employeeId: null
   };
-}
 
-// ============================================================================
-// State
-// ============================================================================
-
-let state = {
-  lineUserId: null,
-  userName: null,
-  employeeId: null,
-  isVerified: false,
-  isSubmitting: false,
-  currentShift: 'กลางวัน',
-  abortController: null,
-  dom: null,
-};
-
-// ============================================================================
-// UI Functions
-// ============================================================================
-
-function populateDutyPoints() {
-  const select = state.dom.dutyPointSelect;
-  if (!select) return;
-  
-  while (select.options.length > 1) {
-    select.remove(1);
-  }
-
-  CONFIG.DUTY_POINTS.forEach((point) => {
-    const option = document.createElement('option');
-    option.value = point;
-    option.textContent = point;
-    select.appendChild(option);
-  });
-}
-
-function showUserInfo(name, employeeId) {
-  const d = state.dom;
-  if (!d) return;
-  
-  if (d.userName) d.userName.textContent = escapeHtml(name) || 'ไม่ระบุชื่อ';
-  if (d.userEmployeeId) d.userEmployeeId.textContent = 'รหัส: ' + (escapeHtml(employeeId) || '-');
-  if (d.userInfoSection) d.userInfoSection.style.display = 'block';
-  if (d.unauthorizedSection) d.unauthorizedSection.style.display = 'none';
-  if (d.dutyForm) d.dutyForm.style.display = 'block';
-  
-  state.isVerified = true;
-}
-
-function showUnauthorized() {
-  const d = state.dom;
-  if (!d) return;
-  
-  if (d.userInfoSection) d.userInfoSection.style.display = 'none';
-  if (d.unauthorizedSection) d.unauthorizedSection.style.display = 'block';
-  if (d.dutyForm) d.dutyForm.style.display = 'none';
-  
-  state.isVerified = false;
-}
-
-function resetForm() {
-  const d = state.dom;
-  if (!d) return;
-  
-  setShift('กลางวัน');
-  if (d.dutyPointSelect) d.dutyPointSelect.value = '';
-  if (d.noteInput) d.noteInput.value = '';
-  if (d.dutyPointError) d.dutyPointError.textContent = '';
-  if (d.submitBtn) {
-    d.submitBtn.disabled = false;
-    const btnText = d.submitBtn.querySelector('.btn-text');
-    if (btnText) btnText.textContent = 'บันทึกข้อมูล';
-    const spinner = d.submitBtn.querySelector('.btn-spinner');
-    if (spinner) spinner.style.display = 'none';
-  }
-  state.isSubmitting = false;
-}
-
-function setShift(shift) {
-  const d = state.dom;
-  if (!d || !d.shiftToggle) return;
-  
-  const buttons = d.shiftToggle.querySelectorAll('.toggle-btn');
-  buttons.forEach((btn) => {
-    const value = btn.getAttribute('data-value');
-    btn.classList.toggle('active', value === shift);
-  });
-  if (d.shiftInput) d.shiftInput.value = shift;
-  state.currentShift = shift;
-}
-
-function showDutyPointError(message) {
-  const d = state.dom;
-  if (d && d.dutyPointError) {
-    d.dutyPointError.textContent = message || '';
-  }
-}
-
-// ============================================================================
-// Event Handlers
-// ============================================================================
-
-function onShiftToggleClick(e) {
-  const btn = e.target.closest('.toggle-btn');
-  if (!btn || btn.classList.contains('active')) return;
-  setShift(btn.getAttribute('data-value'));
-}
-
-async function onFormSubmit(e) {
-  e.preventDefault();
-
-  if (state.isSubmitting) return;
-
-  const d = state.dom;
-  if (!d || !d.dutyPointSelect) return;
-
-  const dutyPoint = d.dutyPointSelect.value;
-  if (!dutyPoint || dutyPoint === '') {
-    showDutyPointError('กรุณาเลือกจุดประจำการ');
-    d.dutyPointSelect.focus();
-    return;
-  }
-  showDutyPointError('');
-
-  const confirmed = await showConfirmDialog(
-    'ยืนยันการบันทึกข้อมูล',
-    'คุณต้องการบันทึกข้อมูลการลงเวลาปฏิบัติงานใช่หรือไม่?',
-    'ยืนยัน',
-    'ยกเลิก'
-  );
-
-  if (!confirmed) return;
-
-  // Submit
-  state.isSubmitting = true;
-  if (d.submitBtn) {
-    d.submitBtn.disabled = true;
-    const btnText = d.submitBtn.querySelector('.btn-text');
-    if (btnText) btnText.textContent = 'กำลังบันทึก...';
-    const spinner = d.submitBtn.querySelector('.btn-spinner');
-    if (spinner) spinner.style.display = 'inline-block';
-  }
-
-  if (state.abortController) {
-    state.abortController.abort();
-  }
-  state.abortController = new AbortController();
-
-  try {
-    const note = d.noteInput ? d.noteInput.value : '';
-    const result = await saveDutyApi({
-      lineUserId: state.lineUserId,
-      shift: state.currentShift,
-      dutyPoint: dutyPoint,
-      note: note,
-    }, state.abortController.signal);
-
-    if (result.success) {
-      await showSuccessAlert('บันทึกข้อมูลเรียบร้อย', 'บันทึกการลงเวลาปฏิบัติงานสำเร็จ');
-      resetForm();
+  function showLoading(show) {
+    if (show) {
+      loadingOverlay.classList.add('show');
     } else {
-      await showErrorAlert('บันทึกไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาด');
+      loadingOverlay.classList.remove('show');
     }
-  } catch (error) {
-    console.error('Submit error:', error);
-    if (error.name !== 'AbortError') {
-      await showErrorAlert('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถบันทึกข้อมูลได้');
-    }
-  } finally {
-    state.isSubmitting = false;
-    if (d.submitBtn) {
-      d.submitBtn.disabled = false;
-      const btnText = d.submitBtn.querySelector('.btn-text');
-      if (btnText) btnText.textContent = 'บันทึกข้อมูล';
-      const spinner = d.submitBtn.querySelector('.btn-spinner');
-      if (spinner) spinner.style.display = 'none';
-    }
-    state.abortController = null;
-  }
-}
-
-// ============================================================================
-// Main Initialization
-// ============================================================================
-
-async function initApp() {
-  state.dom = getDOM();
-  
-  if (!state.dom.loadingOverlay) {
-    console.error('Critical: loadingOverlay not found');
-  }
-  
-  showLoading('กำลังเชื่อมต่อกับ LINE...');
-
-  try {
-    // 1. Initialize LIFF
-    const liffResult = await initLiff();
-
-    if (!liffResult) {
-      hideLoading();
-      return;
-    }
-
-    const { lineUserId } = liffResult;
-    if (!lineUserId) {
-      throw new Error('ไม่สามารถรับ LINE User ID');
-    }
-
-    state.lineUserId = lineUserId;
-
-    // 2. Verify user
-    showLoading('กำลังตรวจสอบผู้ใช้งาน...');
-
-    if (state.abortController) {
-      state.abortController.abort();
-    }
-    state.abortController = new AbortController();
-
-    const verifyResult = await verifyUserApi(lineUserId, state.abortController.signal);
-
-    if (verifyResult.success) {
-      state.userName = verifyResult.name || '';
-      state.employeeId = verifyResult.employeeId || '';
-      showUserInfo(state.userName, state.employeeId);
-    } else {
-      showUnauthorized();
-      await showErrorAlert('ไม่พบผู้ใช้งาน', verifyResult.message || 'ยังไม่ได้ลงทะเบียน');
-    }
-
-    // 3. Populate duty points
-    populateDutyPoints();
-
-    // 4. Setup event listeners
-    setupEventListeners();
-
-  } catch (error) {
-    console.error('App init error:', error);
-    if (error.name !== 'AbortError') {
-      await showErrorAlert('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเริ่มต้นระบบได้');
-    }
-  } finally {
-    hideLoading();
-    state.abortController = null;
-  }
-}
-
-function setupEventListeners() {
-  const d = state.dom;
-  if (!d) return;
-
-  if (d.shiftToggle) {
-    d.shiftToggle.addEventListener('click', onShiftToggleClick);
   }
 
-  if (d.dutyForm) {
-    d.dutyForm.addEventListener('submit', onFormSubmit);
+  function populatePoints() {
+    dutyPointSelect.innerHTML = '';
+    CONFIG.DUTY_POINTS.forEach(function(point) {
+      var opt = document.createElement('option');
+      opt.value = point;
+      opt.textContent = point;
+      dutyPointSelect.appendChild(opt);
+    });
   }
 
-  if (d.dutyPointSelect) {
-    d.dutyPointSelect.addEventListener('change', function () {
-      if (this.value && this.value !== '') {
-        showDutyPointError('');
+  function resetForm() {
+    document.querySelector('input[name="shift"][value="กลางวัน"]').checked = true;
+    dutyPointSelect.selectedIndex = 0;
+    document.getElementById('note').value = '';
+  }
+
+  function handleToggle() {
+    var radios = document.querySelectorAll('input[name="shift"]');
+    radios.forEach(function(radio) {
+      var parent = radio.closest('.toggle-option');
+      if (radio.checked) {
+        parent.classList.add('active');
+      } else {
+        parent.classList.remove('active');
       }
     });
   }
-}
 
-// Export for debugging
-window.initApp = initApp;
+  async function initApp() {
+    showLoading(true);
+    try {
+      var profile = await liffApp.initLiff();
+      currentUser.userId = profile.userId;
+      currentUser.displayName = profile.displayName;
+      currentUser.pictureUrl = profile.pictureUrl;
+
+      var verifyResult = await api.verifyUser(currentUser.userId);
+
+      if (verifyResult.success && verifyResult.data) {
+        currentUser.name = verifyResult.data.name || '';
+        currentUser.employeeId = verifyResult.data.employeeId || '';
+
+        await modal.showUserInfo(currentUser.name, currentUser.employeeId);
+        userInfoDiv.textContent = currentUser.name + ' (' + currentUser.employeeId + ')';
+        appContainer.style.display = 'block';
+        dutyForm.style.display = 'block';
+
+        populatePoints();
+        resetForm();
+
+        document.querySelectorAll('input[name="shift"]').forEach(function(el) {
+          el.addEventListener('change', handleToggle);
+        });
+        handleToggle();
+
+        saveBtn.addEventListener('click', onSave);
+      } else {
+        await modal.showNotRegistered();
+        appContainer.style.display = 'block';
+        dutyForm.style.display = 'none';
+        userInfoDiv.textContent = 'ยังไม่ได้ลงทะเบียน';
+      }
+    } catch (err) {
+      console.error('initApp error:', err);
+      await modal.showError('เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ' + err.message);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  async function onSave() {
+    var shift = document.querySelector('input[name="shift"]:checked').value;
+    var point = dutyPointSelect.value;
+    var note = document.getElementById('note').value.trim();
+
+    if (!point) {
+      await modal.showError('กรุณาเลือกจุดประจำการ');
+      return;
+    }
+
+    var confirmResult = await modal.showConfirmSave();
+    if (!confirmResult.isConfirmed) return;
+
+    showLoading(true);
+    try {
+      var payload = {
+        lineUserId: currentUser.userId,
+        shift: shift,
+        point: point,
+        note: note
+      };
+      var result = await api.saveDuty(payload);
+
+      if (result.success) {
+        await modal.showSuccess('บันทึกข้อมูลเรียบร้อย');
+        resetForm();
+        handleToggle();
+      } else {
+        throw new Error(result.message || 'บันทึกล้มเหลว');
+      }
+    } catch (err) {
+      await modal.showError(err.message || 'เกิดข้อผิดพลาดในการบันทึก');
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initApp);
+})();

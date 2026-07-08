@@ -1,83 +1,61 @@
-/**
- * e-Security - Modal / Dialog Utilities
- * Uses SweetAlert2 for all modals and confirmations.
- */
+var modal = (function() {
+  function showUserInfo(name, employeeId) {
+    var nameEsc = escapeHtml(name);
+    var idEsc = escapeHtml(employeeId);
+    return Swal.fire({
+      title: 'ข้อมูลเจ้าหน้าที่',
+      html: '<p><strong>ชื่อ-สกุล:</strong> ' + nameEsc + '</p><p><strong>รหัสประจำตัว:</strong> ' + idEsc + '</p>',
+      icon: 'info',
+      confirmButtonText: 'ตกลง',
+      allowOutsideClick: false
+    });
+  }
 
-/**
- * Show a success alert.
- * @param {string} title - Alert title
- * @param {string} message - Alert message
- * @returns {Promise}
- */
-function showSuccessAlert(title, message) {
-  return Swal.fire({
-    icon: 'success',
-    title: title || 'สำเร็จ',
-    text: message || 'ดำเนินการเรียบร้อย',
-    confirmButtonText: 'ตกลง',
-    timer: 3000,
-    timerProgressBar: true,
-  });
-}
+  function showNotRegistered() {
+    return Swal.fire({
+      title: 'ยังไม่ได้ลงทะเบียน',
+      text: 'กรุณาติดต่อผู้ดูแลระบบ',
+      icon: 'error',
+      confirmButtonText: 'ตกลง',
+      allowOutsideClick: false
+    });
+  }
 
-/**
- * Show an error alert.
- * @param {string} title - Alert title
- * @param {string} message - Alert message
- * @returns {Promise}
- */
-function showErrorAlert(title, message) {
-  return Swal.fire({
-    icon: 'error',
-    title: title || 'เกิดข้อผิดพลาด',
-    text: message || 'กรุณาลองใหม่อีกครั้ง',
-    confirmButtonText: 'ตกลง',
-  });
-}
+  function showConfirmSave() {
+    return Swal.fire({
+      title: 'ยืนยันการบันทึก',
+      text: 'ยืนยันการบันทึกข้อมูลใช่หรือไม่',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      reverseButtons: true
+    });
+  }
 
-/**
- * Show a warning/info alert.
- * @param {string} title - Alert title
- * @param {string} message - Alert message
- * @returns {Promise}
- */
-function showInfoAlert(title, message) {
-  return Swal.fire({
-    icon: 'info',
-    title: title || 'แจ้งเตือน',
-    text: message || '',
-    confirmButtonText: 'ตกลง',
-  });
-}
+  function showSuccess(message) {
+    return Swal.fire({
+      title: 'สำเร็จ',
+      text: message || 'บันทึกข้อมูลเรียบร้อย',
+      icon: 'success',
+      confirmButtonText: 'ตกลง'
+    });
+  }
 
-/**
- * Show a confirmation dialog.
- * @param {string} title - Dialog title
- * @param {string} message - Dialog message
- * @param {string} confirmText - Confirm button text
- * @param {string} cancelText - Cancel button text
- * @returns {Promise<boolean>} True if confirmed
- */
-async function showConfirmDialog(title, message, confirmText, cancelText) {
-  const result = await Swal.fire({
-    icon: 'question',
-    title: title || 'ยืนยัน',
-    text: message || 'คุณต้องการดำเนินการนี้ใช่หรือไม่?',
-    showCancelButton: true,
-    confirmButtonText: confirmText || 'ยืนยัน',
-    cancelButtonText: cancelText || 'ยกเลิก',
-    confirmButtonColor: '#1a73e8',
-    cancelButtonColor: '#5f6368',
-    reverseButtons: true,
-  });
-  return result.isConfirmed;
-}
+  function showError(message) {
+    return Swal.fire({
+      title: 'เกิดข้อผิดพลาด',
+      text: message || 'กรุณาลองใหม่อีกครั้ง',
+      icon: 'error',
+      confirmButtonText: 'ตกลง'
+    });
+  }
 
-/**
- * Show a custom alert with HTML content.
- * @param {Object} options - SweetAlert2 options
- * @returns {Promise}
- */
-function showCustomAlert(options) {
-  return Swal.fire(options);
-}
+  return {
+    showUserInfo: showUserInfo,
+    showNotRegistered: showNotRegistered,
+    showConfirmSave: showConfirmSave,
+    showSuccess: showSuccess,
+    showError: showError
+  };
+})();
