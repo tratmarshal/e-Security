@@ -65,6 +65,9 @@
 
       var verifyResult = await api.verifyUser(currentUser.userId);
 
+      // === เพิ่มโค้ดปิดโหลดตรงนี้ ก่อนที่จะเรียก Modal ===
+      showLoading(false);
+
       if (verifyResult.success && verifyResult.data) {
         currentUser.name = verifyResult.data.name || '';
         currentUser.employeeId = verifyResult.data.employeeId || '';
@@ -91,9 +94,9 @@
       }
     } catch (err) {
       console.error('initApp error:', err);
-      await modal.showError('เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ' + err.message);
-    } finally {
+      // === เพิ่มโค้ดปิดโหลดในกรณีที่เกิด Error ก่อนแสดงข้อความเตือน ===
       showLoading(false);
+      await modal.showError('เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ' + err.message);
     }
   }
 
@@ -120,6 +123,9 @@
       };
       var result = await api.saveDuty(payload);
 
+      // === เพิ่มโค้ดปิดโหลดเมื่อทำรายการเสร็จสิ้น ก่อนแจ้งเตือนความสำเร็จ ===
+      showLoading(false);
+
       if (result.success) {
         await modal.showSuccess('บันทึกข้อมูลเรียบร้อย');
         resetForm();
@@ -128,9 +134,9 @@
         throw new Error(result.message || 'บันทึกล้มเหลว');
       }
     } catch (err) {
-      await modal.showError(err.message || 'เกิดข้อผิดพลาดในการบันทึก');
-    } finally {
+      // === เพิ่มโค้ดปิดโหลดกรณีเกิด Error ===
       showLoading(false);
+      await modal.showError(err.message || 'เกิดข้อผิดพลาดในการบันทึก');
     }
   }
 
