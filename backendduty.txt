@@ -1,0 +1,241 @@
+/**
+ * =========================================================================
+ * ระบบหลังบ้านลงเวลาปฏิบัติงาน รปภ. อผศ. (e-Security) - เวอร์ชันเสถียรภาพและความปลอดภัยระดับสูง
+ * พัฒนาขึ้นเพื่อทำงานร่วมกับ GitHub Pages และ LINE LIFF SDK
+ * =========================================================================
+ */
+
+// กำหนดค่าคงที่ส่วนกลางเพื่อป้องกันสิทธิ์ในการแทรกแซง
+var CHANNEL_ID = "2010616678-GGszdIBe"; // ดึงจากส่วนต้นของ LIFF ID เสมอเพื่อตรวจสอบ Client ID ตราสารความปลอดภัย
+
+/**
+ * 1. ฟังก์ชันตั้งค่าเริ่มต้น (Setup)
+ * แนะนำให้กดปุ่ม "เรียกใช้ (Run)" ฟังก์ชันนี้ก่อนในครั้งแรก
+ * เพื่อสร้างหน้าแท็บชีท USER และ DUTY อัตโนมัติ (ลบชีท LOGS ที่ไม่จำเป็นออกเพื่อลดการสำรองข้อมูลเปล่า)
+ */
+function setupActiveSpreadsheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1.1 ตั้งค่าหรือสร้างหน้าฐานข้อมูลผู้ใช้งาน (USER)
+  var userSheet = ss.getSheetByName("USER");
+  if (!userSheet) {
+    userSheet = ss.insertSheet("USER");
+    userSheet.appendRow([
+      "LINE User ID (เช่น U123...)", 
+      "รหัสพนักงาน (เช่น อผศ-9402)", 
+      "ชื่อ-นามสกุล (เช่น ร.ต.อ. ประสิทธิ์ ใจเด็ด)"
+    ]);
+    
+    // ใส่ข้อมูลผู้ใช้ตัวอย่างเพื่อประโยชน์ในการรันระบบทดสอบระดับหน่วยงาน
+    userSheet.appendRow([
+      "U-SimulateLineUserWvo9999", 
+      "อผศ-9051", 
+      "พ.ต.ต. ณรงค์ฤทธิ์ ด่านตรวจ"
+    ]);
+  }
+  
+  // 1.2 ตั้งค่าหรือสร้างหน้าตารางลงเวลาแท็บ DUTY (เพิ่มคอลัมน์ พิกัดละติจูด และลองจิจูด แยกเฉพาะอย่างเป็นระบบ)
+  var dutySheet = ss.getSheetByName("DUTY");
+  if (!dutySheet) {
+    dutySheet = ss.insertSheet("DUTY");
+    dutySheet.appendRow([
+      "วันที่", 
+      "เวลา", 
+      "LINE User ID (userid)", 
+      "ผลัดทำงาน (กลางวัน,กลางคืน)", 
+      "จุดประจำการ", 
+      "พิกัดละติจูด",
+      "พิกัดลองจิจูด",
+      "หมายเหตุ"
+    ]);
+  }
+}
+
+/**
+ * 2. รับข้อเสนอขอข้อมูลแบบ GET (ตรวจสอบความปลอดภัยผ่าน ID Token เท่านั้น ปฏิเสธการสืบค้นด้วย Plain UserID)
+ */
+function doGet(e) {
+  try {
+    var action = e.parameter.action;
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("USER");
+    
+    if (!sheet) {
+      return createJsonResponse({ 
+        status: "error", 
+        message: "ไม่พบแท็บ USER ในระบบ กรุณาดำเนินการ setupActiveSpreadsheet ก่อน" 
+      });
+    }
+
+    if (action === "getUser") {
+      var idToken = e.parameter.idToken;
+
+      // บังคับความปลอดภัยสูงสุด: ต้องมี ID Token ส่งมาจาก LINE LIFF เสมอ
+      if (!idToken) {
+        return createJsonResponse({ 
+          status: "error", 
+          message: "ความปลอดภัยถูกปฏิเสธ: ไม่พบ ID Token ยืนยันสิทธิ์" 
+        });
+      }
+
+      var verifiedUserId = verifyLineToken(idToken);
+      if (!verifiedUserId) {
+        return createJsonResponse({ 
+          status: "error", 
+          message: "LINE ID Token ไม่ถูกต้อง หรือหมดอายุแล้ว" 
+        });
+      }
+      
+      var data = sheet.getDataRange().getValues();
+      var foundUser = null;
+      
+      // ค้นหาในแท็บ USER (คอลัมน์ A = LINE UserID, B = รหัสพนักงาน, C = ชื่อ-นามสกุล)
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] && data[i][0].toString().trim() === verifiedUserId.trim()) {
+          foundUser = { 
+            guardId: data[i][1], 
+            name: data[i][2] 
+          };
+          break;
+        }
+      }
+      
+      if (foundUser) {
+        return createJsonResponse({ status: "success", data: foundUser, userId: verifiedUserId });
+      } else {
+        return createJsonResponse({ status: "not_found", userId: verifiedUserId });
+      }
+    }
+    
+    return createJsonResponse({ status: "error", message: "Action ไม่ถูกต้อง" });
+  } catch (err) {
+    return createJsonResponse({ status: "error", message: err.toString() });
+  }
+}
+
+/**
+ * 3. รับคำสั่งเพื่อบันทึกข้อมูลแบบ POST (ป้องกัน Race Conditions และตรวจสอบลายเซ็น ID Token เสมอ)
+ */
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    // จำกัดเวลารอคอยรับคิวเขียนข้อมูลสูงสุด 10 วินาที
+    lock.waitLock(10000);
+
+    if (!e || !e.postData || !e.postData.contents) {
+      return createJsonResponse({ status: "error", message: "ข้อมูลนำส่งว่างเปล่า" });
+    }
+
+    var params;
+    try {
+      params = JSON.parse(e.postData.contents);
+    } catch (parseErr) {
+      return createJsonResponse({ status: "error", message: "รูปแบบโครงสร้างข้อมูล JSON ไม่ถูกต้อง" });
+    }
+
+    var idToken = params.idToken;
+    if (!idToken) {
+      return createJsonResponse({ status: "error", message: "ความปลอดภัยถูกปฏิเสธ: ไม่พบข้อมูล ID Token ยืนยันตน" });
+    }
+
+    // ทวนสอบสิทธิ์ด้วยการส่ง Token ไปยัง LINE API ภายนอกอย่างปลอดภัย
+    var verifiedUserId = verifyLineToken(idToken);
+    if (!verifiedUserId) {
+      return createJsonResponse({ status: "error", message: "ข้อมูลยืนยันตนไม่ถูกต้อง หรือหมดอายุแล้ว" });
+    }
+
+    // --- บันทึกข้อมูลลงในแท็บ DUTY เท่านั้น (ถอนฟังก์ชัน saveLog ซ้ำซ้อนออก) ---
+    if (params.action === "saveDuty") {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var dutySheet = ss.getSheetByName("DUTY");
+      
+      if (!dutySheet) {
+        dutySheet = ss.insertSheet("DUTY");
+        dutySheet.appendRow([
+          "วันที่", 
+          "เวลา", 
+          "LINE User ID (userid)", 
+          "ผลัดทำงาน (กลางวัน,กลางคืน)", 
+          "จุดประจำการ", 
+          "พิกัดละติจูด",
+          "พิกัดลองจิจูด",
+          "หมายเหตุ"
+        ]);
+      }
+      
+      var now = new Date();
+      // กำหนดไทม์โซนประเทศไทย (GMT+7) แบบคงที่ป้องกันการประมวลผลวันเวลาผิดพลาด
+      var formattedDate = Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd");
+      var formattedTime = Utilities.formatDate(now, "Asia/Bangkok", "HH:mm:ss");
+      
+      dutySheet.appendRow([
+        formattedDate,                  // วันที่ (คอลัมน์ A)
+        formattedTime,                  // เวลา (คอลัมน์ B)
+        verifiedUserId,                 // ยืนยัน UserID จาก ID Token จริง (คอลัมน์ C)
+        params.shift || "",             // ผลัด (คอลัมน์ D)
+        params.location || "",          // จุดประจำการ (คอลัมน์ E)
+        params.latitude || "",          // ละติจูดสแตติก (คอลัมน์ F)
+        params.longitude || "",         // ลองจิจูดสแตติก (คอลัมน์ G)
+        params.note || ""               // หมายเหตุเพิ่มเติม (คอลัมน์ H)
+      ]);
+      
+      return createJsonResponse({ status: "success", target: "DUTY" });
+    }
+    
+    return createJsonResponse({ status: "error", message: "Action POST ไม่ถูกต้อง" });
+  } catch (err) {
+    return createJsonResponse({ status: "error", message: err.toString() });
+  } finally {
+    // ปลดปล่อยสิทธิ์ล็อกอย่างเป็นระบบ หลีกเลี่ยงข้อผิดพลาดซ้ำซ้อนในกรณีที่ไม่ได้รับการครองสิทธิ์
+    try {
+      if (lock && typeof lock.hasLock === 'function' && lock.hasLock()) {
+        lock.releaseLock();
+      } else if (lock) {
+        lock.releaseLock();
+      }
+    } catch (lockErr) {
+      // สงบข้อผิดพลาดข้างเคียงเกี่ยวกับกระบวนการยกเลิกสิทธิ์
+    }
+  }
+}
+
+/**
+ * 4. ตรวจสอบ LINE ID Token ไปยัง OAuth2.1 verification endpoint เพื่อตรวจสอบความถูกต้องและเป็นเจ้าของสิทธิ์จริง
+ */
+function verifyLineToken(idToken) {
+  if (!idToken) return null;
+  try {
+    var url = "https://api.line.me/oauth2/v2.1/verify";
+    var options = {
+      method: "post",
+      payload: {
+        id_token: idToken,
+        client_id: CHANNEL_ID // ตรวจสอบความถูกต้องว่าออกให้แก่แอปพลิเคชันของเราจริง ป้องกันการโจมตี Token Substitution
+      },
+      muteHttpExceptions: true
+    };
+    
+    var response = UrlFetchApp.fetch(url, options);
+    var responseCode = response.getResponseCode();
+    var responseBody = JSON.parse(response.getContentText());
+    
+    if (responseCode === 200 && responseBody.sub) {
+      // ตรวจสอบโครงสร้างเพิ่มเติมเพื่อคัดกรอง audience (aud)
+      if (responseBody.aud === CHANNEL_ID) {
+        return responseBody.sub; // คืนค่า LINE UserID (sub) ที่ได้รับการคุ้มครองสิทธิ์ถูกต้อง
+      }
+    }
+    return null;
+  } catch (e) {
+    Logger.log("เกิดข้อผิดพลาดในการตรวจสอบ LINE Token: " + e.toString());
+    return null;
+  }
+}
+
+/**
+ * 5. ฟังก์ชันจัดทำ Output เป็น JSON ที่ปลอดภัย
+ */
+function createJsonResponse(jsonObject) {
+  return ContentService.createTextOutput(JSON.stringify(jsonObject))
+    .setMimeType(ContentService.MimeType.JSON);
+}
