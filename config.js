@@ -6,10 +6,10 @@
 const CONFIG = {
   // Backend API URL (Google Apps Script Web App)
   // เปลี่ยนเป็น URL ของ Web App ที่ deploy แล้ว
-  API_URL: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyrigshyMUC6u3cJeWBseJW1GAYGfzeyb5MjEgj995xX4BZXgkX2UghQUrkGMXvVkBh/exec',
 
   // LIFF App ID (จาก LINE Developers)
-  LIFF_ID: 'YOUR_LIFF_ID_HERE',
+  LIFF_ID: '2010616678-GGszdIBe',
 
   // Duty points - สามารถเพิ่ม/แก้ไขได้ที่นี่
   DUTY_POINTS: [
