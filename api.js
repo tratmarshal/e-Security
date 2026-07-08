@@ -1,89 +1,90 @@
 /**
  * e-Security - API Client
- * Uses google.script.run for direct communication with Google Apps Script
- * No CORS issues when used within the same project
+ * Uses Fetch API with application/x-www-form-urlencoded to avoid CORS preflight
  */
 
 /**
- * Call backend function using google.script.run
+ * Call the backend API with retry logic
  * @param {string} fn - Function name to call
  * @param {Object} payload - Payload data
- * @param {AbortController} controller - AbortController for timeout
+ * @param {AbortSignal} signal - AbortSignal from AbortController
+ * @param {number} retryCount - Current retry attempt
  * @returns {Promise<Object>} API response
  */
-function callApi(fn, payload, controller) {
-  return new Promise((resolve, reject) => {
-    // Set timeout
-    const timeoutId = setTimeout(() => {
-      if (controller) controller.abort();
-      reject(new Error('Request timed out after ' + CONFIG.API_TIMEOUT + 'ms'));
-    }, CONFIG.API_TIMEOUT);
-
-    // Handle abort signal
-    if (controller && controller.signal) {
-      controller.signal.addEventListener('abort', () => {
-        clearTimeout(timeoutId);
-        reject(new Error('Request aborted'));
-      });
-    }
-
-    try {
-      // Use google.script.run
-      google.script.run
-        .withSuccessHandler((result) => {
-          clearTimeout(timeoutId);
-          resolve(result);
-        })
-        .withFailureHandler((error) => {
-          clearTimeout(timeoutId);
-          reject(new Error(error.message || 'Script execution failed'));
-        })
-        .withUserObject(null)
-        [fn](payload);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      reject(new Error('Failed to call script: ' + error.message));
-    }
-  });
-}
-
-/**
- * Call with retry logic
- */
-async function callApiWithRetry(fn, payload, controller, retryCount) {
+async function callApi(fn, payload, signal, retryCount) {
   retryCount = retryCount || 0;
   const maxRetries = CONFIG.API_RETRY_COUNT || 2;
 
   try {
-    return await callApi(fn, payload, controller);
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT);
+    
+    // Use the provided signal or the controller's signal
+    const combinedSignal = signal || controller.signal;
+
+    // Convert to URLSearchParams to avoid preflight CORS
+    const formData = new URLSearchParams();
+    formData.append('fn', fn);
+    formData.append('payload', JSON.stringify(payload));
+
+    const response = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+      signal: combinedSignal,
+      mode: 'cors',
+      credentials: 'omit',
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    // Retry on network errors
+    // AbortError - don't retry
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out after ' + CONFIG.API_TIMEOUT + 'ms');
+    }
+
+    // Network error - retry if under maxRetries
     const isRetryable = error.message.includes('Failed to fetch') ||
-                        error.message.includes('timeout') ||
-                        error.message.includes('network');
+                        error.message.includes('NetworkError') ||
+                        error.message.includes('network') ||
+                        error.message.includes('HTTP') ||
+                        error.message.includes('timeout');
 
     if (isRetryable && retryCount < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, CONFIG.API_RETRY_DELAY));
-      return callApiWithRetry(fn, payload, controller, retryCount + 1);
+      console.log(`Retry ${retryCount + 1}/${maxRetries} for ${fn}`);
+      await new Promise(resolve => setTimeout(resolve, CONFIG.API_RETRY_DELAY * (retryCount + 1)));
+      return callApi(fn, payload, signal, retryCount + 1);
     }
+
+    // Re-throw other errors
     throw error;
   }
 }
 
 /**
- * Verify a user by LINE User ID.
+ * Verify a user by LINE User ID
  */
-async function verifyUserApi(lineUserId, controller) {
+async function verifyUserApi(lineUserId, signal) {
   if (!lineUserId || !isValidString(lineUserId)) {
     throw new Error('LINE User ID is required');
   }
-  return callApiWithRetry('verifyUser', { lineUserId }, controller);
+  return callApi('verifyUser', { lineUserId }, signal);
 }
 
 /**
- * Save a duty record.
+ * Save a duty record
  */
-async function saveDutyApi(data, controller) {
+async function saveDutyApi(data, signal) {
   const { lineUserId, shift, dutyPoint, note } = data;
 
   if (!lineUserId || !isValidString(lineUserId)) {
@@ -96,10 +97,10 @@ async function saveDutyApi(data, controller) {
     throw new Error('Duty point is required');
   }
 
-  return callApiWithRetry('saveDuty', {
+  return callApi('saveDuty', {
     lineUserId: lineUserId.trim(),
     shift: shift.trim(),
     dutyPoint: dutyPoint.trim(),
     note: note ? note.trim() : ''
-  }, controller);
+  }, signal);
 }

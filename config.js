@@ -11,7 +11,7 @@ const CONFIG = {
   // LIFF App ID (จาก LINE Developers)
   LIFF_ID: '2010616678-GGszdIBe',
 
-  // Duty points - สามารถเพิ่ม/แก้ไขได้ที่นี่
+  // Duty points
   DUTY_POINTS: [
     'ประตูหน้า',
     'ประตูหลัง',
@@ -23,15 +23,9 @@ const CONFIG = {
     'รอบนอก'
   ],
 
-  // API timeout (milliseconds)
   API_TIMEOUT: 15000,
-
-  // Number of retries on network error
   API_RETRY_COUNT: 2,
-
-  // Retry delay (ms)
   API_RETRY_DELAY: 1000,
 };
 
-// Freeze to prevent accidental modification
 Object.freeze(CONFIG);

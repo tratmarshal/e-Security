@@ -1,32 +1,33 @@
 /**
  * e-Security - Main Application Logic
- * Orchestrates LIFF, API, UI, and user flow.
  */
 
 // ============================================================================
 // DOM References
 // ============================================================================
 
-const DOM = {
-  loadingOverlay: document.getElementById('loadingOverlay'),
-  userInfoSection: document.getElementById('userInfoSection'),
-  unauthorizedSection: document.getElementById('unauthorizedSection'),
-  dutyForm: document.getElementById('dutyForm'),
-  userName: document.getElementById('userName'),
-  userEmployeeId: document.getElementById('userEmployeeId'),
-  shiftToggle: document.getElementById('shiftToggle'),
-  shiftInput: document.getElementById('shiftInput'),
-  dutyPointSelect: document.getElementById('dutyPointSelect'),
-  noteInput: document.getElementById('noteInput'),
-  submitBtn: document.getElementById('submitBtn'),
-  dutyPointError: document.getElementById('dutyPointError'),
-};
+function getDOM() {
+  return {
+    loadingOverlay: document.getElementById('loadingOverlay'),
+    userInfoSection: document.getElementById('userInfoSection'),
+    unauthorizedSection: document.getElementById('unauthorizedSection'),
+    dutyForm: document.getElementById('dutyForm'),
+    userName: document.getElementById('userName'),
+    userEmployeeId: document.getElementById('userEmployeeId'),
+    shiftToggle: document.getElementById('shiftToggle'),
+    shiftInput: document.getElementById('shiftInput'),
+    dutyPointSelect: document.getElementById('dutyPointSelect'),
+    noteInput: document.getElementById('noteInput'),
+    submitBtn: document.getElementById('submitBtn'),
+    dutyPointError: document.getElementById('dutyPointError'),
+  };
+}
 
 // ============================================================================
 // State
 // ============================================================================
 
-let appState = {
+let state = {
   lineUserId: null,
   userName: null,
   employeeId: null,
@@ -34,18 +35,17 @@ let appState = {
   isSubmitting: false,
   currentShift: 'กลางวัน',
   abortController: null,
+  dom: null,
 };
 
 // ============================================================================
-// UI Helpers
+// UI Functions
 // ============================================================================
 
-/**
- * Populate duty points dropdown from config.
- */
 function populateDutyPoints() {
-  const select = DOM.dutyPointSelect;
-  // Clear existing options except the first placeholder
+  const select = state.dom.dutyPointSelect;
+  if (!select) return;
+  
   while (select.options.length > 1) {
     select.remove(1);
   }
@@ -58,106 +58,94 @@ function populateDutyPoints() {
   });
 }
 
-/**
- * Show user info in the UI.
- * @param {string} name - User's full name
- * @param {string} employeeId - User's employee ID
- */
 function showUserInfo(name, employeeId) {
-  DOM.userName.textContent = escapeHtml(name) || 'ไม่ระบุชื่อ';
-  DOM.userEmployeeId.textContent = 'รหัส: ' + (escapeHtml(employeeId) || '-');
-  DOM.userInfoSection.style.display = 'block';
-  DOM.unauthorizedSection.style.display = 'none';
-  DOM.dutyForm.style.display = 'block';
-  appState.isVerified = true;
+  const d = state.dom;
+  if (!d) return;
+  
+  if (d.userName) d.userName.textContent = escapeHtml(name) || 'ไม่ระบุชื่อ';
+  if (d.userEmployeeId) d.userEmployeeId.textContent = 'รหัส: ' + (escapeHtml(employeeId) || '-');
+  if (d.userInfoSection) d.userInfoSection.style.display = 'block';
+  if (d.unauthorizedSection) d.unauthorizedSection.style.display = 'none';
+  if (d.dutyForm) d.dutyForm.style.display = 'block';
+  
+  state.isVerified = true;
 }
 
-/**
- * Show unauthorized message.
- */
 function showUnauthorized() {
-  DOM.userInfoSection.style.display = 'none';
-  DOM.unauthorizedSection.style.display = 'block';
-  DOM.dutyForm.style.display = 'none';
-  appState.isVerified = false;
+  const d = state.dom;
+  if (!d) return;
+  
+  if (d.userInfoSection) d.userInfoSection.style.display = 'none';
+  if (d.unauthorizedSection) d.unauthorizedSection.style.display = 'block';
+  if (d.dutyForm) d.dutyForm.style.display = 'none';
+  
+  state.isVerified = false;
 }
 
-/**
- * Reset the form to default state.
- */
 function resetForm() {
-  // Reset shift to default (กลางวัน)
+  const d = state.dom;
+  if (!d) return;
+  
   setShift('กลางวัน');
-  DOM.dutyPointSelect.value = '';
-  DOM.noteInput.value = '';
-  DOM.dutyPointError.textContent = '';
-  DOM.submitBtn.disabled = false;
-  DOM.submitBtn.querySelector('.btn-text').textContent = 'บันทึกข้อมูล';
-  DOM.submitBtn.querySelector('.btn-spinner').style.display = 'none';
-  appState.isSubmitting = false;
+  if (d.dutyPointSelect) d.dutyPointSelect.value = '';
+  if (d.noteInput) d.noteInput.value = '';
+  if (d.dutyPointError) d.dutyPointError.textContent = '';
+  if (d.submitBtn) {
+    d.submitBtn.disabled = false;
+    const btnText = d.submitBtn.querySelector('.btn-text');
+    if (btnText) btnText.textContent = 'บันทึกข้อมูล';
+    const spinner = d.submitBtn.querySelector('.btn-spinner');
+    if (spinner) spinner.style.display = 'none';
+  }
+  state.isSubmitting = false;
 }
 
-/**
- * Set the shift toggle state.
- * @param {string} shift - 'กลางวัน' or 'กลางคืน'
- */
 function setShift(shift) {
-  const buttons = DOM.shiftToggle.querySelectorAll('.toggle-btn');
+  const d = state.dom;
+  if (!d || !d.shiftToggle) return;
+  
+  const buttons = d.shiftToggle.querySelectorAll('.toggle-btn');
   buttons.forEach((btn) => {
     const value = btn.getAttribute('data-value');
-    if (value === shift) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
+    btn.classList.toggle('active', value === shift);
   });
-  DOM.shiftInput.value = shift;
-  appState.currentShift = shift;
+  if (d.shiftInput) d.shiftInput.value = shift;
+  state.currentShift = shift;
 }
 
-/**
- * Show form validation error for duty point.
- * @param {string} message - Error message
- */
 function showDutyPointError(message) {
-  DOM.dutyPointError.textContent = message || '';
+  const d = state.dom;
+  if (d && d.dutyPointError) {
+    d.dutyPointError.textContent = message || '';
+  }
 }
 
 // ============================================================================
 // Event Handlers
 // ============================================================================
 
-/**
- * Handle shift toggle click.
- */
 function onShiftToggleClick(e) {
   const btn = e.target.closest('.toggle-btn');
-  if (!btn) return;
-  if (btn.classList.contains('active')) return;
-
-  const shift = btn.getAttribute('data-value');
-  setShift(shift);
+  if (!btn || btn.classList.contains('active')) return;
+  setShift(btn.getAttribute('data-value'));
 }
 
-/**
- * Handle form submission.
- */
 async function onFormSubmit(e) {
   e.preventDefault();
 
-  // Prevent double submission
-  if (appState.isSubmitting) return;
+  if (state.isSubmitting) return;
 
-  // Validate: duty point selected
-  const dutyPoint = DOM.dutyPointSelect.value;
+  const d = state.dom;
+  if (!d || !d.dutyPointSelect) return;
+
+  const dutyPoint = d.dutyPointSelect.value;
   if (!dutyPoint || dutyPoint === '') {
     showDutyPointError('กรุณาเลือกจุดประจำการ');
-    DOM.dutyPointSelect.focus();
+    d.dutyPointSelect.focus();
     return;
   }
   showDutyPointError('');
 
-  // Show confirmation dialog
   const confirmed = await showConfirmDialog(
     'ยืนยันการบันทึกข้อมูล',
     'คุณต้องการบันทึกข้อมูลการลงเวลาปฏิบัติงานใช่หรือไม่?',
@@ -167,44 +155,51 @@ async function onFormSubmit(e) {
 
   if (!confirmed) return;
 
-  // --- Submit ---
-  appState.isSubmitting = true;
-  DOM.submitBtn.disabled = true;
-  DOM.submitBtn.querySelector('.btn-text').textContent = 'กำลังบันทึก...';
-  DOM.submitBtn.querySelector('.btn-spinner').style.display = 'inline-block';
-
-  // Cancel any pending request
-  if (appState.abortController) {
-    appState.abortController.abort();
+  // Submit
+  state.isSubmitting = true;
+  if (d.submitBtn) {
+    d.submitBtn.disabled = true;
+    const btnText = d.submitBtn.querySelector('.btn-text');
+    if (btnText) btnText.textContent = 'กำลังบันทึก...';
+    const spinner = d.submitBtn.querySelector('.btn-spinner');
+    if (spinner) spinner.style.display = 'inline-block';
   }
-  appState.abortController = new AbortController();
+
+  if (state.abortController) {
+    state.abortController.abort();
+  }
+  state.abortController = new AbortController();
 
   try {
+    const note = d.noteInput ? d.noteInput.value : '';
     const result = await saveDutyApi({
-      lineUserId: appState.lineUserId,
-      shift: appState.currentShift,
+      lineUserId: state.lineUserId,
+      shift: state.currentShift,
       dutyPoint: dutyPoint,
-      note: DOM.noteInput.value,
-    }, appState.abortController.signal);
+      note: note,
+    }, state.abortController.signal);
 
     if (result.success) {
       await showSuccessAlert('บันทึกข้อมูลเรียบร้อย', 'บันทึกการลงเวลาปฏิบัติงานสำเร็จ');
       resetForm();
     } else {
-      await showErrorAlert('บันทึกไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาด โปรดลองอีกครั้ง');
+      await showErrorAlert('บันทึกไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาด');
     }
   } catch (error) {
     console.error('Submit error:', error);
-    // Don't show error if it was aborted
     if (error.name !== 'AbortError') {
       await showErrorAlert('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถบันทึกข้อมูลได้');
     }
   } finally {
-    appState.isSubmitting = false;
-    DOM.submitBtn.disabled = false;
-    DOM.submitBtn.querySelector('.btn-text').textContent = 'บันทึกข้อมูล';
-    DOM.submitBtn.querySelector('.btn-spinner').style.display = 'none';
-    appState.abortController = null;
+    state.isSubmitting = false;
+    if (d.submitBtn) {
+      d.submitBtn.disabled = false;
+      const btnText = d.submitBtn.querySelector('.btn-text');
+      if (btnText) btnText.textContent = 'บันทึกข้อมูล';
+      const spinner = d.submitBtn.querySelector('.btn-spinner');
+      if (spinner) spinner.style.display = 'none';
+    }
+    state.abortController = null;
   }
 }
 
@@ -212,18 +207,19 @@ async function onFormSubmit(e) {
 // Main Initialization
 // ============================================================================
 
-/**
- * Main app initialization.
- */
 async function initApp() {
-  // Show loading
+  state.dom = getDOM();
+  
+  if (!state.dom.loadingOverlay) {
+    console.error('Critical: loadingOverlay not found');
+  }
+  
   showLoading('กำลังเชื่อมต่อกับ LINE...');
 
   try {
     // 1. Initialize LIFF
     const liffResult = await initLiff();
 
-    // If login was triggered, page will reload
     if (!liffResult) {
       hideLoading();
       return;
@@ -234,26 +230,25 @@ async function initApp() {
       throw new Error('ไม่สามารถรับ LINE User ID');
     }
 
-    appState.lineUserId = lineUserId;
+    state.lineUserId = lineUserId;
 
-    // 2. Verify user with backend
+    // 2. Verify user
     showLoading('กำลังตรวจสอบผู้ใช้งาน...');
 
-    // Cancel any pending request
-    if (appState.abortController) {
-      appState.abortController.abort();
+    if (state.abortController) {
+      state.abortController.abort();
     }
-    appState.abortController = new AbortController();
+    state.abortController = new AbortController();
 
-    const verifyResult = await verifyUserApi(lineUserId, appState.abortController.signal);
+    const verifyResult = await verifyUserApi(lineUserId, state.abortController.signal);
 
     if (verifyResult.success) {
-      appState.userName = verifyResult.name || '';
-      appState.employeeId = verifyResult.employeeId || '';
-      showUserInfo(appState.userName, appState.employeeId);
+      state.userName = verifyResult.name || '';
+      state.employeeId = verifyResult.employeeId || '';
+      showUserInfo(state.userName, state.employeeId);
     } else {
       showUnauthorized();
-      await showErrorAlert('ไม่พบผู้ใช้งาน', verifyResult.message || 'ยังไม่ได้ลงทะเบียนในระบบ');
+      await showErrorAlert('ไม่พบผู้ใช้งาน', verifyResult.message || 'ยังไม่ได้ลงทะเบียน');
     }
 
     // 3. Populate duty points
@@ -269,44 +264,30 @@ async function initApp() {
     }
   } finally {
     hideLoading();
-    appState.abortController = null;
+    state.abortController = null;
   }
 }
 
-/**
- * Setup all event listeners.
- */
 function setupEventListeners() {
-  // Shift toggle
-  DOM.shiftToggle.addEventListener('click', onShiftToggleClick);
+  const d = state.dom;
+  if (!d) return;
 
-  // Form submit
-  DOM.dutyForm.addEventListener('submit', onFormSubmit);
-
-  // Clear error on select change
-  DOM.dutyPointSelect.addEventListener('change', function () {
-    if (this.value && this.value !== '') {
-      showDutyPointError('');
-    }
-  });
-}
-
-// ============================================================================
-// Start the app when DOM is ready
-// ============================================================================
-
-document.addEventListener('DOMContentLoaded', function () {
-  // Check if LIFF SDK is loaded
-  if (typeof liff === 'undefined') {
-    console.error('LIFF SDK not loaded');
-    document.querySelector('.app-header h1').textContent = '⚠️ ข้อผิดพลาด';
-    return;
+  if (d.shiftToggle) {
+    d.shiftToggle.addEventListener('click', onShiftToggleClick);
   }
 
-  // Start the app
-  initApp().catch((err) => {
-    console.error('Unhandled error in initApp:', err);
-    hideLoading();
-    showErrorAlert('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ' + err.message);
-  });
-});
+  if (d.dutyForm) {
+    d.dutyForm.addEventListener('submit', onFormSubmit);
+  }
+
+  if (d.dutyPointSelect) {
+    d.dutyPointSelect.addEventListener('change', function () {
+      if (this.value && this.value !== '') {
+        showDutyPointError('');
+      }
+    });
+  }
+}
+
+// Export for debugging
+window.initApp = initApp;
