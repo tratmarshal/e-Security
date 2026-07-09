@@ -322,6 +322,15 @@ h1 {
   flex-shrink: 0;
 }
 
+/* Safe area for mobile notches */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   body {

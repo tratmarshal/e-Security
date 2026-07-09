@@ -340,13 +340,16 @@
         currentUser.name = verifyResult.data.name || '';
         currentUser.employeeId = verifyResult.data.employeeId || '';
 
-        document.getElementById('guard-id').value = currentUser.employeeId;
-        document.getElementById('guard-name').value = currentUser.name;
+        var guardBadge = document.getElementById('guard-badge');
+        if (guardBadge) {
+          guardBadge.textContent = currentUser.employeeId + ' · ' + currentUser.name;
+          guardBadge.parentElement.parentElement.classList.remove('hidden');
+        }
 
         var welcomeText = document.getElementById('user-welcome');
         var userAvatar = document.getElementById('user-avatar');
         if (welcomeText) {
-          welcomeText.textContent = 'เจ้าหน้าที่เวรยาม: ' + currentUser.name;
+          welcomeText.textContent = 'เจ้าหน้าที่ : ' + currentUser.name;
         }
         if (userAvatar && currentUser.pictureUrl) {
           userAvatar.src = currentUser.pictureUrl;
