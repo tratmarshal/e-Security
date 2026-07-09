@@ -106,10 +106,10 @@ function saveDuty(payload) {
 
 function getDefaultPoints() {
   return [
-    { name: 'ประตูหน้า', lat: 12.6823, lng: 102.1084, radius: 100 },
-    { name: 'ประตูหลัง', lat: 12.6830, lng: 102.1090, radius: 100 },
-    { name: 'อาคาร A', lat: 12.6825, lng: 102.1080, radius: 50 },
-    { name: 'อาคาร B', lat: 12.6828, lng: 102.1086, radius: 50 }
+    { name: 'ประตูหน้า' },
+    { name: 'ประตูหลัง' },
+    { name: 'อาคาร A' },
+    { name: 'อาคาร B' }
   ];
 }
 
