@@ -1,4 +1,4 @@
-(function() {
+(function () {
   var CONFIG = window.CONFIG;
   var api = window.api;
   var liffApp = window.liffApp;
@@ -36,7 +36,7 @@
   // ดึงรายการจุดตรวจที่โหลดแบบ dynamic มาแสดงใน select
   function populatePoints() {
     dutyPointSelect.innerHTML = '';
-    
+
     // สร้างตัวเลือกเริ่มต้น
     var placeholderOpt = document.createElement('option');
     placeholderOpt.value = '';
@@ -45,7 +45,7 @@
     placeholderOpt.textContent = '-- เลือกจุดตรวจของ อผศ. --';
     dutyPointSelect.appendChild(placeholderOpt);
 
-    loadedPoints.forEach(function(point) {
+    loadedPoints.forEach(function (point) {
       var opt = document.createElement('option');
       opt.value = point.name;
       opt.textContent = point.name;
@@ -72,25 +72,25 @@
 
   function getDefaultPointsFallback() {
     return [
-      { name: 'ประตูหน้า', lat: 12.6823, lng: 102.1084, radius: 100 },
-      { name: 'ประตูหลัง', lat: 12.6830, lng: 102.1090, radius: 100 },
-      { name: 'อาคาร A', lat: 12.6825, lng: 102.1080, radius: 50 },
-      { name: 'อาคาร B', lat: 12.6828, lng: 102.1086, radius: 50 }
+      { name: 'ประตูหน้า' },
+      { name: 'ประตูหลัง' },
+      { name: 'อาคาร A' },
+      { name: 'อาคาร B' }
     ];
   }
 
   // คำนวณระยะทางแบบ Haversine (หน่วยเมตร)
   function calculateDistance(lat1, lon1, lat2, lon2) {
     var R = 6371e3; // รัศมีโลกในหน่วยเมตร
-    var phi1 = lat1 * Math.PI/180;
-    var phi2 = lat2 * Math.PI/180;
-    var deltaPhi = (lat2-lat1) * Math.PI/180;
-    var deltaLambda = (lon2-lon1) * Math.PI/180;
+    var phi1 = lat1 * Math.PI / 180;
+    var phi2 = lat2 * Math.PI / 180;
+    var deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    var deltaLambda = (lon2 - lon1) * Math.PI / 180;
 
-    var a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-            Math.cos(phi1) * Math.cos(phi2) *
-            Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+      Math.cos(phi1) * Math.cos(phi2) *
+      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
   }
@@ -108,7 +108,7 @@
     }
 
     navigator.geolocation.watchPosition(
-      function(position) {
+      function (position) {
         userCoords = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
@@ -119,7 +119,7 @@
         }
         checkDistanceToSelectedPoint();
       },
-      function(error) {
+      function (error) {
         userCoords = null;
         var msg = 'ไม่สามารถดึงตำแหน่งพิกัดได้';
         if (error.code === error.PERMISSION_DENIED) {
@@ -136,7 +136,7 @@
     var gpsText = document.getElementById('gps-text');
     if (!gpsText) return;
     gpsText.textContent = text;
-    
+
     if (success) {
       gpsIcon.innerHTML = `
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -207,7 +207,7 @@
         var accentTextColor = isNightMode ? 'text-wvo-gold-400' : 'text-slate-400';
         var timeTextColor = isNightMode ? 'text-wvo-green-100' : 'text-slate-700';
 
-        history.forEach(function(log) {
+        history.forEach(function (log) {
           var shiftColor = log.shift === 'กลางวัน' ? 'bg-wvo-orange-50 text-wvo-orange-600 border border-wvo-orange-100' : 'bg-wvo-green-100 text-wvo-green-800 border border-wvo-green-200';
           var noteBlock = log.note ? `<p class="mt-1 font-medium text-[11px] ${subTextColor}">หมายเหตุ: ${escapeHtml(log.note)}</p>` : '';
           var gpsBlock = (log.latitude && log.longitude) ? `<span class="block text-[10px] ${accentTextColor}">พิกัด: ${parseFloat(log.latitude).toFixed(4)}, ${parseFloat(log.longitude).toFixed(4)}</span>` : '';
@@ -252,8 +252,8 @@
   function handleToggle() {
     var radios = document.querySelectorAll('input[name="shift"]');
     var isNight = false;
-    
-    radios.forEach(function(radio) {
+
+    radios.forEach(function (radio) {
       if (radio.checked && radio.value === 'กลางคืน') {
         isNight = true;
       }
@@ -315,7 +315,7 @@
     var now = new Date();
     var dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', locale: 'th-TH' };
     var timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-    
+
     var liveDateEl = document.getElementById('live-date');
     var liveClockEl = document.getElementById('live-clock');
     if (liveDateEl) liveDateEl.innerText = now.toLocaleDateString('th-TH', dateOptions);
@@ -325,7 +325,7 @@
   // ฟังก์ชันเริ่มต้นการทำงานของแอปพลิเคชัน
   async function initApp() {
     showLoading(true);
-    
+
     // เริ่มต้นตัวบอกเวลาแบบเรียลไทม์
     setInterval(updateLiveTime, 1000);
     updateLiveTime();
@@ -370,7 +370,7 @@
         resetForm();
 
         // แนบ Event Listener สำหรับสวิตช์ผลัดเวรยาม
-        document.querySelectorAll('input[name="shift"]').forEach(function(el) {
+        document.querySelectorAll('input[name="shift"]').forEach(function (el) {
           el.addEventListener('change', handleToggle);
         });
         handleToggle();
@@ -384,7 +384,7 @@
         await modal.showNotRegistered();
         appContainer.style.display = 'block';
         dutyForm.style.display = 'none';
-        
+
         var welcomeText = document.getElementById('user-welcome');
         if (welcomeText) welcomeText.textContent = 'ยังไม่ได้ลงทะเบียน';
       }
@@ -439,7 +439,7 @@
         longitude: userCoords.longitude,
         note: note
       };
-      
+
       var result = await api.saveDuty(payload);
 
       showLoading(false);
