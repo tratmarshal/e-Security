@@ -78,31 +78,13 @@
     ];
   }
 
-  // คำนวณระยะทางแบบ Haversine (เมตร)
-  function calculateDistance(lat1, lon1, lat2, lon2) {
-    var R = 6371e3;
-    var phi1 = lat1 * Math.PI / 180;
-    var phi2 = lat2 * Math.PI / 180;
-    var deltaPhi = (lat2 - lat1) * Math.PI / 180;
-    var deltaLambda = (lon2 - lon1) * Math.PI / 180;
-
-    var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-      Math.cos(phi1) * Math.cos(phi2) *
-      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-  }
-
   // เริ่มจับสัญญาณ GPS
   function startGpsTracking() {
-    var gpsStatusContainer = document.getElementById('gps-status-container');
-    var gpsCoords = document.getElementById('gps-coords');
-
-    if (gpsStatusContainer) gpsStatusContainer.classList.remove('hidden');
+    var gpsIndicator = document.getElementById('gps-indicator');
+    if (gpsIndicator) gpsIndicator.classList.remove('hidden');
 
     if (!navigator.geolocation) {
-      updateGpsUI(false, 'เบราว์เซอร์ไม่รองรับ GPS');
+      updateGpsUI(false);
       return;
     }
 
@@ -112,72 +94,30 @@
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
         };
-        updateGpsUI(true, 'สัญญาณ GPS พร้อม');
-        if (gpsCoords) {
-          gpsCoords.textContent = userCoords.latitude.toFixed(5) + ', ' + userCoords.longitude.toFixed(5);
-        }
-        checkDistanceToSelectedPoint();
+        updateGpsUI(true);
       },
       function (error) {
         userCoords = null;
-        var msg = 'ไม่พบสัญญาณ GPS';
-        if (error.code === error.PERMISSION_DENIED) {
-          msg = 'ปฏิเสธการเข้าถึงตำแหน่ง';
-        }
-        updateGpsUI(false, msg);
+        updateGpsUI(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }
 
-  function updateGpsUI(success, text) {
-    var gpsIcon = document.getElementById('gps-icon');
-    var gpsText = document.getElementById('gps-text');
-    if (!gpsText) return;
-    gpsText.textContent = text;
+  function updateGpsUI(success) {
+    var gpsDot = document.getElementById('gps-dot');
+    if (!gpsDot) return;
 
     if (success) {
-      gpsIcon.innerHTML = `
+      gpsDot.innerHTML = `
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
       `;
     } else {
-      gpsIcon.innerHTML = `
+      gpsDot.innerHTML = `
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
         <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
       `;
-    }
-  }
-
-  function checkDistanceToSelectedPoint() {
-    var pointName = dutyPointSelect.value;
-    var distanceInfo = document.getElementById('gps-distance-info');
-    var distanceText = document.getElementById('gps-distance-text');
-    if (!distanceInfo || !distanceText) return;
-
-    if (!pointName || !userCoords) {
-      distanceInfo.classList.add('hidden');
-      return;
-    }
-
-    var targetLat = 12.273788;
-    var targetLng = 102.516731;
-    var allowedRadius = 100;
-
-    var dist = calculateDistance(
-      userCoords.latitude,
-      userCoords.longitude,
-      targetLat,
-      targetLng
-    );
-
-    distanceInfo.classList.remove('hidden');
-    distanceText.textContent = 'ระยะห่าง: ' + dist.toFixed(1) + ' ม. (รัศมี ' + allowedRadius + ' ม.)';
-
-    if (dist <= allowedRadius) {
-      distanceText.className = 'text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300';
-    } else {
-      distanceText.className = 'text-xs font-semibold px-2.5 py-1 rounded-md bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300';
     }
   }
 
@@ -243,8 +183,6 @@
     document.querySelector('input[name="shift"][value="กลางวัน"]').checked = true;
     dutyPointSelect.selectedIndex = 0;
     document.getElementById('note').value = '';
-    var distanceInfo = document.getElementById('gps-distance-info');
-    if (distanceInfo) distanceInfo.classList.add('hidden');
   }
 
   /**
@@ -340,16 +278,10 @@
         currentUser.name = verifyResult.data.name || '';
         currentUser.employeeId = verifyResult.data.employeeId || '';
 
-        var guardBadge = document.getElementById('guard-badge');
-        if (guardBadge) {
-          guardBadge.textContent = currentUser.employeeId + ' · ' + currentUser.name;
-          guardBadge.parentElement.parentElement.classList.remove('hidden');
-        }
-
         var welcomeText = document.getElementById('user-welcome');
         var userAvatar = document.getElementById('user-avatar');
         if (welcomeText) {
-          welcomeText.textContent = 'เจ้าหน้าที่ : ' + currentUser.name;
+          welcomeText.textContent = currentUser.name + ' (' + currentUser.employeeId + ')';
         }
         if (userAvatar && currentUser.pictureUrl) {
           userAvatar.src = currentUser.pictureUrl;
@@ -368,7 +300,6 @@
         });
         handleToggle();
 
-        dutyPointSelect.addEventListener('change', checkDistanceToSelectedPoint);
         saveBtn.addEventListener('click', onSave);
 
         startGpsTracking();
@@ -403,21 +334,6 @@
       return;
     }
 
-    var targetLat = 12.273788;
-    var targetLng = 102.516731;
-    var allowedRadius = 100;
-
-    var dist = calculateDistance(
-      userCoords.latitude,
-      userCoords.longitude,
-      targetLat,
-      targetLng
-    );
-    if (dist > allowedRadius) {
-      await modal.showError('ไม่อนุญาต: อยู่ห่างจากพิกัด ' + dist.toFixed(1) + ' ม. (อนุญาต ' + allowedRadius + ' ม.)');
-      return;
-    }
-
     var now = new Date();
     var timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
 
@@ -426,10 +342,7 @@
       name: currentUser.name,
       shift: shift,
       point: point,
-      latitude: userCoords.latitude,
-      longitude: userCoords.longitude,
-      note: note,
-      time: timeString
+      note: note
     });
     if (!confirmResult.isConfirmed) return;
 

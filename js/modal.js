@@ -23,52 +23,32 @@ var modal = (function () {
 
   /**
    * แสดง Modal ยืนยันข้อมูลก่อนบันทึก
-   * @param {Object} data - { employeeId, name, shift, point, latitude, longitude, note, time }
+   * @param {Object} data - { employeeId, name, shift, point, note }
    * @returns {Promise} - { isConfirmed: true/false }
    */
   function showConfirmSave(data) {
-    var idEsc = escapeHtml(data.employeeId);
     var nameEsc = escapeHtml(data.name);
+    var idEsc = escapeHtml(data.employeeId);
     var shiftEsc = escapeHtml(data.shift);
     var pointEsc = escapeHtml(data.point);
-    var lat = data.latitude ? data.latitude.toFixed(5) : '-';
-    var lng = data.longitude ? data.longitude.toFixed(5) : '-';
     var noteEsc = escapeHtml(data.note) || '-';
-    var timeEsc = escapeHtml(data.time);
 
     var shiftBadgeClass = data.shift === 'กลางวัน'
       ? 'bg-orange-100 text-orange-700'
       : 'bg-indigo-100 text-indigo-700';
 
     var html = `
-      <div class="text-left space-y-3" style="font-family: 'Sarabun', sans-serif;">
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
-          <span class="text-gray-500 font-medium text-sm">รหัสพนักงาน</span>
-          <span class="font-bold text-gray-800 text-sm">${idEsc}</span>
+      <div class="text-left space-y-2" style="font-family: 'Sarabun', sans-serif;">
+        <div class="flex items-center py-1.5">
+          <span class="font-bold text-gray-800 text-sm">${nameEsc} (${idEsc})</span>
         </div>
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
-          <span class="text-gray-500 font-medium text-sm">ชื่อ-นามสกุล</span>
-          <span class="font-bold text-gray-800 text-sm">${nameEsc}</span>
+        <div class="flex items-center space-x-2 py-1.5 border-t border-gray-100">
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${shiftBadgeClass}">${shiftEsc}</span>
+          <span class="font-semibold text-emerald-700 text-sm">${pointEsc}</span>
         </div>
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
-          <span class="text-gray-500 font-medium text-sm">ผลัดปฏิบัติงาน</span>
-          <span class="font-bold px-2.5 py-0.5 rounded-full text-xs ${shiftBadgeClass}">${shiftEsc}</span>
-        </div>
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
-          <span class="text-gray-500 font-medium text-sm">จุดตรวจ</span>
-          <span class="font-bold text-emerald-700 text-sm">${pointEsc}</span>
-        </div>
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
-          <span class="text-gray-500 font-medium text-sm">พิกัด GPS</span>
-          <span class="font-mono text-xs text-gray-600">${lat}, ${lng}</span>
-        </div>
-        <div class="flex justify-between items-center py-2 border-b border-gray-100">
-          <span class="text-gray-500 font-medium text-sm">หมายเหตุ</span>
-          <span class="text-sm text-gray-700 max-w-[180px] truncate">${noteEsc}</span>
-        </div>
-        <div class="flex justify-between items-center py-2">
-          <span class="text-gray-500 font-medium text-sm">เวลาในระบบ</span>
-          <span class="font-bold text-orange-600 text-sm">${timeEsc}</span>
+        <div class="flex items-center py-1.5 border-t border-gray-100">
+          <span class="text-gray-500 text-sm">หมายเหตุ: </span>
+          <span class="text-sm text-gray-700 ml-1">${noteEsc}</span>
         </div>
       </div>
     `;
