@@ -1,241 +1,219 @@
-/**
- * =========================================================================
- * ระบบหลังบ้านลงเวลาปฏิบัติงาน รปภ. อผศ. (e-Security) - เวอร์ชันเสถียรภาพและความปลอดภัยระดับสูง
- * พัฒนาขึ้นเพื่อทำงานร่วมกับ GitHub Pages และ LINE LIFF SDK
- * =========================================================================
- */
+// ========== gas.gs ==========
+// Backend for e-Security Duty System
+// ใช้ Google Sheets API v4 (ห้ามใช้ SpreadsheetApp)
+// ========== CONFIG ==========
 
-// กำหนดค่าคงที่ส่วนกลางเพื่อป้องกันสิทธิ์ในการแทรกแซง
-var CHANNEL_ID = "2010616678-GGszdIBe"; // ดึงจากส่วนต้นของ LIFF ID เสมอเพื่อตรวจสอบ Client ID ตราสารความปลอดภัย
+const SPREADSHEET_ID = '1sIjBOBNMN7eJlgaDhRnOctZ0-clAgbm7IwuHZQOsVQc'; // แก้เป็น ID จริง
 
-/**
- * 1. ฟังก์ชันตั้งค่าเริ่มต้น (Setup)
- * แนะนำให้กดปุ่ม "เรียกใช้ (Run)" ฟังก์ชันนี้ก่อนในครั้งแรก
- * เพื่อสร้างหน้าแท็บชีท USER และ DUTY อัตโนมัติ (ลบชีท LOGS ที่ไม่จำเป็นออกเพื่อลดการสำรองข้อมูลเปล่า)
- */
-function setupActiveSpreadsheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1.1 ตั้งค่าหรือสร้างหน้าฐานข้อมูลผู้ใช้งาน (USER)
-  var userSheet = ss.getSheetByName("USER");
-  if (!userSheet) {
-    userSheet = ss.insertSheet("USER");
-    userSheet.appendRow([
-      "LINE User ID (เช่น U123...)", 
-      "รหัสพนักงาน (เช่น อผศ-9402)", 
-      "ชื่อ-นามสกุล (เช่น ร.ต.อ. ประสิทธิ์ ใจเด็ด)"
-    ]);
-    
-    // ใส่ข้อมูลผู้ใช้ตัวอย่างเพื่อประโยชน์ในการรันระบบทดสอบระดับหน่วยงาน
-    userSheet.appendRow([
-      "U-SimulateLineUserWvo9999", 
-      "อผศ-9051", 
-      "พ.ต.ต. ณรงค์ฤทธิ์ ด่านตรวจ"
-    ]);
-  }
-  
-  // 1.2 ตั้งค่าหรือสร้างหน้าตารางลงเวลาแท็บ DUTY (เพิ่มคอลัมน์ พิกัดละติจูด และลองจิจูด แยกเฉพาะอย่างเป็นระบบ)
-  var dutySheet = ss.getSheetByName("DUTY");
-  if (!dutySheet) {
-    dutySheet = ss.insertSheet("DUTY");
-    dutySheet.appendRow([
-      "วันที่", 
-      "เวลา", 
-      "LINE User ID (userid)", 
-      "ผลัดทำงาน (กลางวัน,กลางคืน)", 
-      "จุดประจำการ", 
-      "พิกัดละติจูด",
-      "พิกัดลองจิจูด",
-      "หมายเหตุ"
-    ]);
-  }
+// ========== UTILITIES ==========
+
+function nowDate() {
+  return Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy");
 }
 
-/**
- * 2. รับข้อเสนอขอข้อมูลแบบ GET (ตรวจสอบความปลอดภัยผ่าน ID Token เท่านั้น ปฏิเสธการสืบค้นด้วย Plain UserID)
- */
-function doGet(e) {
+function nowTime() {
+  return Utilities.formatDate(new Date(), "Asia/Bangkok", "HH:mm:ss");
+}
+
+function createResponse(success, message, data) {
+  return {
+    success: success,
+    message: message || '',
+    data: data || null
+  };
+}
+
+// ========== VERIFY USER ==========
+
+function verifyUser(payload) {
   try {
-    var action = e.parameter.action;
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("USER");
-    
-    if (!sheet) {
-      return createJsonResponse({ 
-        status: "error", 
-        message: "ไม่พบแท็บ USER ในระบบ กรุณาดำเนินการ setupActiveSpreadsheet ก่อน" 
-      });
+    var userId = payload.lineUserId;
+    if (!userId) {
+      return createResponse(false, 'Missing lineUserId');
     }
 
-    if (action === "getUser") {
-      var idToken = e.parameter.idToken;
+    var range = 'USER!A:C';
+    var response = Sheets.Spreadsheets.Values.get(SPREADSHEET_ID, range);
+    var rows = response.values || [];
 
-      // บังคับความปลอดภัยสูงสุด: ต้องมี ID Token ส่งมาจาก LINE LIFF เสมอ
-      if (!idToken) {
-        return createJsonResponse({ 
-          status: "error", 
-          message: "ความปลอดภัยถูกปฏิเสธ: ไม่พบ ID Token ยืนยันสิทธิ์" 
-        });
-      }
+    if (rows.length < 2) {
+      return createResponse(false, 'ไม่พบข้อมูลผู้ใช้งาน');
+    }
 
-      var verifiedUserId = verifyLineToken(idToken);
-      if (!verifiedUserId) {
-        return createJsonResponse({ 
-          status: "error", 
-          message: "LINE ID Token ไม่ถูกต้อง หรือหมดอายุแล้ว" 
-        });
-      }
-      
-      var data = sheet.getDataRange().getValues();
-      var foundUser = null;
-      
-      // ค้นหาในแท็บ USER (คอลัมน์ A = LINE UserID, B = รหัสพนักงาน, C = ชื่อ-นามสกุล)
-      for (var i = 1; i < data.length; i++) {
-        if (data[i][0] && data[i][0].toString().trim() === verifiedUserId.trim()) {
-          foundUser = { 
-            guardId: data[i][1], 
-            name: data[i][2] 
-          };
-          break;
-        }
-      }
-      
-      if (foundUser) {
-        return createJsonResponse({ status: "success", data: foundUser, userId: verifiedUserId });
-      } else {
-        return createJsonResponse({ status: "not_found", userId: verifiedUserId });
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      if (row[0] && row[0].toString().trim() === userId) {
+        var name = row[1] || '';
+        var employeeId = row[2] || '';
+        return createResponse(true, '', { name: name, employeeId: employeeId });
       }
     }
-    
-    return createJsonResponse({ status: "error", message: "Action ไม่ถูกต้อง" });
+
+    return createResponse(false, 'ไม่พบผู้ใช้งาน');
   } catch (err) {
-    return createJsonResponse({ status: "error", message: err.toString() });
+    console.error('verifyUser error:', err);
+    return createResponse(false, 'เกิดข้อผิดพลาดในการตรวจสอบ: ' + err.message);
   }
 }
 
-/**
- * 3. รับคำสั่งเพื่อบันทึกข้อมูลแบบ POST (ป้องกัน Race Conditions และตรวจสอบลายเซ็น ID Token เสมอ)
- */
-function doPost(e) {
+// ========== SAVE DUTY ==========
+
+function saveDuty(payload) {
   var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
   try {
-    // จำกัดเวลารอคอยรับคิวเขียนข้อมูลสูงสุด 10 วินาที
-    lock.waitLock(10000);
+    var userId = payload.lineUserId;
+    var shift = payload.shift;
+    var point = payload.point;
+    var latitude = payload.latitude || '';
+    var longitude = payload.longitude || '';
+    var note = payload.note || '';
 
-    if (!e || !e.postData || !e.postData.contents) {
-      return createJsonResponse({ status: "error", message: "ข้อมูลนำส่งว่างเปล่า" });
+    if (!userId) {
+      return createResponse(false, 'Missing lineUserId');
+    }
+    if (!shift || !point) {
+      return createResponse(false, 'กรุณาเลือกผลัดและจุดประจำการ');
     }
 
-    var params;
-    try {
-      params = JSON.parse(e.postData.contents);
-    } catch (parseErr) {
-      return createJsonResponse({ status: "error", message: "รูปแบบโครงสร้างข้อมูล JSON ไม่ถูกต้อง" });
+    // ตรวจสอบสิทธิ์อีกครั้ง
+    var verifyResult = verifyUser({ lineUserId: userId });
+    if (!verifyResult.success) {
+      return createResponse(false, 'ไม่พบผู้ใช้งานในระบบ');
     }
 
-    var idToken = params.idToken;
-    if (!idToken) {
-      return createJsonResponse({ status: "error", message: "ความปลอดภัยถูกปฏิเสธ: ไม่พบข้อมูล ID Token ยืนยันตน" });
-    }
+    var dateStr = nowDate();
+    var timeStr = nowTime();
 
-    // ทวนสอบสิทธิ์ด้วยการส่ง Token ไปยัง LINE API ภายนอกอย่างปลอดภัย
-    var verifiedUserId = verifyLineToken(idToken);
-    if (!verifiedUserId) {
-      return createJsonResponse({ status: "error", message: "ข้อมูลยืนยันตนไม่ถูกต้อง หรือหมดอายุแล้ว" });
-    }
+    var values = [[dateStr, timeStr, userId, shift, point, latitude, longitude, note]];
+    var resource = { values: values };
+    var range = 'DUTY!A:H';
+    var options = { valueInputOption: 'USER_ENTERED' };
 
-    // --- บันทึกข้อมูลลงในแท็บ DUTY เท่านั้น (ถอนฟังก์ชัน saveLog ซ้ำซ้อนออก) ---
-    if (params.action === "saveDuty") {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var dutySheet = ss.getSheetByName("DUTY");
-      
-      if (!dutySheet) {
-        dutySheet = ss.insertSheet("DUTY");
-        dutySheet.appendRow([
-          "วันที่", 
-          "เวลา", 
-          "LINE User ID (userid)", 
-          "ผลัดทำงาน (กลางวัน,กลางคืน)", 
-          "จุดประจำการ", 
-          "พิกัดละติจูด",
-          "พิกัดลองจิจูด",
-          "หมายเหตุ"
-        ]);
-      }
-      
-      var now = new Date();
-      // กำหนดไทม์โซนประเทศไทย (GMT+7) แบบคงที่ป้องกันการประมวลผลวันเวลาผิดพลาด
-      var formattedDate = Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd");
-      var formattedTime = Utilities.formatDate(now, "Asia/Bangkok", "HH:mm:ss");
-      
-      dutySheet.appendRow([
-        formattedDate,                  // วันที่ (คอลัมน์ A)
-        formattedTime,                  // เวลา (คอลัมน์ B)
-        verifiedUserId,                 // ยืนยัน UserID จาก ID Token จริง (คอลัมน์ C)
-        params.shift || "",             // ผลัด (คอลัมน์ D)
-        params.location || "",          // จุดประจำการ (คอลัมน์ E)
-        params.latitude || "",          // ละติจูดสแตติก (คอลัมน์ F)
-        params.longitude || "",         // ลองจิจูดสแตติก (คอลัมน์ G)
-        params.note || ""               // หมายเหตุเพิ่มเติม (คอลัมน์ H)
-      ]);
-      
-      return createJsonResponse({ status: "success", target: "DUTY" });
-    }
-    
-    return createJsonResponse({ status: "error", message: "Action POST ไม่ถูกต้อง" });
+    Sheets.Spreadsheets.Values.append(resource, SPREADSHEET_ID, range, options);
+
+    return createResponse(true, 'บันทึกข้อมูลเรียบร้อย');
   } catch (err) {
-    return createJsonResponse({ status: "error", message: err.toString() });
+    console.error('saveDuty error:', err);
+    return createResponse(false, 'เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
   } finally {
-    // ปลดปล่อยสิทธิ์ล็อกอย่างเป็นระบบ หลีกเลี่ยงข้อผิดพลาดซ้ำซ้อนในกรณีที่ไม่ได้รับการครองสิทธิ์
-    try {
-      if (lock && typeof lock.hasLock === 'function' && lock.hasLock()) {
-        lock.releaseLock();
-      } else if (lock) {
-        lock.releaseLock();
-      }
-    } catch (lockErr) {
-      // สงบข้อผิดพลาดข้างเคียงเกี่ยวกับกระบวนการยกเลิกสิทธิ์
-    }
+    lock.releaseLock();
   }
 }
 
-/**
- * 4. ตรวจสอบ LINE ID Token ไปยัง OAuth2.1 verification endpoint เพื่อตรวจสอบความถูกต้องและเป็นเจ้าของสิทธิ์จริง
- */
-function verifyLineToken(idToken) {
-  if (!idToken) return null;
+// ========== GET DYNAMIC POINTS ==========
+
+function getDefaultPoints() {
+  return [
+    { name: 'ประตูหน้า', lat: 12.6823, lng: 102.1084, radius: 100 },
+    { name: 'ประตูหลัง', lat: 12.6830, lng: 102.1090, radius: 100 },
+    { name: 'อาคาร A', lat: 12.6825, lng: 102.1080, radius: 50 },
+    { name: 'อาคาร B', lat: 12.6828, lng: 102.1086, radius: 50 }
+  ];
+}
+
+function getPoints() {
   try {
-    var url = "https://api.line.me/oauth2/v2.1/verify";
-    var options = {
-      method: "post",
-      payload: {
-        id_token: idToken,
-        client_id: CHANNEL_ID // ตรวจสอบความถูกต้องว่าออกให้แก่แอปพลิเคชันของเราจริง ป้องกันการโจมตี Token Substitution
-      },
-      muteHttpExceptions: true
-    };
-    
-    var response = UrlFetchApp.fetch(url, options);
-    var responseCode = response.getResponseCode();
-    var responseBody = JSON.parse(response.getContentText());
-    
-    if (responseCode === 200 && responseBody.sub) {
-      // ตรวจสอบโครงสร้างเพิ่มเติมเพื่อคัดกรอง audience (aud)
-      if (responseBody.aud === CHANNEL_ID) {
-        return responseBody.sub; // คืนค่า LINE UserID (sub) ที่ได้รับการคุ้มครองสิทธิ์ถูกต้อง
+    var range = 'POINTS!A:D';
+    var response = Sheets.Spreadsheets.Values.get(SPREADSHEET_ID, range);
+    var rows = response.values || [];
+    if (rows.length < 2) {
+      return createResponse(true, 'ใช้จุดตรวจเริ่มต้น (ไม่มีข้อมูลในชีท)', getDefaultPoints());
+    }
+    var points = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      if (row[0]) {
+        points.push({
+          name: row[0].toString().trim(),
+          lat: parseFloat(row[1]) || 0,
+          lng: parseFloat(row[2]) || 0,
+          radius: parseFloat(row[3]) || 100
+        });
       }
     }
-    return null;
-  } catch (e) {
-    Logger.log("เกิดข้อผิดพลาดในการตรวจสอบ LINE Token: " + e.toString());
-    return null;
+    return createResponse(true, '', points);
+  } catch (err) {
+    return createResponse(true, 'ใช้จุดตรวจเริ่มต้น: ' + err.message, getDefaultPoints());
   }
 }
 
-/**
- * 5. ฟังก์ชันจัดทำ Output เป็น JSON ที่ปลอดภัย
- */
-function createJsonResponse(jsonObject) {
-  return ContentService.createTextOutput(JSON.stringify(jsonObject))
-    .setMimeType(ContentService.MimeType.JSON);
+// ========== GET DUTY HISTORY ==========
+
+function getHistory(payload) {
+  try {
+    var userId = payload.lineUserId;
+    if (!userId) {
+      return createResponse(false, 'Missing lineUserId');
+    }
+    var range = 'DUTY!A:H';
+    var response = Sheets.Spreadsheets.Values.get(SPREADSHEET_ID, range);
+    var rows = response.values || [];
+    var history = [];
+    
+    // ดึง 10 รายการล่าสุด
+    for (var i = rows.length - 1; i >= 1; i--) {
+      var row = rows[i];
+      if (row[2] && row[2].toString().trim() === userId.trim()) {
+        history.push({
+          date: row[0] || '',
+          time: row[1] || '',
+          shift: row[3] || '',
+          point: row[4] || '',
+          latitude: row[5] || '',
+          longitude: row[6] || '',
+          note: row[7] || ''
+        });
+        if (history.length >= 10) break;
+      }
+    }
+    return createResponse(true, '', history);
+  } catch (err) {
+    console.error('getHistory error:', err);
+    return createResponse(false, 'เกิดข้อผิดพลาดในการดึงประวัติ: ' + err.message);
+  }
+}
+
+// ========== API GATEWAY ==========
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: false, message: 'No data received' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var data = JSON.parse(e.postData.contents);
+    var fn = data.fn || '';
+    var payload = data.payload || {};
+
+    var result;
+    switch (fn) {
+      case 'verifyUser':
+        result = verifyUser(payload);
+        break;
+      case 'saveDuty':
+        result = saveDuty(payload);
+        break;
+      case 'getPoints':
+        result = getPoints();
+        break;
+      case 'getHistory':
+        result = getHistory(payload);
+        break;
+      default:
+        result = { success: false, message: 'Invalid function: ' + fn };
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, message: 'Server error: ' + err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
