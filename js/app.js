@@ -161,23 +161,21 @@
       return;
     }
 
-    var selectedPoint = loadedPoints.find(function(p) { return p.name === pointName; });
-    if (!selectedPoint) {
-      distanceInfo.classList.add('hidden');
-      return;
-    }
+    var targetLat = 12.273788;
+    var targetLng = 102.516731;
+    var allowedRadius = 100;
 
     var dist = calculateDistance(
       userCoords.latitude,
       userCoords.longitude,
-      selectedPoint.lat,
-      selectedPoint.lng
+      targetLat,
+      targetLng
     );
 
     distanceInfo.classList.remove('hidden');
-    distanceText.textContent = 'ระยะห่าง: ' + dist.toFixed(1) + ' เมตร (รัศมีที่อนุญาต: ' + selectedPoint.radius + ' เมตร)';
+    distanceText.textContent = 'ระยะห่างจากพิกัดอ้างอิง: ' + dist.toFixed(1) + ' เมตร (รัศมีที่อนุญาต: ' + allowedRadius + ' เมตร)';
 
-    if (dist <= selectedPoint.radius) {
+    if (dist <= allowedRadius) {
       distanceText.className = 'text-xs font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300';
     } else {
       distanceText.className = 'text-xs font-semibold px-2.5 py-1 rounded-md bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300';
@@ -413,18 +411,19 @@
       return;
     }
 
-    var selectedPoint = loadedPoints.find(function(p) { return p.name === point; });
-    if (selectedPoint) {
-      var dist = calculateDistance(
-        userCoords.latitude,
-        userCoords.longitude,
-        selectedPoint.lat,
-        selectedPoint.lng
-      );
-      if (dist > selectedPoint.radius) {
-        await modal.showError('ไม่อนุญาตให้บันทึก: คุณอยู่ห่างจากจุดตรวจมากเกินไป (' + dist.toFixed(1) + ' เมตรจาก ' + selectedPoint.name + ')');
-        return;
-      }
+    var targetLat = 12.273788;
+    var targetLng = 102.516731;
+    var allowedRadius = 100;
+
+    var dist = calculateDistance(
+      userCoords.latitude,
+      userCoords.longitude,
+      targetLat,
+      targetLng
+    );
+    if (dist > allowedRadius) {
+      await modal.showError('ไม่อนุญาตให้บันทึก: คุณอยู่ห่างจากจุดตรวจมากเกินไป (' + dist.toFixed(1) + ' เมตร)');
+      return;
     }
 
     var confirmResult = await modal.showConfirmSave();
