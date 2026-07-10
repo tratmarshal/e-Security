@@ -10,7 +10,7 @@ function verifyUser(payload) {
     var validation = validatePayload(payload, ['lineUserId']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
-    var rows = SheetService.getCachedOrFetch(SHEETS.USER, 'A:C', 'cache_users');
+    var rows = SheetService.getValues(SHEETS.USER, 'A:C');
     if (rows.length < 2) return jsonResponse(false, 'ไม่พบข้อมูลผู้ใช้งาน');
 
     for (var i = 1; i < rows.length; i++) {
@@ -69,7 +69,7 @@ function getDefaultPoints() {
 
 function getPoints() {
   try {
-    var rows = SheetService.getCachedOrFetch(SHEETS.POINTS, 'A:D', 'cache_points');
+    var rows = SheetService.getValues(SHEETS.POINTS, 'A:D');
     if (rows.length < 2) return jsonResponse(true, 'ใช้จุดตรวจเริ่มต้น (ไม่มีข้อมูลในชีท)', getDefaultPoints());
 
     var points = [];

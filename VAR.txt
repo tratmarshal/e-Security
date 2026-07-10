@@ -27,6 +27,5 @@ const COL = {
   SWAP:    { DATE: 0, LINE_USER_ID: 1, NAME: 2, SUB_USER_ID: 3, SUB_NAME: 4, TIMESTAMP: 5 }
 };
 
-const CACHE_TTL = 300; // 5 นาที สำหรับข้อมูลที่เปลี่ยนไม่บ่อย
 const MAX_HISTORY = 10;
 const TIMEZONE = 'Asia/Bangkok';

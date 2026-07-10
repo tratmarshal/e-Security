@@ -7,7 +7,7 @@
 
 function getSubstituteList() {
   try {
-    var rows = SheetService.getCachedOrFetch(SHEETS.LIST, 'A:C', 'cache_substitutes');
+    var rows = SheetService.getValues(SHEETS.LIST, 'A:C');
     if (rows.length < 2) return jsonResponse(true, 'ไม่มีข้อมูล', []);
 
     var list = [];
@@ -82,7 +82,7 @@ function submitSwap(payload) {
 
     // 7. ดึงชื่อผู้แทน (จากชีท LIST)
     var substituteName = '';
-    var listRows = SheetService.getCachedOrFetch(SHEETS.LIST, 'A:C', 'cache_substitutes');
+    var listRows = SheetService.getValues(SHEETS.LIST, 'A:C');
     for (var j = 1; j < listRows.length; j++) {
       if (listRows[j][COL.LIST.LINE_USER_ID] && String(listRows[j][COL.LIST.LINE_USER_ID]).trim() === payload.substituteUserId) {
         substituteName = listRows[j][COL.LIST.NAME] || '';

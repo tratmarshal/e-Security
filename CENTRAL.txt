@@ -49,29 +49,10 @@ var SheetService = (function() {
     sheet.appendRow(values);
   }
 
-  function getCachedOrFetch(sheetName, rangeStr, cacheKey) {
-    var cache = CacheService.getScriptCache();
-    var cached = cache.get(cacheKey);
-    if (cached) {
-      try { return JSON.parse(cached); } catch(e) { /* ignore and refetch */ }
-    }
-
-    var data = getValues(sheetName, rangeStr);
-    cache.put(cacheKey, JSON.stringify(data), CACHE_TTL);
-    return data;
-  }
-
-  function clearCache(cacheKey) {
-    var cache = CacheService.getScriptCache();
-    cache.remove(cacheKey);
-  }
-
   return {
     getSheet: getSheet,
     getValues: getValues,
-    appendRow: appendRow,
-    getCachedOrFetch: getCachedOrFetch,
-    clearCache: clearCache
+    appendRow: appendRow
   };
 })();
 
