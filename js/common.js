@@ -3,16 +3,34 @@
 // ==========================================
 
 var common = (function () {
-    // ===== Loading Overlay =====
+    // ===== Loading Overlay (Dynamic) =====
     function showLoading(show) {
-        var overlay = document.getElementById('loadingOverlay');
-        if (!overlay) return;
+        var overlayId = 'dynamicLoadingOverlay';
+        var overlay = document.getElementById(overlayId);
+
         if (show) {
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.className = 'fixed inset-0 z-[100] bg-[#1A2E1A] flex flex-col items-center justify-center p-6 text-center';
+                overlay.innerHTML = [
+                    '<div class="mb-4 p-3 bg-white/10 rounded-full border border-emerald-400/30 animate-pulse">',
+                    '<div class="w-10 h-10 border-3 border-white/20 border-t-emerald-400 rounded-full animate-spin"></div>',
+                    '</div>',
+                    '<h2 class="text-lg font-bold text-white mb-1">กำลังตรวจสอบ...</h2>',
+                    '<p class="text-xs text-emerald-200">กรุณารอสักครู่</p>',
+                    '</div>'
+                ].join('');
+                document.body.appendChild(overlay);
+            } else {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            }
         } else {
-            overlay.classList.remove('flex');
-            overlay.classList.add('hidden');
+            if (overlay) {
+                overlay.classList.remove('flex');
+                overlay.classList.add('hidden');
+            }
         }
     }
 

@@ -27,7 +27,7 @@ function verifyUser(payload) {
   }
 }
 
-// ===== SAVE DUTY (ลงเวลา) =====
+// ===== SAVE DUTY (ลงเวลา) — ลบข้อมูลเก่าก่อนบันทึกใหม่ =====
 
 function saveDuty(payload) {
   var lock = LockService.getScriptLock();
@@ -36,19 +36,47 @@ function saveDuty(payload) {
     var validation = validatePayload(payload, ['lineUserId', 'shift', 'point', 'latitude', 'longitude']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
+    var today = nowDate();
+    var userId = payload.lineUserId;
+    var shift = payload.shift;
+
+    // ===== 1. อ่านข้อมูลทั้งหมดในชีท DUTY =====
+    var sheet = SheetService.getSheet(SHEETS.DUTY);
+    var allData = sheet.getDataRange().getValues();
+    var rows = allData.slice(1);
+
+    // ===== 2. หาแถวที่ต้องลบ (วันเดียวกัน + user เดียว + shift เดียว) =====
+    var rowsToDelete = [];
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var row = rows[i];
+      var rowDate = String(row[COL.DUTY.DATE] || '').trim();
+      var rowUserId = String(row[COL.DUTY.LINE_USER_ID] || '').trim();
+      var rowShift = String(row[COL.DUTY.SHIFT] || '').trim();
+      if (rowDate === today && rowUserId === userId && rowShift === shift) {
+        rowsToDelete.push(i + 2); // +2 เพราะ row index เริ่มที่ 1 และมี header
+      }
+    }
+
+    // ===== 3. ลบแถวเก่าทั้งหมด (เรียงจากมากไปน้อยเพื่อไม่ให้ index เพี้ยน) =====
+    rowsToDelete.sort(function(a, b) { return b - a; });
+    for (var j = 0; j < rowsToDelete.length; j++) {
+      sheet.deleteRow(rowsToDelete[j]);
+    }
+
+    // ===== 4. บันทึกข้อมูลใหม่ =====
     var values = [[
-      nowDate(),
+      today,
       nowTime(),
-      payload.lineUserId,
-      payload.shift,
+      userId,
+      shift,
       payload.point,
       payload.latitude,
       payload.longitude,
       payload.note || ''
     ]];
-    SheetService.appendRow(SHEETS.DUTY, values[0]);
+    sheet.appendRow(values[0]);
 
-    return jsonResponse(true, 'บันทึกข้อมูลเรียบร้อย');
+    return jsonResponse(true, 'บันทึกข้อมูลเรียบร้อย (อัปเดตล่าสุด)');
   } catch (err) {
     return handleError(err);
   } finally {
@@ -60,16 +88,16 @@ function saveDuty(payload) {
 
 function getDefaultPoints() {
   return [
-    { name: 'ประตูหน้า' },
-    { name: 'ประตูหลัง' },
-    { name: 'อาคาร A' },
-    { name: 'อาคาร B' }
+    { name: 'ประตูหน้า', maxPeople: 2 },
+    { name: 'ประตูหลัง', maxPeople: 1 },
+    { name: 'อาคาร A', maxPeople: 1 },
+    { name: 'อาคาร B', maxPeople: 1 }
   ];
 }
 
 function getPoints() {
   try {
-    var rows = SheetService.getValues(SHEETS.POINTS, 'A:D');
+    var rows = SheetService.getValues(SHEETS.POINTS, 'A:E');
     if (rows.length < 2) return jsonResponse(true, 'ใช้จุดตรวจเริ่มต้น (ไม่มีข้อมูลในชีท)', getDefaultPoints());
 
     var points = [];
@@ -79,7 +107,8 @@ function getPoints() {
           name: rows[i][0].toString().trim(),
           lat: parseFloat(rows[i][1]) || 0,
           lng: parseFloat(rows[i][2]) || 0,
-          radius: parseFloat(rows[i][3]) || 100
+          radius: parseFloat(rows[i][3]) || 100,
+          maxPeople: parseInt(rows[i][4]) || 1
         });
       }
     }

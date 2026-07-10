@@ -54,10 +54,31 @@ var App = (function () {
 
     // ===== PRIVATE FUNCTIONS =====
 
-    // ดึงจุดตรวจมาแสดงใน select
-    function populatePoints() {
+    // กรองจุดตรวจตามผลัด
+    function getPointsByShift(shift) {
+        if (shift === 'กลางวัน') {
+            return loadedPoints.filter(function (p) {
+                return ['ป้อมหน้า', 'ชั้น1', 'โรงรถ', 'ชั้น'].indexOf(p.name) !== -1;
+            });
+        } else { // กลางคืน
+            return loadedPoints.filter(function (p) {
+                return ['ป้อมหน้า', 'ป้อมบ้านพัก'].indexOf(p.name) !== -1;
+            });
+        }
+    }
+
+    // หาผลัดปัจจุบัน
+    function getCurrentShift() {
+        var checked = document.querySelector('input[name="shift"]:checked');
+        return checked ? checked.value : 'กลางวัน';
+    }
+
+    // ดึงจุดตรวจมาแสดงใน select (รองรับการกรองตามผลัด)
+    function populatePoints(shift) {
         var select = document.getElementById('dutyPoint');
         select.innerHTML = '';
+
+        var filtered = getPointsByShift(shift || getCurrentShift());
 
         var placeholderOpt = document.createElement('option');
         placeholderOpt.value = '';
@@ -66,10 +87,10 @@ var App = (function () {
         placeholderOpt.textContent = '-- เลือกจุดตรวจ --';
         select.appendChild(placeholderOpt);
 
-        loadedPoints.forEach(function (point) {
+        filtered.forEach(function (point) {
             var opt = document.createElement('option');
             opt.value = point.name;
-            opt.textContent = point.name;
+            opt.textContent = point.name + (point.maxPeople ? ' (' + point.maxPeople + ' คน)' : '');
             select.appendChild(opt);
         });
     }
@@ -88,15 +109,16 @@ var App = (function () {
             console.error('Failed to load points:', err);
             loadedPoints = getDefaultPointsFallback();
         }
-        populatePoints();
+        populatePoints(getCurrentShift());
     }
 
     function getDefaultPointsFallback() {
         return [
-            { name: 'ประตูหน้า' },
-            { name: 'ประตูหลัง' },
-            { name: 'อาคาร A' },
-            { name: 'อาคาร B' }
+            { name: 'ป้อมหน้า', maxPeople: 2 },
+            { name: 'ชั้น1', maxPeople: 2 },
+            { name: 'โรงรถ', maxPeople: 1 },
+            { name: 'ชั้น', maxPeople: 1 },
+            { name: 'ป้อมบ้านพัก', maxPeople: 1 }
         ];
     }
 
@@ -201,8 +223,7 @@ var App = (function () {
     // รีเซ็ตฟอร์ม
     function resetForm() {
         document.querySelector('input[name="shift"][value="กลางวัน"]').checked = true;
-        var select = document.getElementById('dutyPoint');
-        if (select) select.selectedIndex = 0;
+        populatePoints('กลางวัน');
         document.getElementById('note').value = '';
     }
 
@@ -216,6 +237,9 @@ var App = (function () {
                 isNight = true;
             }
         });
+
+        // อัปเดตจุดตรวจตามผลัด
+        populatePoints(isNight ? 'กลางคืน' : 'กลางวัน');
 
         var toggleBg = document.getElementById('toggle-bg');
         var labelDay = document.getElementById('label-day');

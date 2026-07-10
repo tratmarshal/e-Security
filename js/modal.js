@@ -1,13 +1,23 @@
 var modal = (function () {
+  // Shared customClass for consistent styling
+  var sharedPopupClass = 'rounded-2xl p-4';
+  var sharedConfirmBtnClass = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition';
+  var sharedCancelBtnClass = 'px-6 py-2.5 rounded-xl font-semibold text-sm transition';
+
   function showUserInfo(name, employeeId) {
     var nameEsc = escapeHtml(name);
     var idEsc = escapeHtml(employeeId);
     return Swal.fire({
       title: 'ข้อมูลเจ้าหน้าที่',
-      html: '<p><strong>ชื่อ-สกุล:</strong> ' + nameEsc + '</p><p><strong>รหัสประจำตัว:</strong> ' + idEsc + '</p>',
+      html: '<p style="font-family: \'Sarabun\', sans-serif;"><strong>ชื่อ-สกุล:</strong> ' + nameEsc + '</p><p style="font-family: \'Sarabun\', sans-serif;"><strong>รหัสประจำตัว:</strong> ' + idEsc + '</p>',
       icon: 'info',
       confirmButtonText: 'ตกลง',
-      allowOutsideClick: false
+      confirmButtonColor: '#2ECC71',
+      allowOutsideClick: false,
+      customClass: {
+        popup: sharedPopupClass,
+        confirmButton: sharedConfirmBtnClass
+      }
     });
   }
 
@@ -17,7 +27,12 @@ var modal = (function () {
       text: 'กรุณาติดต่อผู้ดูแลระบบ',
       icon: 'error',
       confirmButtonText: 'ตกลง',
-      allowOutsideClick: false
+      confirmButtonColor: '#2ECC71',
+      allowOutsideClick: false,
+      customClass: {
+        popup: sharedPopupClass,
+        confirmButton: sharedConfirmBtnClass
+      }
     });
   }
 
@@ -65,9 +80,9 @@ var modal = (function () {
       cancelButtonColor: '#94a3b8',
       allowOutsideClick: false,
       customClass: {
-        popup: 'rounded-2xl p-4',
-        confirmButton: 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition',
-        cancelButton: 'px-6 py-2.5 rounded-xl font-semibold text-sm transition'
+        popup: sharedPopupClass,
+        confirmButton: sharedConfirmBtnClass,
+        cancelButton: sharedCancelBtnClass
       }
     });
   }
@@ -112,9 +127,9 @@ var modal = (function () {
       cancelButtonColor: '#94a3b8',
       allowOutsideClick: false,
       customClass: {
-        popup: 'rounded-2xl p-4',
-        confirmButton: 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition',
-        cancelButton: 'px-6 py-2.5 rounded-xl font-semibold text-sm transition'
+        popup: sharedPopupClass,
+        confirmButton: sharedConfirmBtnClass,
+        cancelButton: sharedCancelBtnClass
       }
     });
   }
@@ -125,7 +140,11 @@ var modal = (function () {
       text: message || 'บันทึกสำเร็จ',
       icon: 'success',
       confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#2ECC71'
+      confirmButtonColor: '#2ECC71',
+      customClass: {
+        popup: sharedPopupClass,
+        confirmButton: sharedConfirmBtnClass
+      }
     });
   }
 
@@ -135,7 +154,11 @@ var modal = (function () {
       text: message || 'กรุณาลองใหม่',
       icon: 'error',
       confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#ef4444'
+      confirmButtonColor: '#2ECC71',
+      customClass: {
+        popup: sharedPopupClass,
+        confirmButton: sharedConfirmBtnClass
+      }
     });
   }
 
