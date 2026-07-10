@@ -1,0 +1,136 @@
+// ========== SWAP.gs ==========
+// เฉพาะ Business Logic ระบบลา/แทนเวร
+// ใช้ฟังก์ชันจาก CENTRAL.gs และ VAR.gs
+// ================================
+
+// ===== GET SUBSTITUTE LIST (รายชื่อผู้แทนเวร) =====
+
+function getSubstituteList() {
+  try {
+    var rows = SheetService.getCachedOrFetch(SHEETS.LIST, 'A:C', 'cache_substitutes');
+    if (rows.length < 2) return jsonResponse(true, 'ไม่มีข้อมูล', []);
+
+    var list = [];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][COL.LIST.LINE_USER_ID]) {
+        list.push({
+          lineUserId: rows[i][COL.LIST.LINE_USER_ID].toString().trim(),
+          name: rows[i][COL.LIST.NAME] || '',
+          employeeId: rows[i][COL.LIST.EMPLOYEE_ID] || ''
+        });
+      }
+    }
+
+    // เรียงตามชื่อ ก-ฮ
+    list.sort(function(a, b) {
+      return a.name.localeCompare(b.name, 'th');
+    });
+
+    return jsonResponse(true, '', list);
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+// ===== SUBMIT SWAP (บันทึกการลา) =====
+
+function submitSwap(payload) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    // 1. Validate required fields
+    var validation = validatePayload(payload, ['lineUserId', 'swapDate', 'substituteUserId']);
+    if (!validation.valid) return jsonResponse(false, validation.message);
+
+    // 2. Validate date
+    var dateValidation = validateDate(payload.swapDate);
+    if (!dateValidation.valid) return jsonResponse(false, dateValidation.message);
+
+    // 3. ห้ามเลือกตัวเองเป็นผู้แทนเวร
+    if (payload.lineUserId === payload.substituteUserId) {
+      return jsonResponse(false, 'ไม่สามารถเลือกตนเองเป็นผู้แทนเวรได้');
+    }
+
+    // 4. Authenticate (ตรวจสอบสิทธิ์)
+    var auth = authenticateRequest(payload);
+    if (!auth.success) return jsonResponse(false, auth.message);
+
+    // 5. ตรวจสอบซ้ำ — คนเดิมลาในวันเดียวกันแล้วหรือยัง
+    //    และคนที่เลือกมาแทน ถูกเลือกแทนให้คนอื่นวันเดียวกันหรือยัง
+    var existingRows = SheetService.getValues(SHEETS.SWAP, 'A:F');
+    for (var i = 1; i < existingRows.length; i++) {
+      var row = existingRows[i];
+      if (row[COL.SWAP.DATE] && row[COL.SWAP.LINE_USER_ID]) {
+        var existingDate = String(row[COL.SWAP.DATE]).trim();
+        var existingUserId = String(row[COL.SWAP.LINE_USER_ID]).trim();
+        var existingSubId = row[COL.SWAP.SUB_USER_ID] ? String(row[COL.SWAP.SUB_USER_ID]).trim() : '';
+
+        // 5.1 คนเดิมลาในวันเดียวกันแล้ว
+        if (existingDate === payload.swapDate && existingUserId === payload.lineUserId) {
+          return jsonResponse(false, 'คุณได้ลงบันทึกการลาในวันที่ ' + payload.swapDate + ' ไว้แล้ว');
+        }
+
+        // 5.2 คนที่เลือกมาแทน ถูกเลือกแทนให้คนอื่นในวันเดียวกันแล้ว
+        if (existingDate === payload.swapDate && existingSubId === payload.substituteUserId) {
+          return jsonResponse(false, 'ผู้แทนเวรท่านนี้ถูกเลือกให้แทนคนอื่นในวันที่ ' + payload.swapDate + ' แล้ว');
+        }
+      }
+    }
+
+    // 6. ดึงชื่อผู้ลา (จาก authenticate result)
+    var requesterName = auth.data.name || '';
+
+    // 7. ดึงชื่อผู้แทน (จากชีท LIST)
+    var substituteName = '';
+    var listRows = SheetService.getCachedOrFetch(SHEETS.LIST, 'A:C', 'cache_substitutes');
+    for (var j = 1; j < listRows.length; j++) {
+      if (listRows[j][COL.LIST.LINE_USER_ID] && String(listRows[j][COL.LIST.LINE_USER_ID]).trim() === payload.substituteUserId) {
+        substituteName = listRows[j][COL.LIST.NAME] || '';
+        break;
+      }
+    }
+
+    // 8. บันทึกข้อมูล
+    var values = [[
+      payload.swapDate,
+      payload.lineUserId,
+      requesterName,
+      payload.substituteUserId,
+      substituteName,
+      nowTimestamp()
+    ]];
+    SheetService.appendRow(SHEETS.SWAP, values[0]);
+
+    return jsonResponse(true, 'บันทึกการลาเรียบร้อย ✅');
+  } catch (err) {
+    return handleError(err);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ===== GET SWAP HISTORY (ประวัติการลา) =====
+
+function getSwapHistory(payload) {
+  try {
+    var validation = validatePayload(payload, ['lineUserId']);
+    if (!validation.valid) return jsonResponse(false, validation.message);
+
+    var rows = SheetService.getValues(SHEETS.SWAP, 'A:F'); // ไม่ cache
+    var history = [];
+    for (var i = rows.length - 1; i >= 1; i--) {
+      if (rows[i][COL.SWAP.LINE_USER_ID] && String(rows[i][COL.SWAP.LINE_USER_ID]).trim() === payload.lineUserId.trim()) {
+        history.push({
+          date: rows[i][COL.SWAP.DATE] || '',
+          name: rows[i][COL.SWAP.NAME] || '',
+          substituteName: rows[i][COL.SWAP.SUB_NAME] || '',
+          timestamp: rows[i][COL.SWAP.TIMESTAMP] || ''
+        });
+        if (history.length >= MAX_HISTORY) break;
+      }
+    }
+    return jsonResponse(true, '', history);
+  } catch (err) {
+    return handleError(err);
+  }
+}

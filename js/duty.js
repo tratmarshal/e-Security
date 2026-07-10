@@ -1,0 +1,382 @@
+// ========== duty.js ==========
+// เฉพาะ Business Logic ระบบลงเวลา
+// ใช้ App Pattern: init(), load(), bindEvents(), destroy()
+// ================================
+
+var App = (function () {
+    var currentUser = {
+        userId: null,
+        displayName: null,
+        pictureUrl: null,
+        name: null,
+        employeeId: null
+    };
+
+    var loadedPoints = [];
+    var userCoords = null;
+    var liveTimeInterval = null;
+
+    // ===== INIT =====
+    function init() {
+        document.addEventListener('DOMContentLoaded', initApp);
+    }
+
+    // ===== LOAD =====
+    async function load() {
+        await loadPoints();
+        await updateHistoryUI();
+        resetForm();
+    }
+
+    // ===== BIND EVENTS =====
+    function bindEvents() {
+        document.querySelectorAll('input[name="shift"]').forEach(function (el) {
+            el.addEventListener('change', handleToggle);
+        });
+        handleToggle();
+
+        document.getElementById('saveBtn').addEventListener('click', onSave);
+
+        // Live time
+        liveTimeInterval = setInterval(common.updateLiveTime, 1000);
+        common.updateLiveTime();
+    }
+
+    // ===== DESTROY =====
+    function destroy() {
+        if (liveTimeInterval) {
+            clearInterval(liveTimeInterval);
+            liveTimeInterval = null;
+        }
+        loadedPoints = [];
+        userCoords = null;
+    }
+
+    // ===== PRIVATE FUNCTIONS =====
+
+    // ดึงจุดตรวจมาแสดงใน select
+    function populatePoints() {
+        var select = document.getElementById('dutyPoint');
+        select.innerHTML = '';
+
+        var placeholderOpt = document.createElement('option');
+        placeholderOpt.value = '';
+        placeholderOpt.disabled = true;
+        placeholderOpt.selected = true;
+        placeholderOpt.textContent = '-- เลือกจุดตรวจ --';
+        select.appendChild(placeholderOpt);
+
+        loadedPoints.forEach(function (point) {
+            var opt = document.createElement('option');
+            opt.value = point.name;
+            opt.textContent = point.name;
+            select.appendChild(opt);
+        });
+    }
+
+    // โหลดจุดตรวจจาก Google Sheets
+    async function loadPoints() {
+        try {
+            var res = await api.getPoints();
+            if (res && res.success && res.data) {
+                loadedPoints = res.data;
+            } else {
+                console.warn('Fallback to default points:', res ? res.message : 'no response');
+                loadedPoints = getDefaultPointsFallback();
+            }
+        } catch (err) {
+            console.error('Failed to load points:', err);
+            loadedPoints = getDefaultPointsFallback();
+        }
+        populatePoints();
+    }
+
+    function getDefaultPointsFallback() {
+        return [
+            { name: 'ประตูหน้า' },
+            { name: 'ประตูหลัง' },
+            { name: 'อาคาร A' },
+            { name: 'อาคาร B' }
+        ];
+    }
+
+    // เริ่มจับสัญญาณ GPS
+    function startGpsTracking() {
+        var gpsIndicator = document.getElementById('gps-indicator');
+        if (gpsIndicator) gpsIndicator.classList.remove('hidden');
+
+        if (!navigator.geolocation) {
+            updateGpsUI(false);
+            return;
+        }
+
+        navigator.geolocation.watchPosition(
+            function (position) {
+                userCoords = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+                updateGpsUI(true);
+            },
+            function () {
+                userCoords = null;
+                updateGpsUI(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    function updateGpsUI(success) {
+        var gpsDot = document.getElementById('gps-dot');
+        if (!gpsDot) return;
+
+        if (success) {
+            gpsDot.innerHTML = [
+                '<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>',
+                '<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>'
+            ].join('');
+        } else {
+            gpsDot.innerHTML = [
+                '<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>',
+                '<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>'
+            ].join('');
+        }
+    }
+
+    // โหลดและแสดงประวัติย้อนหลัง
+    async function updateHistoryUI() {
+        var historySection = document.getElementById('history-section');
+        var historyContainer = document.getElementById('history-container');
+        if (!historySection || !historyContainer) return;
+
+        historySection.classList.remove('hidden');
+        historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">กำลังโหลดประวัติ...</p>';
+
+        try {
+            var res = await api.getHistory(currentUser.userId);
+            if (res && res.success && res.data) {
+                var history = res.data;
+                if (history.length === 0) {
+                    historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">ไม่พบประวัติ</p>';
+                    return;
+                }
+                historyContainer.innerHTML = '';
+                var classes = common.getHistoryItemClasses();
+
+                history.forEach(function (log) {
+                    var shiftColor = log.shift === 'กลางวัน'
+                        ? 'bg-wvo-orange-50 text-wvo-orange-600 border border-wvo-orange-100'
+                        : 'bg-wvo-green-100 text-wvo-green-800 border border-wvo-green-200';
+
+                    var noteBlock = log.note
+                        ? '<p class="mt-1 font-medium text-[11px] ' + classes.subText + '">หมายเหตุ: ' + escapeHtml(log.note) + '</p>'
+                        : '';
+
+                    var gpsBlock = (log.latitude && log.longitude)
+                        ? '<span class="block text-[10px] ' + classes.accentText + '">พิกัด: ' + parseFloat(log.latitude).toFixed(4) + ', ' + parseFloat(log.longitude).toFixed(4) + '</span>'
+                        : '';
+
+                    var logItem = document.createElement('div');
+                    logItem.className = 'p-3 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
+                    logItem.innerHTML = [
+                        '<div class="space-y-1">',
+                        '<div class="flex items-center space-x-1.5">',
+                        '<span class="font-bold ' + classes.mainText + '">จุดตรวจ: ' + escapeHtml(log.point) + '</span>',
+                        '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ' + shiftColor + '">' + escapeHtml(log.shift) + '</span>',
+                        '</div>',
+                        '<p class="font-medium ' + classes.subText + '">วันที่: ' + escapeHtml(log.date) + '</p>',
+                        noteBlock,
+                        '</div>',
+                        '<div class="text-right">',
+                        gpsBlock,
+                        '<span class="font-bold ' + classes.timeText + '">' + escapeHtml(log.time) + ' น.</span>',
+                        '</div>'
+                    ].join('');
+                    historyContainer.appendChild(logItem);
+                });
+            } else {
+                historyContainer.innerHTML = '<p class="text-xs text-red-500 text-center py-4">โหลดประวัติไม่สำเร็จ: ' + escapeHtml(res ? res.message : '') + '</p>';
+            }
+        } catch (err) {
+            console.error('History load error:', err);
+            historyContainer.innerHTML = '<p class="text-xs text-red-500 text-center py-4">โหลดประวัติไม่สำเร็จ</p>';
+        }
+    }
+
+    // รีเซ็ตฟอร์ม
+    function resetForm() {
+        document.querySelector('input[name="shift"][value="กลางวัน"]').checked = true;
+        var select = document.getElementById('dutyPoint');
+        if (select) select.selectedIndex = 0;
+        document.getElementById('note').value = '';
+    }
+
+    // จัดการ toggle ผลัดกลางวัน/กลางคืน
+    function handleToggle() {
+        var radios = document.querySelectorAll('input[name="shift"]');
+        var isNight = false;
+
+        radios.forEach(function (radio) {
+            if (radio.checked && radio.value === 'กลางคืน') {
+                isNight = true;
+            }
+        });
+
+        var toggleBg = document.getElementById('toggle-bg');
+        var labelDay = document.getElementById('label-day');
+        var labelNight = document.getElementById('label-night');
+        var textDay = document.getElementById('text-day');
+        var textNight = document.getElementById('text-night');
+        var shiftTimeDesc = document.getElementById('shift-time-desc');
+
+        if (!isNight) {
+            if (toggleBg) toggleBg.style.left = '6px';
+            if (labelDay) {
+                var svg = labelDay.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-wvo-orange-500');
+            }
+            if (textDay) textDay.className = 'text-sm font-bold text-emerald-700';
+            if (labelNight) {
+                var svg = labelNight.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
+            }
+            if (textNight) textNight.className = 'text-sm font-semibold text-slate-500';
+
+            if (shiftTimeDesc) {
+                shiftTimeDesc.innerText = '07:00 - 19:00 น.';
+                shiftTimeDesc.className = 'text-xs text-orange-600 font-semibold bg-orange-50 px-2.5 py-1 rounded-md transition-colors';
+            }
+        } else {
+            if (toggleBg) toggleBg.style.left = 'calc(50% - 6px)';
+            if (labelDay) {
+                var svg = labelDay.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-slate-400');
+            }
+            if (textDay) textDay.className = 'text-sm font-semibold text-slate-500';
+            if (labelNight) {
+                var svg = labelNight.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-5 w-5 mr-1.5 text-indigo-500');
+            }
+            if (textNight) textNight.className = 'text-sm font-bold text-indigo-700';
+
+            if (shiftTimeDesc) {
+                shiftTimeDesc.innerText = '19:00 - 07:00 น.';
+                shiftTimeDesc.className = 'text-xs text-indigo-600 font-semibold bg-indigo-50 px-2.5 py-1 rounded-md transition-colors';
+            }
+        }
+    }
+
+    // เริ่มต้นแอปพลิเคชัน
+    async function initApp() {
+        common.showLoading(true);
+
+        try {
+            var profile = await liffApp.initLiff(CONFIG.LIFF_ID_DUTY);
+            currentUser.userId = profile.userId;
+            currentUser.displayName = profile.displayName;
+            currentUser.pictureUrl = profile.pictureUrl;
+
+            var verifyResult = await api.verifyUser(currentUser.userId);
+
+            common.showLoading(false);
+
+            if (verifyResult.success && verifyResult.data) {
+                currentUser.name = verifyResult.data.name || '';
+                currentUser.employeeId = verifyResult.data.employeeId || '';
+
+                var welcomeText = document.getElementById('user-welcome');
+                var userAvatar = document.getElementById('user-avatar');
+                if (welcomeText) {
+                    welcomeText.textContent = currentUser.name + ' (' + currentUser.employeeId + ')';
+                }
+                if (userAvatar && currentUser.pictureUrl) {
+                    userAvatar.src = currentUser.pictureUrl;
+                    userAvatar.classList.remove('hidden');
+                }
+
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('dutyForm').style.display = 'block';
+
+                await load();
+                bindEvents();
+                startGpsTracking();
+            } else {
+                common.showLoading(false);
+                await modal.showNotRegistered();
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('dutyForm').style.display = 'none';
+
+                var welcomeText = document.getElementById('user-welcome');
+                if (welcomeText) welcomeText.textContent = 'ยังไม่ได้ลงทะเบียน';
+            }
+        } catch (err) {
+            common.showLoading(false);
+            if (err.message && err.message.includes('redirecting')) return;
+            common.handleError(err);
+        }
+    }
+
+    // ส่งรายงานลงเวลา
+    async function onSave() {
+        var shift = document.querySelector('input[name="shift"]:checked').value;
+        var point = document.getElementById('dutyPoint').value;
+        var note = document.getElementById('note').value.trim();
+
+        if (!point) {
+            await modal.showError('กรุณาเลือกจุดตรวจ');
+            return;
+        }
+
+        if (!userCoords) {
+            await modal.showError('ไม่พบสัญญาณ GPS กรุณาเปิดสิทธิ์ตำแหน่ง');
+            return;
+        }
+
+        var confirmResult = await modal.showConfirmSave({
+            employeeId: currentUser.employeeId,
+            name: currentUser.name,
+            shift: shift,
+            point: point,
+            note: note
+        });
+        if (!confirmResult.isConfirmed) return;
+
+        common.showLoading(true);
+        try {
+            var payload = {
+                lineUserId: currentUser.userId,
+                shift: shift,
+                point: point,
+                latitude: userCoords.latitude,
+                longitude: userCoords.longitude,
+                note: note
+            };
+
+            var result = await api.saveDuty(payload);
+
+            common.showLoading(false);
+
+            if (result && result.success) {
+                await modal.showSuccess('บันทึกสำเร็จ ✅');
+                resetForm();
+                handleToggle();
+                await updateHistoryUI();
+            } else {
+                throw new Error(result ? result.message : 'ส่งรายงานไม่สำเร็จ');
+            }
+        } catch (err) {
+            common.showLoading(false);
+            await modal.showError(err.message || 'บันทึกข้อมูลไม่สำเร็จ');
+        }
+    }
+
+    return {
+        init: init,
+        load: load,
+        bindEvents: bindEvents,
+        destroy: destroy
+    };
+})();
+
+// Auto-start
+App.init();

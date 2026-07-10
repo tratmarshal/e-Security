@@ -1,0 +1,178 @@
+// ========== CENTRAL.gs ==========
+// ฟังก์ชันกลางที่ทุกระบบใช้ร่วมกัน
+// ห้ามมี Business Logic ของ DUTY หรือ SWAP
+// ==================================
+
+// ===== 1. UTILITIES =====
+
+function jsonResponse(success, message, data) {
+  return {
+    success: success,
+    message: message || '',
+    data: data || null
+  };
+}
+
+function nowDate() {
+  return Utilities.formatDate(new Date(), TIMEZONE, 'dd/MM/yyyy');
+}
+
+function nowTime() {
+  return Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm:ss');
+}
+
+function nowTimestamp() {
+  return Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+}
+
+function handleError(error) {
+  console.error('Error:', error.message || error);
+  return jsonResponse(false, 'เกิดข้อผิดพลาด: ' + (error.message || ''));
+}
+
+// ===== 2. SHEET SERVICE — Access Layer เดียวสำหรับ Google Sheets =====
+
+var SheetService = (function() {
+  function getSheet(sheetName) {
+    var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
+    if (!sheet) throw new Error('Sheet not found: ' + sheetName);
+    return sheet;
+  }
+
+  function getValues(sheetName, rangeStr) {
+    var sheet = getSheet(sheetName);
+    return sheet.getRange(rangeStr).getValues();
+  }
+
+  function appendRow(sheetName, values) {
+    var sheet = getSheet(sheetName);
+    sheet.appendRow(values);
+  }
+
+  function getCachedOrFetch(sheetName, rangeStr, cacheKey) {
+    var cache = CacheService.getScriptCache();
+    var cached = cache.get(cacheKey);
+    if (cached) {
+      try { return JSON.parse(cached); } catch(e) { /* ignore and refetch */ }
+    }
+
+    var data = getValues(sheetName, rangeStr);
+    cache.put(cacheKey, JSON.stringify(data), CACHE_TTL);
+    return data;
+  }
+
+  function clearCache(cacheKey) {
+    var cache = CacheService.getScriptCache();
+    cache.remove(cacheKey);
+  }
+
+  return {
+    getSheet: getSheet,
+    getValues: getValues,
+    appendRow: appendRow,
+    getCachedOrFetch: getCachedOrFetch,
+    clearCache: clearCache
+  };
+})();
+
+// ===== 3. VALIDATION LAYER =====
+
+function validateRequired(obj, fields) {
+  for (var i = 0; i < fields.length; i++) {
+    var val = obj[fields[i]];
+    if (val === undefined || val === null || String(val).trim() === '') {
+      return { valid: false, message: 'กรุณากรอก ' + fields[i] };
+    }
+  }
+  return { valid: true };
+}
+
+function validateDate(dateStr) {
+  if (!dateStr) return { valid: false, message: 'กรุณาเลือกวันที่' };
+  var date = new Date(dateStr);
+  if (isNaN(date.getTime())) return { valid: false, message: 'รูปแบบวันที่ไม่ถูกต้อง' };
+  return { valid: true };
+}
+
+function validateUser(lineUserId) {
+  if (!lineUserId) return { valid: false, message: 'Missing lineUserId' };
+  return { valid: true };
+}
+
+function validatePayload(payload, requiredFields) {
+  if (!payload || typeof payload !== 'object') {
+    return { valid: false, message: 'Invalid payload' };
+  }
+  return validateRequired(payload, requiredFields);
+}
+
+// ===== 4. PERMISSION LAYER =====
+
+function authenticateRequest(payload) {
+  var userId = payload.lineUserId;
+  if (!userId) return jsonResponse(false, 'Missing lineUserId');
+
+  var result = verifyUser({ lineUserId: userId });
+  if (!result.success) return jsonResponse(false, 'ไม่พบผู้ใช้งานในระบบ');
+
+  return jsonResponse(true, '', result.data);
+}
+
+// ===== 5. ROUTER — แทน switch(fn) ยาว =====
+// เมื่อเพิ่มระบบใหม่: import function แล้วเพิ่ม Route ที่นี่
+
+var ROUTES = {
+  // DUTY
+  verifyUser:       function(p) { return verifyUser(p); },
+  saveDuty:         function(p) { return saveDuty(p); },
+  getHistory:       function(p) { return getHistory(p); },
+  getPoints:        function(p) { return getPoints(); },
+  // SWAP
+  getSubstituteList: function(p) { return getSubstituteList(); },
+  submitSwap:       function(p) { return submitSwap(p); },
+  getSwapHistory:   function(p) { return getSwapHistory(p); }
+};
+
+// ===== 6. API GATEWAY =====
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService
+        .createTextOutput(JSON.stringify(jsonResponse(false, 'No data received')))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var data = JSON.parse(e.postData.contents);
+    var fn = data.fn || '';
+    var payload = data.payload || {};
+
+    // 1. Authenticate ทุก request ยกเว้น verifyUser
+    if (fn !== 'verifyUser') {
+      var auth = authenticateRequest(payload);
+      if (!auth.success) {
+        return ContentService
+          .createTextOutput(JSON.stringify(auth))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // 2. Route
+    if (!ROUTES[fn]) {
+      return ContentService
+        .createTextOutput(JSON.stringify(jsonResponse(false, 'Invalid function: ' + fn)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var result = ROUTES[fn](payload);
+
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify(handleError(err)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

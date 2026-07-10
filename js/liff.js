@@ -1,10 +1,8 @@
-var liffApp = (function() {
-  var CONFIG = window.CONFIG;
-
-  function initLiff() {
-    return new Promise(function(resolve, reject) {
-      liff.init({ liffId: CONFIG.LIFF_ID })
-        .then(function() {
+var liffApp = (function () {
+  function initLiff(liffId) {
+    return new Promise(function (resolve, reject) {
+      liff.init({ liffId: liffId })
+        .then(function () {
           if (!liff.isLoggedIn()) {
             liff.login();
             reject(new Error('User not logged in, redirecting...'));
@@ -12,10 +10,10 @@ var liffApp = (function() {
           }
           return liff.getProfile();
         })
-        .then(function(profile) {
+        .then(function (profile) {
           resolve(profile);
         })
-        .catch(function(err) {
+        .catch(function (err) {
           reject(err);
         });
     });
