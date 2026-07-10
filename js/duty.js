@@ -172,10 +172,6 @@ var App = (function () {
                         ? '<p class="mt-1 font-medium text-[11px] ' + classes.subText + '">หมายเหตุ: ' + escapeHtml(log.note) + '</p>'
                         : '';
 
-                    var gpsBlock = (log.latitude && log.longitude)
-                        ? '<span class="block text-[10px] ' + classes.accentText + '">พิกัด: ' + parseFloat(log.latitude).toFixed(4) + ', ' + parseFloat(log.longitude).toFixed(4) + '</span>'
-                        : '';
-
                     var logItem = document.createElement('div');
                     logItem.className = 'p-3 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
                     logItem.innerHTML = [
@@ -188,7 +184,6 @@ var App = (function () {
                         noteBlock,
                         '</div>',
                         '<div class="text-right">',
-                        gpsBlock,
                         '<span class="font-bold ' + classes.timeText + '">' + escapeHtml(log.time) + ' น.</span>',
                         '</div>'
                     ].join('');

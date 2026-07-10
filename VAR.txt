@@ -16,15 +16,15 @@ const HEADERS = {
   USER: ['LineUserId', 'Name', 'EmployeeId'],
   DUTY: ['Date', 'Time', 'LineUserId', 'Shift', 'Point', 'Latitude', 'Longitude', 'Note'],
   POINTS: ['Name', 'Lat', 'Lng', 'Radius'],
-  LIST: ['LineUserId', 'Name', 'EmployeeId'],
-  SWAP: ['Date', 'LineUserId', 'Name', 'SubstituteUserId', 'SubstituteName', 'Timestamp']
+  LIST: ['Name', 'EmployeeId', 'Phone'],
+  SWAP: ['Date', 'LineUserId', 'Name', 'SubstituteEmployeeId', 'SubstituteName', 'Timestamp']
 };
 
 const COL = {
   USER:     { LINE_USER_ID: 0, NAME: 1, EMPLOYEE_ID: 2 },
   DUTY:    { DATE: 0, TIME: 1, LINE_USER_ID: 2, SHIFT: 3, POINT: 4, LAT: 5, LNG: 6, NOTE: 7 },
-  LIST:    { LINE_USER_ID: 0, NAME: 1, EMPLOYEE_ID: 2 },
-  SWAP:    { DATE: 0, LINE_USER_ID: 1, NAME: 2, SUB_USER_ID: 3, SUB_NAME: 4, TIMESTAMP: 5 }
+  LIST:    { NAME: 0, EMPLOYEE_ID: 1, PHONE: 2 },
+  SWAP:    { DATE: 0, LINE_USER_ID: 1, NAME: 2, SUB_EMP_ID: 3, SUB_NAME: 4, TIMESTAMP: 5 }
 };
 
 const MAX_HISTORY = 10;

@@ -12,9 +12,8 @@ function getSubstituteList() {
 
     var list = [];
     for (var i = 1; i < rows.length; i++) {
-      if (rows[i][COL.LIST.LINE_USER_ID]) {
+      if (rows[i][COL.LIST.NAME]) {
         list.push({
-          lineUserId: rows[i][COL.LIST.LINE_USER_ID].toString().trim(),
           name: rows[i][COL.LIST.NAME] || '',
           employeeId: rows[i][COL.LIST.EMPLOYEE_ID] || ''
         });
@@ -39,21 +38,21 @@ function submitSwap(payload) {
   lock.waitLock(30000);
   try {
     // 1. Validate required fields
-    var validation = validatePayload(payload, ['lineUserId', 'swapDate', 'substituteUserId']);
+    var validation = validatePayload(payload, ['lineUserId', 'swapDate', 'substituteEmployeeId']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
     // 2. Validate date
     var dateValidation = validateDate(payload.swapDate);
     if (!dateValidation.valid) return jsonResponse(false, dateValidation.message);
 
-    // 3. ห้ามเลือกตัวเองเป็นผู้แทนเวร
-    if (payload.lineUserId === payload.substituteUserId) {
-      return jsonResponse(false, 'ไม่สามารถเลือกตนเองเป็นผู้แทนเวรได้');
-    }
-
-    // 4. Authenticate (ตรวจสอบสิทธิ์)
+    // 3. Authenticate (ตรวจสอบสิทธิ์) — ได้ชื่อผู้ลาและ employeeId
     var auth = authenticateRequest(payload);
     if (!auth.success) return jsonResponse(false, auth.message);
+
+    // 4. ห้ามเลือกตัวเองเป็นผู้แทนเวร (เทียบ employeeId)
+    if (auth.data.employeeId && auth.data.employeeId === payload.substituteEmployeeId) {
+      return jsonResponse(false, 'ไม่สามารถเลือกตนเองเป็นผู้แทนเวรได้');
+    }
 
     // 5. ตรวจสอบซ้ำ — คนเดิมลาในวันเดียวกันแล้วหรือยัง
     //    และคนที่เลือกมาแทน ถูกเลือกแทนให้คนอื่นวันเดียวกันหรือยัง
@@ -63,15 +62,15 @@ function submitSwap(payload) {
       if (row[COL.SWAP.DATE] && row[COL.SWAP.LINE_USER_ID]) {
         var existingDate = String(row[COL.SWAP.DATE]).trim();
         var existingUserId = String(row[COL.SWAP.LINE_USER_ID]).trim();
-        var existingSubId = row[COL.SWAP.SUB_USER_ID] ? String(row[COL.SWAP.SUB_USER_ID]).trim() : '';
+        var existingSubEmpId = row[COL.SWAP.SUB_EMP_ID] ? String(row[COL.SWAP.SUB_EMP_ID]).trim() : '';
 
         // 5.1 คนเดิมลาในวันเดียวกันแล้ว
         if (existingDate === payload.swapDate && existingUserId === payload.lineUserId) {
           return jsonResponse(false, 'คุณได้ลงบันทึกการลาในวันที่ ' + payload.swapDate + ' ไว้แล้ว');
         }
 
-        // 5.2 คนที่เลือกมาแทน ถูกเลือกแทนให้คนอื่นในวันเดียวกันแล้ว
-        if (existingDate === payload.swapDate && existingSubId === payload.substituteUserId) {
+        // 5.2 คนที่เลือกมาแทน ถูกเลือกแทนให้คนอื่นในวันเดียวกันแล้ว (เทียบ employeeId)
+        if (existingDate === payload.swapDate && existingSubEmpId === payload.substituteEmployeeId) {
           return jsonResponse(false, 'ผู้แทนเวรท่านนี้ถูกเลือกให้แทนคนอื่นในวันที่ ' + payload.swapDate + ' แล้ว');
         }
       }
@@ -80,11 +79,11 @@ function submitSwap(payload) {
     // 6. ดึงชื่อผู้ลา (จาก authenticate result)
     var requesterName = auth.data.name || '';
 
-    // 7. ดึงชื่อผู้แทน (จากชีท LIST)
+    // 7. ดึงชื่อผู้แทน (จากชีท LIST โดยใช้ employeeId)
     var substituteName = '';
     var listRows = SheetService.getValues(SHEETS.LIST, 'A:C');
     for (var j = 1; j < listRows.length; j++) {
-      if (listRows[j][COL.LIST.LINE_USER_ID] && String(listRows[j][COL.LIST.LINE_USER_ID]).trim() === payload.substituteUserId) {
+      if (listRows[j][COL.LIST.EMPLOYEE_ID] && String(listRows[j][COL.LIST.EMPLOYEE_ID]).trim() === payload.substituteEmployeeId) {
         substituteName = listRows[j][COL.LIST.NAME] || '';
         break;
       }
@@ -95,7 +94,7 @@ function submitSwap(payload) {
       payload.swapDate,
       payload.lineUserId,
       requesterName,
-      payload.substituteUserId,
+      payload.substituteEmployeeId,
       substituteName,
       nowTimestamp()
     ]];
@@ -116,7 +115,7 @@ function getSwapHistory(payload) {
     var validation = validatePayload(payload, ['lineUserId']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
-    var rows = SheetService.getValues(SHEETS.SWAP, 'A:F'); // ไม่ cache
+    var rows = SheetService.getValues(SHEETS.SWAP, 'A:F');
     var history = [];
     for (var i = rows.length - 1; i >= 1; i--) {
       if (rows[i][COL.SWAP.LINE_USER_ID] && String(rows[i][COL.SWAP.LINE_USER_ID]).trim() === payload.lineUserId.trim()) {

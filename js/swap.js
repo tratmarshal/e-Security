@@ -60,12 +60,12 @@ var App = (function () {
         select.appendChild(placeholderOpt);
 
         loadedSubstitutes.forEach(function (person) {
-            // ซ่อนตัวเองออกจากรายการ (แต่ถ้าอยู่ใน LIST ก็ยังแสดงได้ ถ้าต้องการให้เลือกตัวเองไม่ได้ให้ filter ออก)
-            if (person.lineUserId === currentUser.userId) return;
+            // ซ่อนตัวเองออกจากรายการ (เทียบ employeeId)
+            if (person.employeeId === currentUser.employeeId) return;
 
             var opt = document.createElement('option');
-            opt.value = person.lineUserId;
-            opt.textContent = person.name + ' (' + person.employeeId + ')';
+            opt.value = person.employeeId;
+            opt.textContent = person.name;
             select.appendChild(opt);
         });
     }
@@ -163,7 +163,7 @@ var App = (function () {
         // หาชื่อผู้แทน
         var substituteName = '';
         for (var i = 0; i < loadedSubstitutes.length; i++) {
-            if (loadedSubstitutes[i].lineUserId === substituteUserId) {
+            if (loadedSubstitutes[i].employeeId === substituteUserId) {
                 substituteName = loadedSubstitutes[i].name;
                 break;
             }
@@ -182,7 +182,7 @@ var App = (function () {
             var payload = {
                 lineUserId: currentUser.userId,
                 swapDate: swapDate,
-                substituteUserId: substituteUserId
+                substituteEmployeeId: substituteUserId
             };
 
             var result = await api.submitSwap(payload);

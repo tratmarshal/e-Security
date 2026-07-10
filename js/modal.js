@@ -78,7 +78,8 @@ var modal = (function () {
    * @returns {Promise} - { isConfirmed: true/false }
    */
   function confirmSwap(data) {
-    var dateEsc = escapeHtml(data.swapDate);
+    var displayDate = common.formatDateTH(data.swapDate);
+    var dateEsc = escapeHtml(displayDate);
     var nameEsc = escapeHtml(data.requesterName);
     var subEsc = escapeHtml(data.substituteName);
 
