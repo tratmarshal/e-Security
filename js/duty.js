@@ -291,9 +291,15 @@ var App = (function () {
     function createHistoryItem(log) {
         var classes = common.getHistoryItemClasses();
         var displayDate = formatShortDate(log.date);
-        // ดึงเวลาเฉพาะ hh:mm
+        // ดึงเวลาเฉพาะ hh:mm (24 ชม.)
         var timeOnly = log.time || '';
-        if (timeOnly.length >= 5) {
+        if (timeOnly.indexOf('T') !== -1) {
+            // ISO datetime string เช่น "1899-12-30T12:46:06.000Z"
+            var d = new Date(timeOnly);
+            if (!isNaN(d.getTime())) {
+                timeOnly = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            }
+        } else if (timeOnly.length >= 5) {
             timeOnly = timeOnly.substring(0, 5);
         }
         // ใช้ชื่อจาก log ที่บันทึกไว้ ถ้าไม่มีใช้ currentUser.name
