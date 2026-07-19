@@ -95,29 +95,9 @@ var App = (function () {
         });
     }
 
-    // โหลดจุดตรวจจาก Google Sheets
+    // โหลดจุดตรวจ (hardcode)
     async function loadPoints() {
-        // แสดง skeleton ขณะโหลด
-        var select = document.getElementById('dutyPoint');
-        select.innerHTML = '';
-        var skeletonOpt = document.createElement('option');
-        skeletonOpt.disabled = true;
-        skeletonOpt.selected = true;
-        skeletonOpt.textContent = '⏳ กำลังโหลด...';
-        select.appendChild(skeletonOpt);
-
-        try {
-            var res = await api.getPoints();
-            if (res && res.success && res.data) {
-                loadedPoints = res.data;
-            } else {
-                console.warn('Fallback to default points:', res ? res.message : 'no response');
-                loadedPoints = getDefaultPointsFallback();
-            }
-        } catch (err) {
-            console.error('Failed to load points:', err);
-            loadedPoints = getDefaultPointsFallback();
-        }
+        loadedPoints = getDefaultPointsFallback();
         populatePoints(getCurrentShift());
     }
 

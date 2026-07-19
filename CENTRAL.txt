@@ -108,7 +108,6 @@ var ROUTES = {
   saveDuty:         function(p) { return saveDuty(p); },
   getHistory:       function(p) { return getHistory(p); },
   getAllHistory:    function(p) { return getAllHistory(); },
-  getPoints:        function(p) { return getPoints(); },
   // SWAP
   getSubstituteList: function(p) { return getSubstituteList(); },
   submitSwap:       function(p) { return submitSwap(p); },
@@ -130,7 +129,7 @@ function doPost(e) {
     var payload = data.payload || {};
 
     // 1. Authenticate ทุก request ยกเว้นพวกที่ไม่ต้องใช้ lineUserId
-    if (['verifyUser', 'getPoints', 'getAllHistory', 'getSubstituteList'].indexOf(fn) === -1) {
+    if (['verifyUser', 'getAllHistory', 'getSubstituteList'].indexOf(fn) === -1) {
       var auth = authenticateRequest(payload);
       if (!auth.success) {
         return ContentService

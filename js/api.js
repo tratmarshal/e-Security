@@ -48,10 +48,6 @@ var api = (function () {
     return callGas('saveDuty', data);
   }
 
-  function getPoints() {
-    return callGas('getPoints', {});
-  }
-
   function getHistory(lineUserId) {
     return callGas('getHistory', { lineUserId: lineUserId });
   }
@@ -77,7 +73,6 @@ var api = (function () {
     callGas: callGas,
     verifyUser: verifyUser,
     saveDuty: saveDuty,
-    getPoints: getPoints,
     getHistory: getHistory,
     getAllHistory: getAllHistory,
     getSubstituteList: getSubstituteList,

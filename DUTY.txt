@@ -85,41 +85,6 @@ function saveDuty(payload) {
   }
 }
 
-// ===== GET POINTS (จุดตรวจ) =====
-
-function getDefaultPoints() {
-  return [
-    { name: 'ป้อมหน้า', maxPeople: 2 },
-    { name: 'ชั้น 1', maxPeople: 2 },
-    { name: 'โรงรถ', maxPeople: 1 },
-    { name: 'ชั้น 4', maxPeople: 1 },
-    { name: 'ป้อมบ้านพัก', maxPeople: 1 }
-  ];
-}
-
-function getPoints() {
-  try {
-    var rows = SheetService.getValues(SHEETS.POINTS, 'A:E');
-    if (rows.length < 2) return jsonResponse(true, 'ใช้จุดตรวจเริ่มต้น (ไม่มีข้อมูลในชีท)', getDefaultPoints());
-
-    var points = [];
-    for (var i = 1; i < rows.length; i++) {
-      if (rows[i][0]) {
-        points.push({
-          name: rows[i][0].toString().trim(),
-          lat: parseFloat(rows[i][1]) || 0,
-          lng: parseFloat(rows[i][2]) || 0,
-          radius: parseFloat(rows[i][3]) || 100,
-          maxPeople: parseInt(rows[i][4]) || 1
-        });
-      }
-    }
-    return jsonResponse(true, '', points);
-  } catch (err) {
-    return jsonResponse(true, 'ใช้จุดตรวจเริ่มต้น: ' + err.message, getDefaultPoints());
-  }
-}
-
 // ===== GET DUTY HISTORY (ของตัวเอง) =====
 
 function getHistory(payload) {
