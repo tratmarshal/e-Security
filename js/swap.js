@@ -110,7 +110,14 @@ var App = (function () {
                 history.forEach(function (log) {
                     // แปลงวันที่จาก yyyy-mm-dd เป็นรูปแบบไทย
                     var displayDate = common.formatDateTH(log.date);
-                    var displayTime = log.timestamp ? common.formatDateTH(log.timestamp) + ' ' + log.timestamp.split(' ')[1] : '';
+                    var timePart = '';
+                    if (log.timestamp && log.timestamp.split(' ')[1]) {
+                        var parts = log.timestamp.split(' ')[1].split(':');
+                        if (parts.length >= 2) {
+                            timePart = parts[0] + ':' + parts[1] + ' น.';
+                        }
+                    }
+                    var displayTime = log.timestamp ? common.formatDateTH(log.timestamp) + ' ' + timePart : '';
 
                     var logItem = document.createElement('div');
                     logItem.className = 'p-3 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;

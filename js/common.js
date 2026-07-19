@@ -52,21 +52,10 @@ var common = (function () {
         });
     }
 
-    function formatTimeTH(date) {
-        if (!date) return '';
-        var d = new Date(date);
-        if (isNaN(d.getTime())) return String(date);
-        return d.toLocaleTimeString('th-TH', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        }) + ' น.';
-    }
-
     function updateLiveTime() {
         var now = new Date();
         var dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', locale: 'th-TH' };
-        var timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        var timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
 
         var liveDateEl = document.getElementById('live-date');
         var liveClockEl = document.getElementById('live-clock');
@@ -77,38 +66,6 @@ var common = (function () {
     // ===== Dark Mode Helper =====
     function isDarkMode() {
         return document.documentElement.classList.contains('dark');
-    }
-
-    // ===== Safe DOM Creation =====
-    function createElement(tag, attrs, children) {
-        var el = document.createElement(tag);
-        if (attrs) {
-            Object.keys(attrs).forEach(function (key) {
-                if (key === 'className') {
-                    el.className = attrs[key];
-                } else if (key === 'style' && typeof attrs[key] === 'object') {
-                    Object.assign(el.style, attrs[key]);
-                } else if (key.startsWith('data-')) {
-                    el.setAttribute(key, attrs[key]);
-                } else {
-                    el[key] = attrs[key];
-                }
-            });
-        }
-        if (children) {
-            if (Array.isArray(children)) {
-                children.forEach(function (child) {
-                    if (typeof child === 'string') {
-                        el.appendChild(document.createTextNode(child));
-                    } else if (child instanceof Node) {
-                        el.appendChild(child);
-                    }
-                });
-            } else if (typeof children === 'string') {
-                el.textContent = children;
-            }
-        }
-        return el;
     }
 
     // ===== History Item Renderer (ใช้ร่วมกัน) =====
@@ -127,10 +84,8 @@ var common = (function () {
         showLoading: showLoading,
         handleError: handleError,
         formatDateTH: formatDateTH,
-        formatTimeTH: formatTimeTH,
         updateLiveTime: updateLiveTime,
         isDarkMode: isDarkMode,
-        createElement: createElement,
         getHistoryItemClasses: getHistoryItemClasses
     };
 })();

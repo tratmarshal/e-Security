@@ -202,7 +202,7 @@ var App = (function () {
                         '<span class="font-bold ' + classes.mainText + '">จุดตรวจ: ' + escapeHtml(log.point) + '</span>',
                         '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ' + shiftColor + '">' + escapeHtml(log.shift) + '</span>',
                         '</div>',
-                        '<p class="font-medium ' + classes.subText + '">วันที่: ' + escapeHtml(log.date) + '</p>',
+                        '<p class="font-medium ' + classes.subText + '">วันที่: ' + escapeHtml(common.formatDateTH(log.date)) + '</p>',
                         noteBlock,
                         '</div>',
                         '<div class="text-right">',
