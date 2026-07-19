@@ -129,8 +129,8 @@ function doPost(e) {
     var fn = data.fn || '';
     var payload = data.payload || {};
 
-    // 1. Authenticate ทุก request ยกเว้น verifyUser
-    if (fn !== 'verifyUser') {
+    // 1. Authenticate ทุก request ยกเว้นพวกที่ไม่ต้องใช้ lineUserId
+    if (['verifyUser', 'getPoints', 'getAllHistory', 'getSubstituteList'].indexOf(fn) === -1) {
       var auth = authenticateRequest(payload);
       if (!auth.success) {
         return ContentService
