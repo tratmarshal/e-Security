@@ -89,10 +89,11 @@ function saveDuty(payload) {
 
 function getDefaultPoints() {
   return [
-    { name: 'ประตูหน้า', maxPeople: 2 },
-    { name: 'ประตูหลัง', maxPeople: 1 },
-    { name: 'อาคาร A', maxPeople: 1 },
-    { name: 'อาคาร B', maxPeople: 1 }
+    { name: 'ป้อมหน้า', maxPeople: 2 },
+    { name: 'ชั้น 1', maxPeople: 2 },
+    { name: 'โรงรถ', maxPeople: 1 },
+    { name: 'ชั้น 4', maxPeople: 1 },
+    { name: 'ป้อมบ้านพัก', maxPeople: 1 }
   ];
 }
 

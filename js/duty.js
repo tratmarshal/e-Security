@@ -58,7 +58,7 @@ var App = (function () {
     function getPointsByShift(shift) {
         if (shift === 'กลางวัน') {
             return loadedPoints.filter(function (p) {
-                return ['ป้อมหน้า', 'ชั้น1', 'โรงรถ', 'ชั้น'].indexOf(p.name) !== -1;
+                return ['ป้อมหน้า', 'ชั้น 1', 'โรงรถ', 'ชั้น 4'].indexOf(p.name) !== -1;
             });
         } else { // กลางคืน
             return loadedPoints.filter(function (p) {
@@ -124,9 +124,9 @@ var App = (function () {
     function getDefaultPointsFallback() {
         return [
             { name: 'ป้อมหน้า', maxPeople: 2 },
-            { name: 'ชั้น1', maxPeople: 2 },
+            { name: 'ชั้น 1', maxPeople: 2 },
             { name: 'โรงรถ', maxPeople: 1 },
-            { name: 'ชั้น', maxPeople: 1 },
+            { name: 'ชั้น 4', maxPeople: 1 },
             { name: 'ป้อมบ้านพัก', maxPeople: 1 }
         ];
     }
