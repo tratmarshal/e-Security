@@ -68,6 +68,7 @@ function saveDuty(payload) {
       today,
       nowTime(),
       userId,
+      payload.name || '',
       shift,
       payload.point,
       payload.latitude,
@@ -125,13 +126,14 @@ function getHistory(payload) {
     var validation = validatePayload(payload, ['lineUserId']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
-    var rows = SheetService.getValues(SHEETS.DUTY, 'A:H'); // ไม่ cache — ข้อมูล实时
+    var rows = SheetService.getValues(SHEETS.DUTY, 'A:I'); // ไม่ cache — ข้อมูล实时
     var history = [];
     for (var i = rows.length - 1; i >= 1; i--) {
       if (rows[i][COL.DUTY.LINE_USER_ID] && rows[i][COL.DUTY.LINE_USER_ID].toString().trim() === payload.lineUserId.trim()) {
         history.push({
           date: rows[i][COL.DUTY.DATE] || '',
           time: rows[i][COL.DUTY.TIME] || '',
+          name: rows[i][COL.DUTY.NAME] || '',
           shift: rows[i][COL.DUTY.SHIFT] || '',
           point: rows[i][COL.DUTY.POINT] || '',
           latitude: rows[i][COL.DUTY.LAT] || '',

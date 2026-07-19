@@ -296,6 +296,8 @@ var App = (function () {
         if (timeOnly.length >= 5) {
             timeOnly = timeOnly.substring(0, 5);
         }
+        // ใช้ชื่อจาก log ที่บันทึกไว้ ถ้าไม่มีใช้ currentUser.name
+        var displayName = log.name || currentUser.name;
 
         var logItem = document.createElement('div');
         logItem.className = 'p-2.5 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
@@ -305,7 +307,7 @@ var App = (function () {
         leftCol.className = 'flex flex-col space-y-0.5 flex-1 min-w-0';
         leftCol.innerHTML = [
             '<span class="text-[9px] ' + classes.accentText + '">' + escapeHtml(displayDate) + '</span>',
-            '<span class="font-bold text-sm ' + classes.mainText + ' truncate">' + escapeHtml(currentUser.name) + '</span>'
+            '<span class="font-bold text-sm ' + classes.mainText + ' truncate">' + escapeHtml(displayName) + '</span>'
         ].join('');
 
         // ขวา: เวลาเล็ก + จุดตรวจใหญ่

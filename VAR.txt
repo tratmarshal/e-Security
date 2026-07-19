@@ -14,7 +14,7 @@ const SHEETS = {
 
 const HEADERS = {
   USER: ['LineUserId', 'Name', 'EmployeeId'],
-  DUTY: ['Date', 'Time', 'LineUserId', 'Shift', 'Point', 'Latitude', 'Longitude', 'Note'],
+  DUTY: ['Date', 'Time', 'LineUserId', 'Name', 'Shift', 'Point', 'Latitude', 'Longitude', 'Note'],
   POINTS: ['Name', 'Lat', 'Lng', 'Radius', 'MaxPeople'],
   LIST: ['Name', 'EmployeeId', 'Phone'],
   SWAP: ['Date', 'LineUserId', 'Name', 'SubstituteEmployeeId', 'SubstituteName', 'Timestamp']
@@ -22,7 +22,7 @@ const HEADERS = {
 
 const COL = {
   USER:     { LINE_USER_ID: 0, NAME: 1, EMPLOYEE_ID: 2 },
-  DUTY:    { DATE: 0, TIME: 1, LINE_USER_ID: 2, SHIFT: 3, POINT: 4, LAT: 5, LNG: 6, NOTE: 7 },
+  DUTY:    { DATE: 0, TIME: 1, LINE_USER_ID: 2, NAME: 3, SHIFT: 4, POINT: 5, LAT: 6, LNG: 7, NOTE: 8 },
   LIST:    { NAME: 0, EMPLOYEE_ID: 1, PHONE: 2 },
   SWAP:    { DATE: 0, LINE_USER_ID: 1, NAME: 2, SUB_EMP_ID: 3, SUB_NAME: 4, TIMESTAMP: 5 }
 };
