@@ -90,13 +90,22 @@ var App = (function () {
         filtered.forEach(function (point) {
             var opt = document.createElement('option');
             opt.value = point.name;
-            opt.textContent = point.name + (point.maxPeople ? ' (' + point.maxPeople + ' คน)' : '');
+            opt.textContent = point.name; // ไม่ต้องใส่ (N คน)
             select.appendChild(opt);
         });
     }
 
     // โหลดจุดตรวจจาก Google Sheets
     async function loadPoints() {
+        // แสดง skeleton ขณะโหลด
+        var select = document.getElementById('dutyPoint');
+        select.innerHTML = '';
+        var skeletonOpt = document.createElement('option');
+        skeletonOpt.disabled = true;
+        skeletonOpt.selected = true;
+        skeletonOpt.textContent = '⏳ กำลังโหลด...';
+        select.appendChild(skeletonOpt);
+
         try {
             var res = await api.getPoints();
             if (res && res.success && res.data) {
@@ -165,14 +174,46 @@ var App = (function () {
         }
     }
 
-    // โหลดและแสดงประวัติย้อนหลัง
+    // รูปแบบวันที่สั้น เช่น "19 ก.ค. 69"
+    function formatShortDate(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+        return d.toLocaleDateString('th-TH', {
+            day: 'numeric',
+            month: 'short',
+            year: '2-digit'
+        });
+    }
+
+    // เช็คว่าช่วงเวลาปัจจุบันเป็นกลางวันหรือกลางคืน
+    function getCurrentPeriod() {
+        var now = new Date();
+        var h = now.getHours();
+        var m = now.getMinutes();
+        var totalMin = h * 60 + m;
+        // 07:00 - 19:00 = กลางวัน (420 - 1140)
+        // 19:00 - 07:00 = กลางคืน
+        if (totalMin >= 420 && totalMin < 1140) {
+            return 'กลางวัน';
+        } else {
+            return 'กลางคืน';
+        }
+    }
+
+    // โหลดและแสดงประวัติย้อนหลัง (2 คอลัมน์ + จัดกลุ่มตามผลัด)
     async function updateHistoryUI() {
         var historySection = document.getElementById('history-section');
         var historyContainer = document.getElementById('history-container');
         if (!historySection || !historyContainer) return;
 
         historySection.classList.remove('hidden');
-        historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">กำลังโหลดประวัติ...</p>';
+
+        // แสดง skeleton ขณะโหลด
+        historyContainer.innerHTML = '';
+        for (var s = 0; s < 3; s++) {
+            historyContainer.appendChild(common.createSkeletonItem());
+        }
 
         try {
             var res = await api.getHistory(currentUser.userId);
@@ -182,35 +223,61 @@ var App = (function () {
                     historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">ไม่พบประวัติ</p>';
                     return;
                 }
-                historyContainer.innerHTML = '';
-                var classes = common.getHistoryItemClasses();
 
+                // แยกเป็นกลางวัน / กลางคืน
+                var dayItems = [];
+                var nightItems = [];
                 history.forEach(function (log) {
-                    var shiftColor = log.shift === 'กลางวัน'
-                        ? 'bg-wvo-orange-50 text-wvo-orange-600 border border-wvo-orange-100'
-                        : 'bg-wvo-green-100 text-wvo-green-800 border border-wvo-green-200';
-
-                    var noteBlock = log.note
-                        ? '<p class="mt-1 font-medium text-[11px] ' + classes.subText + '">หมายเหตุ: ' + escapeHtml(log.note) + '</p>'
-                        : '';
-
-                    var logItem = document.createElement('div');
-                    logItem.className = 'p-3 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
-                    logItem.innerHTML = [
-                        '<div class="space-y-1">',
-                        '<div class="flex items-center space-x-1.5">',
-                        '<span class="font-bold ' + classes.mainText + '">จุดตรวจ: ' + escapeHtml(log.point) + '</span>',
-                        '<span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold ' + shiftColor + '">' + escapeHtml(log.shift) + '</span>',
-                        '</div>',
-                        '<p class="font-medium ' + classes.subText + '">วันที่: ' + escapeHtml(common.formatDateTH(log.date)) + '</p>',
-                        noteBlock,
-                        '</div>',
-                        '<div class="text-right">',
-                        '<span class="font-bold ' + classes.timeText + '">' + escapeHtml(log.time) + ' น.</span>',
-                        '</div>'
-                    ].join('');
-                    historyContainer.appendChild(logItem);
+                    // หาผลัดจาก log.shift หรือเดาจากเวลา
+                    if (log.shift === 'กลางวัน') {
+                        dayItems.push(log);
+                    } else {
+                        nightItems.push(log);
+                    }
                 });
+
+                // เรียงลำดับ: กลุ่มหลักตามช่วงเวลาปัจจุบันขึ้นก่อน
+                var currentPeriod = getCurrentPeriod();
+                var primaryGroup, secondaryGroup;
+                var primaryLabel, secondaryLabel;
+
+                if (currentPeriod === 'กลางวัน') {
+                    primaryGroup = dayItems;
+                    secondaryGroup = nightItems;
+                    primaryLabel = '☀️ กลางวัน';
+                    secondaryLabel = '🌙 กลางคืน';
+                } else {
+                    primaryGroup = nightItems;
+                    secondaryGroup = dayItems;
+                    primaryLabel = '🌙 กลางคืน';
+                    secondaryLabel = '☀️ กลางวัน';
+                }
+
+                historyContainer.innerHTML = '';
+
+                // Render กลุ่มหลัก
+                if (primaryGroup.length > 0) {
+                    var primaryHeader = document.createElement('div');
+                    primaryHeader.className = 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mb-1 mt-1';
+                    primaryHeader.textContent = primaryLabel;
+                    historyContainer.appendChild(primaryHeader);
+
+                    primaryGroup.forEach(function (log) {
+                        historyContainer.appendChild(createHistoryItem(log));
+                    });
+                }
+
+                // Render กลุ่มรอง (ถ้ามี)
+                if (secondaryGroup.length > 0) {
+                    var secondaryHeader = document.createElement('div');
+                    secondaryHeader.className = 'text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1 mt-2';
+                    secondaryHeader.textContent = secondaryLabel;
+                    historyContainer.appendChild(secondaryHeader);
+
+                    secondaryGroup.forEach(function (log) {
+                        historyContainer.appendChild(createHistoryItem(log));
+                    });
+                }
             } else {
                 historyContainer.innerHTML = '<p class="text-xs text-red-500 text-center py-4">โหลดประวัติไม่สำเร็จ: ' + escapeHtml(res ? res.message : '') + '</p>';
             }
@@ -218,6 +285,41 @@ var App = (function () {
             console.error('History load error:', err);
             historyContainer.innerHTML = '<p class="text-xs text-red-500 text-center py-4">โหลดประวัติไม่สำเร็จ</p>';
         }
+    }
+
+    // สร้าง element ประวัติ 2 คอลัมน์
+    function createHistoryItem(log) {
+        var classes = common.getHistoryItemClasses();
+        var displayDate = formatShortDate(log.date);
+        // ดึงเวลาเฉพาะ hh:mm
+        var timeOnly = log.time || '';
+        if (timeOnly.length >= 5) {
+            timeOnly = timeOnly.substring(0, 5);
+        }
+
+        var logItem = document.createElement('div');
+        logItem.className = 'p-2.5 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
+
+        // ซ้าย: วันที่เล็ก + ชื่อใหญ่
+        var leftCol = document.createElement('div');
+        leftCol.className = 'flex flex-col space-y-0.5 flex-1 min-w-0';
+        leftCol.innerHTML = [
+            '<span class="text-[9px] ' + classes.accentText + '">' + escapeHtml(displayDate) + '</span>',
+            '<span class="font-bold text-sm ' + classes.mainText + ' truncate">' + escapeHtml(currentUser.name) + '</span>'
+        ].join('');
+
+        // ขวา: เวลาเล็ก + จุดตรวจใหญ่
+        var rightCol = document.createElement('div');
+        rightCol.className = 'flex flex-col space-y-0.5 items-end flex-shrink-0 ml-2';
+        rightCol.innerHTML = [
+            '<span class="text-[9px] ' + classes.accentText + '">' + escapeHtml(timeOnly) + ' น.</span>',
+            '<span class="font-bold text-sm ' + classes.mainText + '">' + escapeHtml(log.point) + '</span>'
+        ].join('');
+
+        logItem.appendChild(leftCol);
+        logItem.appendChild(rightCol);
+
+        return logItem;
     }
 
     // รีเซ็ตฟอร์ม
@@ -303,10 +405,15 @@ var App = (function () {
                 currentUser.name = verifyResult.data.name || '';
                 currentUser.employeeId = verifyResult.data.employeeId || '';
 
-                var welcomeText = document.getElementById('user-welcome');
+                // แสดงชื่อ 2 บรรทัด
+                var nameDisplay = document.getElementById('user-name-display');
+                var idDisplay = document.getElementById('user-id-display');
                 var userAvatar = document.getElementById('user-avatar');
-                if (welcomeText) {
-                    welcomeText.textContent = currentUser.name + ' (' + currentUser.employeeId + ')';
+                if (nameDisplay) {
+                    nameDisplay.textContent = currentUser.name;
+                }
+                if (idDisplay) {
+                    idDisplay.textContent = 'รหัส: ' + currentUser.employeeId;
                 }
                 if (userAvatar && currentUser.pictureUrl) {
                     userAvatar.src = currentUser.pictureUrl;
@@ -325,8 +432,8 @@ var App = (function () {
                 document.getElementById('app').style.display = 'block';
                 document.getElementById('dutyForm').style.display = 'none';
 
-                var welcomeText = document.getElementById('user-welcome');
-                if (welcomeText) welcomeText.textContent = 'ยังไม่ได้ลงทะเบียน';
+                var nameDisplay = document.getElementById('user-name-display');
+                if (nameDisplay) nameDisplay.textContent = 'ยังไม่ได้ลงทะเบียน';
             }
         } catch (err) {
             common.showLoading(false);
@@ -364,6 +471,8 @@ var App = (function () {
         try {
             var payload = {
                 lineUserId: currentUser.userId,
+                name: currentUser.name,
+                employeeId: currentUser.employeeId,
                 shift: shift,
                 point: point,
                 latitude: userCoords.latitude,

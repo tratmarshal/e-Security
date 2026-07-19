@@ -1,18 +1,22 @@
 var modal = (function () {
-  // Shared customClass for consistent styling
-  var sharedPopupClass = 'rounded-2xl p-4';
-  var sharedConfirmBtnClass = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition';
-  var sharedCancelBtnClass = 'px-6 py-2.5 rounded-xl font-semibold text-sm transition';
+  // Shared customClass for consistent styling - Emerald theme
+  var sharedPopupClass = 'rounded-2xl p-5 shadow-2xl border border-emerald-100 dark:border-emerald-800';
+  var sharedConfirmBtnClass = 'px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus:ring-2 focus:ring-emerald-300';
+  var sharedCancelBtnClass = 'px-6 py-2.5 rounded-xl font-semibold text-sm transition bg-slate-100 dark:bg-emerald-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-emerald-800 focus:ring-2 focus:ring-slate-300';
 
   function showUserInfo(name, employeeId) {
     var nameEsc = escapeHtml(name);
     var idEsc = escapeHtml(employeeId);
     return Swal.fire({
-      title: 'ข้อมูลเจ้าหน้าที่',
-      html: '<p style="font-family: \'Sarabun\', sans-serif;"><strong>ชื่อ-สกุล:</strong> ' + nameEsc + '</p><p style="font-family: \'Sarabun\', sans-serif;"><strong>รหัสประจำตัว:</strong> ' + idEsc + '</p>',
-      icon: 'info',
+      title: '<span style="font-size:1.1rem;color:#1b5e20;">เจ้าหน้าที่</span>',
+      html: '<div style="font-family: \'Sarabun\', sans-serif; text-align: left; padding: 0 4px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e2e8f0;">' +
+        '<span style="background:#d4edda;color:#1b5e20;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;">' + nameEsc.charAt(0) + '</span>' +
+        '<div><div style="font-weight:600;font-size:14px;color:#1e293b;">' + nameEsc + '</div>' +
+        '<div style="font-size:12px;color:#64748b;">รหัส: ' + idEsc + '</div></div></div>',
+      icon: null,
       confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#2ECC71',
+      confirmButtonColor: '#1b5e20',
       allowOutsideClick: false,
       customClass: {
         popup: sharedPopupClass,
@@ -23,11 +27,13 @@ var modal = (function () {
 
   function showNotRegistered() {
     return Swal.fire({
-      title: 'ยังไม่ได้ลงทะเบียน',
-      text: 'กรุณาติดต่อผู้ดูแลระบบ',
-      icon: 'error',
+      title: '<span style="font-size:1.1rem;color:#b91c1c;">ยังไม่ได้ลงทะเบียน</span>',
+      html: '<div style="font-family: \'Sarabun\', sans-serif; text-align: center; padding: 8px 4px;">' +
+        '<div style="font-size:40px;margin-bottom:8px;">🚫</div>' +
+        '<div style="font-size:14px;color:#475569;">กรุณาติดต่อผู้ดูแลระบบ</div></div>',
+      icon: null,
       confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#2ECC71',
+      confirmButtonColor: '#1b5e20',
       allowOutsideClick: false,
       customClass: {
         popup: sharedPopupClass,
@@ -48,35 +54,46 @@ var modal = (function () {
     var pointEsc = escapeHtml(data.point);
     var noteEsc = escapeHtml(data.note) || '-';
 
+    var shiftIcon = data.shift === 'กลางวัน' ? '☀️' : '🌙';
     var shiftBadgeClass = data.shift === 'กลางวัน'
       ? 'bg-orange-100 text-orange-700'
       : 'bg-indigo-100 text-indigo-700';
 
     var html = [
-      '<div class="text-left space-y-2" style="font-family: \'Sarabun\', sans-serif;">',
-      '<div class="flex items-center py-1.5">',
-      '<span class="font-bold text-gray-800 text-sm">' + nameEsc + ' (' + idEsc + ')</span>',
+      '<div style="font-family: \'Sarabun\', sans-serif;" class="text-left space-y-3">',
+      // User info card
+      '<div class="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl">',
+      '<div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">' + nameEsc.charAt(0) + '</div>',
+      '<div>',
+      '<div class="font-bold text-sm text-slate-800 dark:text-white">' + nameEsc + '</div>',
+      '<div class="text-[11px] text-slate-500 dark:text-emerald-200/70">รหัส: ' + idEsc + '</div>',
       '</div>',
-      '<div class="flex items-center space-x-2 py-1.5 border-t border-gray-100">',
-      '<span class="px-2 py-0.5 rounded-full text-xs font-semibold ' + shiftBadgeClass + '">' + shiftEsc + '</span>',
-      '<span class="font-semibold text-emerald-700 text-sm">' + pointEsc + '</span>',
       '</div>',
-      '<div class="flex items-center py-1.5 border-t border-gray-100">',
-      '<span class="text-gray-500 text-sm">หมายเหตุ: </span>',
-      '<span class="text-sm text-gray-700 ml-1">' + noteEsc + '</span>',
+      // Shift + Point
+      '<div class="flex items-center justify-between p-3 bg-white dark:bg-emerald-900/30 rounded-xl border border-slate-100 dark:border-emerald-800/50">',
+      '<div class="flex items-center gap-2">',
+      '<span class="text-sm">' + shiftIcon + '</span>',
+      '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ' + shiftBadgeClass + '">' + shiftEsc + '</span>',
+      '</div>',
+      '<div class="font-bold text-sm text-emerald-700 dark:text-emerald-300">' + pointEsc + '</div>',
+      '</div>',
+      // Note
+      '<div class="p-3 bg-slate-50 dark:bg-emerald-900/20 rounded-xl border border-slate-100 dark:border-emerald-800/30">',
+      '<div class="text-[11px] text-slate-500 dark:text-emerald-200/60 mb-0.5">📝 หมายเหตุ</div>',
+      '<div class="text-sm text-slate-700 dark:text-emerald-100">' + noteEsc + '</div>',
       '</div>',
       '</div>'
     ].join('');
 
     return Swal.fire({
-      title: 'ตรวจสอบข้อมูล',
+      title: '<span style="font-size:1.1rem;color:#1b5e20;">ตรวจสอบข้อมูล</span>',
       html: html,
       icon: null,
       showCancelButton: true,
-      confirmButtonText: 'ยืนยัน',
-      cancelButtonText: 'กลับไปแก้ไข',
+      confirmButtonText: '✅ ยืนยัน',
+      cancelButtonText: '✏️ แก้ไข',
       reverseButtons: true,
-      confirmButtonColor: '#2ECC71',
+      confirmButtonColor: '#1b5e20',
       cancelButtonColor: '#94a3b8',
       allowOutsideClick: false,
       customClass: {
@@ -99,31 +116,43 @@ var modal = (function () {
     var subEsc = escapeHtml(data.substituteName);
 
     var html = [
-      '<div class="text-left space-y-2" style="font-family: \'Sarabun\', sans-serif;">',
-      '<div class="flex items-center py-1.5">',
-      '<span class="font-semibold text-gray-600 text-sm">วันที่ลา: </span>',
-      '<span class="font-bold text-gray-800 text-sm ml-1">' + dateEsc + '</span>',
+      '<div style="font-family: \'Sarabun\', sans-serif;" class="text-left space-y-3">',
+      // Requestor
+      '<div class="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl">',
+      '<div class="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">' + nameEsc.charAt(0) + '</div>',
+      '<div>',
+      '<div class="text-[11px] text-slate-500 dark:text-emerald-200/60">ผู้ลา</div>',
+      '<div class="font-bold text-sm text-slate-800 dark:text-white">' + nameEsc + '</div>',
       '</div>',
-      '<div class="flex items-center py-1.5 border-t border-gray-100">',
-      '<span class="font-semibold text-gray-600 text-sm">ผู้ลา: </span>',
-      '<span class="font-bold text-gray-800 text-sm ml-1">' + nameEsc + '</span>',
       '</div>',
-      '<div class="flex items-center py-1.5 border-t border-gray-100">',
-      '<span class="font-semibold text-gray-600 text-sm">ผู้แทนเวร: </span>',
-      '<span class="font-bold text-emerald-700 text-sm ml-1">' + subEsc + '</span>',
+      // Date
+      '<div class="flex items-center gap-3 p-3 bg-white dark:bg-emerald-900/30 rounded-xl border border-slate-100 dark:border-emerald-800/50">',
+      '<span class="text-lg">📅</span>',
+      '<div>',
+      '<div class="text-[11px] text-slate-500 dark:text-emerald-200/60">วันที่ลา</div>',
+      '<div class="font-bold text-sm text-slate-800 dark:text-white">' + dateEsc + '</div>',
+      '</div>',
+      '</div>',
+      // Substitute
+      '<div class="flex items-center gap-3 p-3 bg-white dark:bg-emerald-900/30 rounded-xl border border-slate-100 dark:border-emerald-800/50">',
+      '<div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">' + subEsc.charAt(0) + '</div>',
+      '<div>',
+      '<div class="text-[11px] text-slate-500 dark:text-emerald-200/60">ผู้แทนเวร</div>',
+      '<div class="font-bold text-sm text-emerald-700 dark:text-emerald-300">' + subEsc + '</div>',
+      '</div>',
       '</div>',
       '</div>'
     ].join('');
 
     return Swal.fire({
-      title: 'ยืนยันการลา',
+      title: '<span style="font-size:1.1rem;color:#1b5e20;">ยืนยันการลา</span>',
       html: html,
-      icon: 'question',
+      icon: null,
       showCancelButton: true,
-      confirmButtonText: 'ยืนยัน',
-      cancelButtonText: 'ยกเลิก',
+      confirmButtonText: '✅ ยืนยัน',
+      cancelButtonText: '↩️ ยกเลิก',
       reverseButtons: true,
-      confirmButtonColor: '#2ECC71',
+      confirmButtonColor: '#1b5e20',
       cancelButtonColor: '#94a3b8',
       allowOutsideClick: false,
       customClass: {
@@ -136,11 +165,13 @@ var modal = (function () {
 
   function showSuccess(message) {
     return Swal.fire({
-      title: 'สำเร็จ ✅',
-      text: message || 'บันทึกสำเร็จ',
-      icon: 'success',
+      title: '<span style="font-size:1.1rem;color:#1b5e20;">สำเร็จ</span>',
+      html: '<div style="font-family: \'Sarabun\', sans-serif; text-align: center; padding: 8px 4px;">' +
+        '<div style="font-size:48px;margin-bottom:8px;">✅</div>' +
+        '<div style="font-size:14px;color:#475569;">' + escapeHtml(message || 'บันทึกสำเร็จ') + '</div></div>',
+      icon: null,
       confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#2ECC71',
+      confirmButtonColor: '#1b5e20',
       customClass: {
         popup: sharedPopupClass,
         confirmButton: sharedConfirmBtnClass
@@ -150,11 +181,13 @@ var modal = (function () {
 
   function showError(message) {
     return Swal.fire({
-      title: 'ไม่สำเร็จ',
-      text: message || 'กรุณาลองใหม่',
-      icon: 'error',
+      title: '<span style="font-size:1.1rem;color:#b91c1c;">ไม่สำเร็จ</span>',
+      html: '<div style="font-family: \'Sarabun\', sans-serif; text-align: center; padding: 8px 4px;">' +
+        '<div style="font-size:48px;margin-bottom:8px;">❌</div>' +
+        '<div style="font-size:14px;color:#475569;">' + escapeHtml(message || 'กรุณาลองใหม่') + '</div></div>',
+      icon: null,
       confirmButtonText: 'ตกลง',
-      confirmButtonColor: '#2ECC71',
+      confirmButtonColor: '#1b5e20',
       customClass: {
         popup: sharedPopupClass,
         confirmButton: sharedConfirmBtnClass

@@ -70,14 +70,17 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-sm font-bold text-emerald-800 dark:text-white leading-tight theme-transition">รปภ.
-                        อผศ.</h1>
-                    <div id="userInfo" class="flex items-center space-x-1 mt-0.5">
-                        <img id="user-avatar" src="" class="w-4 h-4 rounded-full border border-emerald-400 hidden"
-                            alt="">
-                        <p id="user-welcome"
-                            class="text-[9px] text-slate-500 dark:text-emerald-200 font-semibold truncate max-w-[120px] theme-transition">
-                            กำลังโหลด...</p>
+                    <h1 class="text-sm font-bold text-emerald-800 dark:text-white leading-tight theme-transition">
+                        ระบบลงเวลาปฏิบัติงาน</h1>
+                    <div id="userInfo" class="flex items-start space-x-1.5 mt-0.5">
+                        <img id="user-avatar" src=""
+                            class="w-5 h-5 rounded-full border border-emerald-400 hidden mt-0.5" alt="">
+                        <div id="user-welcome" class="theme-transition">
+                            <span id="user-name-display"
+                                class="block text-[10px] font-bold text-slate-700 dark:text-emerald-100 leading-tight">กำลังโหลด...</span>
+                            <span id="user-id-display"
+                                class="block text-[8px] text-slate-400 dark:text-emerald-300/60 leading-tight"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,7 +150,7 @@
                 <!-- 2. Duty Point -->
                 <div class="mb-4">
                     <label for="dutyPoint"
-                        class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 theme-transition">จุดตรวจ
+                        class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5 theme-transition">จุดรักษาความปลอดภัย
                         <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="dutyPoint" required
@@ -192,7 +195,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>ประวัติ</span>
+                    <span>ล่าสุด</span>
                 </h3>
                 <div id="history-container" class="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
                     <p class="text-[10px] text-slate-400 text-center py-3">กำลังโหลด...</p>

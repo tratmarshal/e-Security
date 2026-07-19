@@ -227,10 +227,14 @@ var App = (function () {
                 currentUser.name = verifyResult.data.name || '';
                 currentUser.employeeId = verifyResult.data.employeeId || '';
 
-                var welcomeText = document.getElementById('user-welcome');
+                var nameDisplay = document.getElementById('user-name-display');
+                var idDisplay = document.getElementById('user-id-display');
                 var userAvatar = document.getElementById('user-avatar');
-                if (welcomeText) {
-                    welcomeText.textContent = currentUser.name + ' (' + currentUser.employeeId + ')';
+                if (nameDisplay) {
+                    nameDisplay.textContent = currentUser.name;
+                }
+                if (idDisplay) {
+                    idDisplay.textContent = 'รหัส: ' + currentUser.employeeId;
                 }
                 if (userAvatar && currentUser.pictureUrl) {
                     userAvatar.src = currentUser.pictureUrl;
@@ -248,8 +252,8 @@ var App = (function () {
                 document.getElementById('app').style.display = 'block';
                 document.getElementById('swapForm').style.display = 'none';
 
-                var welcomeText = document.getElementById('user-welcome');
-                if (welcomeText) welcomeText.textContent = 'ยังไม่ได้ลงทะเบียน';
+                var nameDisplay = document.getElementById('user-name-display');
+                if (nameDisplay) nameDisplay.textContent = 'ยังไม่ได้ลงทะเบียน';
             }
         } catch (err) {
             common.showLoading(false);
