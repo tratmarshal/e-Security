@@ -31,6 +31,22 @@ var App = (function () {
     function bindEvents() {
         document.getElementById('submitSwapBtn').addEventListener('click', onSubmitSwap);
 
+        // Multi-day toggle
+        document.getElementById('multiDayToggle').addEventListener('change', function () {
+            var wrapper = document.getElementById('dateEndWrapper');
+            var dateInput = document.getElementById('swapDate');
+            if (this.checked) {
+                wrapper.classList.remove('hidden');
+                wrapper.classList.add('flex');
+                dateInput.className = 'w-1/2 px-3 py-2.5 bg-white dark:bg-emerald-900 border border-slate-200 dark:border-emerald-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm text-slate-800 dark:text-white theme-transition';
+            } else {
+                wrapper.classList.add('hidden');
+                wrapper.classList.remove('flex');
+                dateInput.className = 'w-full px-3 py-2.5 bg-white dark:bg-emerald-900 border border-slate-200 dark:border-emerald-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm text-slate-800 dark:text-white theme-transition';
+                document.getElementById('swapDateEnd').value = '';
+            }
+        });
+
         // Shift toggle
         document.querySelectorAll('input[name="swapShift"]').forEach(function (el) {
             el.addEventListener('change', handleShiftToggle);
@@ -196,8 +212,18 @@ var App = (function () {
 
     // รีเซ็ตฟอร์ม
     function resetForm() {
-        document.getElementById('swapDateStart').value = '';
+        document.getElementById('swapDate').value = '';
         document.getElementById('swapDateEnd').value = '';
+        var toggle = document.getElementById('multiDayToggle');
+        if (toggle) toggle.checked = false;
+        // ซ่อน end date wrapper
+        var wrapper = document.getElementById('dateEndWrapper');
+        if (wrapper) {
+            wrapper.classList.add('hidden');
+            wrapper.classList.remove('flex');
+        }
+        var dateInput = document.getElementById('swapDate');
+        if (dateInput) dateInput.className = 'w-full px-3 py-2.5 bg-white dark:bg-emerald-900 border border-slate-200 dark:border-emerald-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-sm text-slate-800 dark:text-white theme-transition';
         document.querySelector('input[name="swapShift"][value="กลางวัน"]').checked = true;
         handleShiftToggle();
         var select = document.getElementById('substituteSelect');
@@ -206,25 +232,26 @@ var App = (function () {
 
     // ส่งคำขอลา
     async function onSubmitSwap() {
-        var swapDateStart = document.getElementById('swapDateStart').value;
-        var swapDateEnd = document.getElementById('swapDateEnd').value;
+        var swapDate = document.getElementById('swapDate').value;
+        var isMultiDay = document.getElementById('multiDayToggle').checked;
+        var swapDateEnd = isMultiDay ? document.getElementById('swapDateEnd').value : swapDate;
         var shiftEl = document.querySelector('input[name="swapShift"]:checked');
         var shift = shiftEl ? shiftEl.value : 'กลางวัน';
         var substituteSelect = document.getElementById('substituteSelect');
         var substituteUserId = substituteSelect.value;
 
         // Validate ฝั่ง Front-end
-        if (!swapDateStart) {
-            await modal.showError('กรุณาเลือกวันที่เริ่มลา');
+        if (!swapDate) {
+            await modal.showError('กรุณาเลือกวันที่ลา');
             return;
         }
 
-        if (!swapDateEnd) {
+        if (isMultiDay && !swapDateEnd) {
             await modal.showError('กรุณาเลือกวันที่สิ้นสุด');
             return;
         }
 
-        if (swapDateEnd < swapDateStart) {
+        if (isMultiDay && swapDateEnd < swapDate) {
             await modal.showError('วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม');
             return;
         }
@@ -234,18 +261,14 @@ var App = (function () {
             return;
         }
 
-        // หาชื่อผู้แทน
-        var substituteName = '';
-        for (var i = 0; i < loadedSubstitutes.length; i++) {
-            if (loadedSubstitutes[i].employeeId === substituteUserId) {
-                substituteName = loadedSubstitutes[i].name;
-                break;
-            }
-        }
+        // หาชื่อผู้แทนจาก select option ที่เลือก
+        var substituteName = substituteSelect.options[substituteSelect.selectedIndex].text;
+        // ถ้าเป็น placeholder ให้ clear
+        if (substituteName === '-- เลือกผู้แทน --') substituteName = '';
 
         // แสดง Modal ยืนยัน
         var confirmResult = await modal.confirmSwap({
-            swapDateStart: swapDateStart,
+            swapDateStart: swapDate,
             swapDateEnd: swapDateEnd,
             shift: shift,
             requesterName: currentUser.name,
@@ -257,7 +280,7 @@ var App = (function () {
         try {
             var payload = {
                 lineUserId: currentUser.userId,
-                swapDateStart: swapDateStart,
+                swapDateStart: swapDate,
                 swapDateEnd: swapDateEnd,
                 shift: shift,
                 substituteEmployeeId: substituteUserId

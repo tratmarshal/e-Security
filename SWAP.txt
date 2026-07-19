@@ -82,31 +82,42 @@ function submitSwap(payload) {
       current.setDate(current.getDate() + 1);
     }
 
-    // 7. ตรวจสอบซ้ำ — แต่ละวันในห้วง
+    // 7. หาแถวของตัวเองเก่า + แถวที่ substitute ถูกเลือกซ้ำ เพื่อลบ
+    var sheet = SheetService.getSheet(SHEETS.SWAP);
     var existingRows = SheetService.getValues(SHEETS.SWAP, 'A:G');
     var requesterName = auth.data.name || '';
+    var rowsToDelete = {};
 
-    for (var di = 0; di < dates.length; di++) {
-      var dateStr = dates[di];
+    // เก็บ index แถวที่ต้องลบ (key = dateStr)
+    for (var i = 1; i < existingRows.length; i++) {
+      var row = existingRows[i];
+      if (row[COL.SWAP.DATE] && row[COL.SWAP.LINE_USER_ID]) {
+        var existingDate = String(row[COL.SWAP.DATE]).trim();
+        var existingUserId = String(row[COL.SWAP.LINE_USER_ID]).trim();
 
-      for (var i = 1; i < existingRows.length; i++) {
-        var row = existingRows[i];
-        if (row[COL.SWAP.DATE] && row[COL.SWAP.LINE_USER_ID]) {
-          var existingDate = String(row[COL.SWAP.DATE]).trim();
-          var existingUserId = String(row[COL.SWAP.LINE_USER_ID]).trim();
-          var existingSubEmpId = row[COL.SWAP.SUBLIST_ID] ? String(row[COL.SWAP.SUBLIST_ID]).trim() : '';
-
-          // 7.1 คนเดิมลาในวันเดียวกันแล้ว
-          if (existingDate === dateStr && existingUserId === payload.lineUserId) {
-            return jsonResponse(false, 'คุณได้ลงบันทึกการลาในวันที่ ' + dateStr + ' ไว้แล้ว');
-          }
-
-          // 7.2 คนที่เลือกมาแทน ถูกเลือกแทนให้คนอื่นในวันเดียวกันแล้ว
-          if (existingDate === dateStr && existingSubEmpId === payload.substituteEmployeeId) {
-            return jsonResponse(false, 'ผู้แทนเวรท่านนี้ถูกเลือกให้แทนคนอื่นในวันที่ ' + dateStr + ' แล้ว');
+        // ลบแถวเก่าของ user นี้ในวันที่ซ้ำกัน (upsert)
+        if (existingUserId === payload.lineUserId) {
+          for (var di = 0; di < dates.length; di++) {
+            if (existingDate === dates[di]) {
+              rowsToDelete[i] = true;
+              break;
+            }
           }
         }
       }
+    }
+
+    // ลบแถวเก่าทั้งหมด (เรียง index จากมากไปน้อย)
+    var deleteIndices = [];
+    for (var idx in rowsToDelete) {
+      if (rowsToDelete.hasOwnProperty(idx)) {
+        deleteIndices.push(parseInt(idx));
+      }
+    }
+    deleteIndices.sort(function(a, b) { return b - a; });
+    // แปลง index 0-based ของ array เป็น row number ใน sheet (+1 เพราะ header)
+    for (var k = 0; k < deleteIndices.length; k++) {
+      sheet.deleteRow(deleteIndices[k] + 1);
     }
 
     // 8. บันทึกข้อมูลทีละวัน
