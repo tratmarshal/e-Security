@@ -51,12 +51,20 @@ function submitSwap(payload) {
       return jsonResponse(false, 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม');
     }
 
-    // 3. Authenticate (ตรวจสอบสิทธิ์) — ได้ชื่อผู้ลาและ employeeId
+    // 3. Anti-spam check
+    var spamCheck = checkSpam(payload.lineUserId, 'submitSwap');
+    if (!spamCheck.valid) return jsonResponse(false, spamCheck.message);
+
+    // 4. Authenticate (ตรวจสอบสิทธิ์) — ได้ชื่อผู้ลาและ employeeId
     var auth = authenticateRequest(payload);
-    if (!auth.success) return jsonResponse(false, auth.message);
+    if (!auth.success) {
+      logAction('submitSwap', payload.lineUserId, 'ลา', 'FAIL', auth.message);
+      return jsonResponse(false, auth.message);
+    }
 
     // 4. ห้ามเลือกตัวเองเป็นผู้แทนเวร (เทียบ employeeId)
     if (auth.data.employeeId && auth.data.employeeId === payload.substituteEmployeeId) {
+      logAction('submitSwap', payload.lineUserId, 'ลา', 'FAIL', 'เลือกตัวเองเป็นผู้แทน');
       return jsonResponse(false, 'ไม่สามารถเลือกตนเองเป็นผู้แทนเวรได้');
     }
 
@@ -191,6 +199,7 @@ function submitSwap(payload) {
     });
 
     if (hasConsecutiveShifts(subSchedule)) {
+      logAction('submitSwap', payload.lineUserId, 'ลา', 'FAIL', 'ผู้แทนควงกะ');
       return jsonResponse(false, 'ห้ามควงกะผลัดติดกัน (ผู้แทนเวรปฏิบัติงานติดต่อกันเกินกำหนด)');
     }
 
@@ -201,6 +210,7 @@ function submitSwap(payload) {
         reqSchedule = Object.assign({}, activeSubstitutes[reqEmpId]);
       }
       if (hasConsecutiveShifts(reqSchedule)) {
+        logAction('submitSwap', payload.lineUserId, 'ลา', 'FAIL', 'ผู้ลาควงกะ');
         return jsonResponse(false, 'ห้ามควงกะผลัดติดกัน (ผู้ลามีการปฏิบัติงานผลัดอื่นติดต่อกันเกินกำหนด)');
       }
     }
@@ -211,6 +221,7 @@ function submitSwap(payload) {
     for (var di = 0; di < dates.length; di++) {
       var D = dates[di];
       if (activeSubstitutes[subEmpId] && activeSubstitutes[subEmpId][D + '|' + proposedShift]) {
+        logAction('submitSwap', payload.lineUserId, 'ลา', 'FAIL', 'ผู้แทนซ้ำกับคนอื่น');
         return jsonResponse(false, 'ผู้แทนเวรคนนี้ถูกเลือกโดยเจ้าหน้าที่ท่านอื่นแล้ว');
       }
     }
@@ -250,8 +261,10 @@ function submitSwap(payload) {
       sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).sort({column: 1, ascending: true});
     }
 
+    logAction('submitSwap', payload.lineUserId, 'ลา', 'SUCCESS', dates.length + ' วัน, ผู้แทน: ' + substituteName);
     return jsonResponse(true, 'บันทึกการลาเรียบร้อย ✅ (' + dates.length + ' วัน)');
   } catch (err) {
+    logAction('submitSwap', payload.lineUserId, 'ลา', 'ERROR', err.message);
     return handleError(err);
   } finally {
     lock.releaseLock();

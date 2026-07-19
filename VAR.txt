@@ -9,7 +9,8 @@ const SHEETS = {
   DUTY: 'DUTY',
   POINTS: 'POINTS',
   SUPLIST: 'SUPLIST',
-  SWAP: 'SWAP'
+  SWAP: 'SWAP',
+  LOGS: 'LOGS'
 };
 
 const HEADERS = {
@@ -17,14 +18,16 @@ const HEADERS = {
   DUTY: ['Date', 'Time', 'LineUserId', 'Name', 'Shift', 'Point', 'Latitude', 'Longitude', 'Note'],
   POINTS: ['Name', 'Lat', 'Lng', 'Radius', 'MaxPeople'],
   SUPLIST: ['Sublistname', 'SublistID', 'Sublistphone'],
-  SWAP: ['Date', 'LineUserId', 'Name', 'Sublistname', 'SublistID', 'Shift', 'Timestamp']
+  SWAP: ['Date', 'LineUserId', 'Name', 'Sublistname', 'SublistID', 'Shift', 'Timestamp'],
+  LOGS: ['Timestamp', 'Function', 'LineUserId', 'Action', 'Status', 'Detail']
 };
 
 const COL = {
   USER:     { LINE_USER_ID: 0, NAME: 1, EMPLOYEE_ID: 2, PHONE: 3 },
   DUTY:    { DATE: 0, TIME: 1, LINE_USER_ID: 2, NAME: 3, SHIFT: 4, POINT: 5, LAT: 6, LNG: 7, NOTE: 8 },
   SUPLIST: { NAME: 0, EMPLOYEE_ID: 1, PHONE: 2 },
-  SWAP:    { DATE: 0, LINE_USER_ID: 1, NAME: 2, SUBLIST_NAME: 3, SUBLIST_ID: 4, SHIFT: 5, TIMESTAMP: 6 }
+  SWAP:    { DATE: 0, LINE_USER_ID: 1, NAME: 2, SUBLIST_NAME: 3, SUBLIST_ID: 4, SHIFT: 5, TIMESTAMP: 6 },
+  LOGS:    { TIMESTAMP: 0, FUNCTION: 1, LINE_USER_ID: 2, ACTION: 3, STATUS: 4, DETAIL: 5 }
 };
 
 const MAX_HISTORY = 10;

@@ -87,7 +87,43 @@ function validatePayload(payload, requiredFields) {
   return validateRequired(payload, requiredFields);
 }
 
-// ===== 4. PERMISSION LAYER =====
+// ===== 4. ANTI-SPAM LAYER =====
+
+const SPAM_INTERVAL_SEC = 10; // 10 วิ ระหว่าง request เดียวกัน
+
+function checkSpam(userId, fn) {
+  var cache = CacheService.getScriptCache();
+  var key = 'spam_' + fn + '_' + userId;
+  var lastTime = cache.get(key);
+  var now = new Date().getTime();
+  if (lastTime) {
+    var elapsed = (now - parseInt(lastTime)) / 1000;
+    if (elapsed < SPAM_INTERVAL_SEC) {
+      return { valid: false, message: 'กรุณารอสักครู่ (' + Math.ceil(SPAM_INTERVAL_SEC - elapsed) + ' วิ)' };
+    }
+  }
+  cache.put(key, String(now), SPAM_INTERVAL_SEC + 5);
+  return { valid: true };
+}
+
+// ===== 5. LOG LAYER =====
+
+function logAction(fn, userId, action, status, detail) {
+  try {
+    SheetService.appendRow(SHEETS.LOGS, [
+      nowTimestamp(),
+      fn,
+      userId || '',
+      action || '',
+      status || '',
+      detail || ''
+    ]);
+  } catch (e) {
+    console.error('Log error:', e);
+  }
+}
+
+// ===== 6. PERMISSION LAYER =====
 
 function authenticateRequest(payload) {
   var userId = payload.lineUserId;
@@ -99,7 +135,7 @@ function authenticateRequest(payload) {
   return jsonResponse(true, '', result.data);
 }
 
-// ===== 5. ROUTER — แทน switch(fn) ยาว =====
+// ===== 7. ROUTER — แทน switch(fn) ยาว =====
 // เมื่อเพิ่มระบบใหม่: import function แล้วเพิ่ม Route ที่นี่
 
 var ROUTES = {
@@ -114,7 +150,7 @@ var ROUTES = {
   getSwapHistory:   function(p) { return getSwapHistory(p); }
 };
 
-// ===== 6. API GATEWAY =====
+// ===== 8. API GATEWAY =====
 
 function doPost(e) {
   try {

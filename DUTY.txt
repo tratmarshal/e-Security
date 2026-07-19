@@ -36,6 +36,10 @@ function saveDuty(payload) {
     var validation = validatePayload(payload, ['lineUserId', 'shift', 'point', 'latitude', 'longitude']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
+    // Anti-spam check
+    var spamCheck = checkSpam(payload.lineUserId, 'saveDuty');
+    if (!spamCheck.valid) return jsonResponse(false, spamCheck.message);
+
     var today = nowDate();
     var userId = payload.lineUserId;
     var shift = payload.shift;
@@ -77,8 +81,10 @@ function saveDuty(payload) {
     ]];
     sheet.appendRow(values[0]);
 
+    logAction('saveDuty', payload.lineUserId, 'ลงเวลา', 'SUCCESS', shift + ' ' + (payload.point || ''));
     return jsonResponse(true, 'บันทึกข้อมูลเรียบร้อย (อัปเดตล่าสุด)');
   } catch (err) {
+    logAction('saveDuty', payload.lineUserId, 'ลงเวลา', 'ERROR', err.message);
     return handleError(err);
   } finally {
     lock.releaseLock();

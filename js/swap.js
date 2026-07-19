@@ -171,7 +171,12 @@ var App = (function () {
         if (!historySection || !historyContainer) return;
 
         historySection.classList.remove('hidden');
-        historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">กำลังโหลดประวัติ...</p>';
+
+        // แสดง skeleton ขณะโหลด
+        historyContainer.innerHTML = '';
+        for (var s = 0; s < 3; s++) {
+            historyContainer.appendChild(common.createSkeletonItem());
+        }
 
         try {
             var res = await api.getSwapHistory(currentUser.userId);
