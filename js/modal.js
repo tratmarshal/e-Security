@@ -106,14 +106,23 @@ var modal = (function () {
 
   /**
    * แสดง Modal ยืนยันการลา/แทนเวร
-   * @param {Object} data - { swapDate, requesterName, substituteName }
+   * @param {Object} data - { swapDateStart, swapDateEnd, shift, requesterName, substituteName }
    * @returns {Promise} - { isConfirmed: true/false }
    */
   function confirmSwap(data) {
-    var displayDate = common.formatDateTH(data.swapDate);
-    var dateEsc = escapeHtml(displayDate);
+    var displayDateStart = common.formatDateTH(data.swapDateStart);
+    var displayDateEnd = common.formatDateTH(data.swapDateEnd);
+    var dateStartEsc = escapeHtml(displayDateStart);
+    var dateEndEsc = escapeHtml(displayDateEnd);
     var nameEsc = escapeHtml(data.requesterName);
     var subEsc = escapeHtml(data.substituteName);
+    var shiftEsc = escapeHtml(data.shift || '');
+    var shiftIcon = data.shift === 'กลางวัน' ? '☀️' : '🌙';
+    var shiftBadgeClass = data.shift === 'กลางวัน'
+      ? 'bg-orange-100 text-orange-700'
+      : 'bg-indigo-100 text-indigo-700';
+
+    var dateRangeText = dateStartEsc + ' → ' + dateEndEsc;
 
     var html = [
       '<div style="font-family: \'Sarabun\', sans-serif;" class="text-left space-y-3">',
@@ -125,12 +134,20 @@ var modal = (function () {
       '<div class="font-bold text-sm text-slate-800 dark:text-white">' + nameEsc + '</div>',
       '</div>',
       '</div>',
-      // Date
+      // Date range
       '<div class="flex items-center gap-3 p-3 bg-white dark:bg-emerald-900/30 rounded-xl border border-slate-100 dark:border-emerald-800/50">',
       '<span class="text-lg">📅</span>',
       '<div>',
       '<div class="text-[11px] text-slate-500 dark:text-emerald-200/60">วันที่ลา</div>',
-      '<div class="font-bold text-sm text-slate-800 dark:text-white">' + dateEsc + '</div>',
+      '<div class="font-bold text-sm text-slate-800 dark:text-white">' + dateRangeText + '</div>',
+      '</div>',
+      '</div>',
+      // Shift
+      '<div class="flex items-center gap-3 p-3 bg-white dark:bg-emerald-900/30 rounded-xl border border-slate-100 dark:border-emerald-800/50">',
+      '<span class="text-lg">' + shiftIcon + '</span>',
+      '<div>',
+      '<div class="text-[11px] text-slate-500 dark:text-emerald-200/60">ผลัด</div>',
+      '<div class="font-bold text-sm"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ' + shiftBadgeClass + '">' + shiftEsc + '</span></div>',
       '</div>',
       '</div>',
       // Substitute

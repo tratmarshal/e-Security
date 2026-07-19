@@ -31,6 +31,12 @@ var App = (function () {
     function bindEvents() {
         document.getElementById('submitSwapBtn').addEventListener('click', onSubmitSwap);
 
+        // Shift toggle
+        document.querySelectorAll('input[name="swapShift"]').forEach(function (el) {
+            el.addEventListener('change', handleShiftToggle);
+        });
+        handleShiftToggle();
+
         // Live time
         liveTimeInterval = setInterval(common.updateLiveTime, 1000);
         common.updateLiveTime();
@@ -46,6 +52,61 @@ var App = (function () {
     }
 
     // ===== PRIVATE FUNCTIONS =====
+
+    // จัดการ toggle ผลัดกลางวัน/กลางคืน
+    function handleShiftToggle() {
+        var radios = document.querySelectorAll('input[name="swapShift"]');
+        var isNight = false;
+
+        radios.forEach(function (radio) {
+            if (radio.checked && radio.value === 'กลางคืน') {
+                isNight = true;
+            }
+        });
+
+        var toggleBg = document.getElementById('toggle-bg');
+        var labelDay = document.getElementById('label-day');
+        var labelNight = document.getElementById('label-night');
+        var textDay = document.getElementById('text-day');
+        var textNight = document.getElementById('text-night');
+        var shiftTimeDesc = document.getElementById('shift-time-desc');
+
+        if (!isNight) {
+            if (toggleBg) toggleBg.style.left = '6px';
+            if (labelDay) {
+                var svg = labelDay.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-4 w-4 mr-1 text-orange-500');
+            }
+            if (textDay) textDay.className = 'text-xs font-bold text-emerald-700';
+            if (labelNight) {
+                var svg = labelNight.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-4 w-4 mr-1 text-slate-400');
+            }
+            if (textNight) textNight.className = 'text-xs font-semibold text-slate-500';
+
+            if (shiftTimeDesc) {
+                shiftTimeDesc.innerText = '07:00 - 19:00 น.';
+                shiftTimeDesc.className = 'text-[10px] text-orange-600 font-semibold bg-orange-50 px-2 py-0.5 rounded-md';
+            }
+        } else {
+            if (toggleBg) toggleBg.style.left = 'calc(50% - 6px)';
+            if (labelDay) {
+                var svg = labelDay.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-4 w-4 mr-1 text-slate-400');
+            }
+            if (textDay) textDay.className = 'text-xs font-semibold text-slate-500';
+            if (labelNight) {
+                var svg = labelNight.querySelector('svg');
+                if (svg) svg.setAttribute('class', 'h-4 w-4 mr-1 text-indigo-500');
+            }
+            if (textNight) textNight.className = 'text-xs font-bold text-indigo-700';
+
+            if (shiftTimeDesc) {
+                shiftTimeDesc.innerText = '19:00 - 07:00 น.';
+                shiftTimeDesc.className = 'text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md';
+            }
+        }
+    }
 
     // ดึงรายชื่อผู้แทนเวรมาแสดงใน select
     function populateSubstitutes() {
@@ -110,27 +171,17 @@ var App = (function () {
                 history.forEach(function (log) {
                     // แปลงวันที่จาก yyyy-mm-dd เป็นรูปแบบไทย
                     var displayDate = common.formatDateTH(log.date);
-                    var timePart = '';
-                    if (log.timestamp && log.timestamp.split(' ')[1]) {
-                        var parts = log.timestamp.split(' ')[1].split(':');
-                        if (parts.length >= 2) {
-                            timePart = parts[0] + ':' + parts[1] + ' น.';
-                        }
-                    }
-                    var displayTime = log.timestamp ? common.formatDateTH(log.timestamp) + ' ' + timePart : '';
+                    var shiftLabel = log.shift || '';
+                    var subName = log.substituteName || '(ไม่ระบุ)';
 
                     var logItem = document.createElement('div');
-                    logItem.className = 'p-3 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
+                    logItem.className = 'p-2.5 border rounded-xl flex justify-between items-center text-xs transition shadow-sm ' + classes.itemBg;
                     logItem.innerHTML = [
-                        '<div class="space-y-1">',
-                        '<div class="flex items-center space-x-1.5">',
-                        '<span class="font-semibold ' + classes.mainText + '">วันที่ลา: ' + escapeHtml(displayDate) + '</span>',
+                        '<div class="flex items-center space-x-2">',
+                        '<span class="font-semibold ' + classes.mainText + '">' + escapeHtml(displayDate) + '</span>',
+                        shiftLabel ? '<span class="text-[10px] px-1.5 py-0.5 rounded ' + (shiftLabel === 'กลางวัน' ? 'bg-orange-100 text-orange-700' : 'bg-indigo-100 text-indigo-700') + '">' + escapeHtml(shiftLabel) + '</span>' : '',
                         '</div>',
-                        '<p class="font-medium ' + classes.subText + '">ผู้แทน: ' + escapeHtml(log.substituteName) + '</p>',
-                        '</div>',
-                        '<div class="text-right">',
-                        '<span class="block text-[10px] ' + classes.accentText + '">' + escapeHtml(displayTime) + '</span>',
-                        '</div>'
+                        '<div class="font-medium ' + classes.subText + ' text-right">' + escapeHtml(subName) + '</div>'
                     ].join('');
                     historyContainer.appendChild(logItem);
                 });
@@ -145,20 +196,36 @@ var App = (function () {
 
     // รีเซ็ตฟอร์ม
     function resetForm() {
-        document.getElementById('swapDate').value = '';
+        document.getElementById('swapDateStart').value = '';
+        document.getElementById('swapDateEnd').value = '';
+        document.querySelector('input[name="swapShift"][value="กลางวัน"]').checked = true;
+        handleShiftToggle();
         var select = document.getElementById('substituteSelect');
         if (select) select.selectedIndex = 0;
     }
 
     // ส่งคำขอลา
     async function onSubmitSwap() {
-        var swapDate = document.getElementById('swapDate').value;
+        var swapDateStart = document.getElementById('swapDateStart').value;
+        var swapDateEnd = document.getElementById('swapDateEnd').value;
+        var shiftEl = document.querySelector('input[name="swapShift"]:checked');
+        var shift = shiftEl ? shiftEl.value : 'กลางวัน';
         var substituteSelect = document.getElementById('substituteSelect');
         var substituteUserId = substituteSelect.value;
 
         // Validate ฝั่ง Front-end
-        if (!swapDate) {
-            await modal.showError('กรุณาเลือกวันที่ลา');
+        if (!swapDateStart) {
+            await modal.showError('กรุณาเลือกวันที่เริ่มลา');
+            return;
+        }
+
+        if (!swapDateEnd) {
+            await modal.showError('กรุณาเลือกวันที่สิ้นสุด');
+            return;
+        }
+
+        if (swapDateEnd < swapDateStart) {
+            await modal.showError('วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม');
             return;
         }
 
@@ -178,7 +245,9 @@ var App = (function () {
 
         // แสดง Modal ยืนยัน
         var confirmResult = await modal.confirmSwap({
-            swapDate: swapDate,
+            swapDateStart: swapDateStart,
+            swapDateEnd: swapDateEnd,
+            shift: shift,
             requesterName: currentUser.name,
             substituteName: substituteName
         });
@@ -188,7 +257,9 @@ var App = (function () {
         try {
             var payload = {
                 lineUserId: currentUser.userId,
-                swapDate: swapDate,
+                swapDateStart: swapDateStart,
+                swapDateEnd: swapDateEnd,
+                shift: shift,
                 substituteEmployeeId: substituteUserId
             };
 
