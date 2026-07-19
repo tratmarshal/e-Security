@@ -119,14 +119,14 @@ function getPoints() {
   }
 }
 
-// ===== GET DUTY HISTORY =====
+// ===== GET DUTY HISTORY (ของตัวเอง) =====
 
 function getHistory(payload) {
   try {
     var validation = validatePayload(payload, ['lineUserId']);
     if (!validation.valid) return jsonResponse(false, validation.message);
 
-    var rows = SheetService.getValues(SHEETS.DUTY, 'A:I'); // ไม่ cache — ข้อมูล实时
+    var rows = SheetService.getValues(SHEETS.DUTY, 'A:I');
     var history = [];
     for (var i = rows.length - 1; i >= 1; i--) {
       if (rows[i][COL.DUTY.LINE_USER_ID] && rows[i][COL.DUTY.LINE_USER_ID].toString().trim() === payload.lineUserId.trim()) {
@@ -141,6 +141,33 @@ function getHistory(payload) {
           note: rows[i][COL.DUTY.NOTE] || ''
         });
         if (history.length >= MAX_HISTORY) break;
+      }
+    }
+    return jsonResponse(true, '', history);
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
+// ===== GET ALL DUTY HISTORY (ทุกคน ไม่กรอง user) =====
+
+function getAllHistory() {
+  try {
+    var rows = SheetService.getValues(SHEETS.DUTY, 'A:I');
+    var history = [];
+    for (var i = rows.length - 1; i >= 1; i--) {
+      if (rows[i][COL.DUTY.DATE]) {
+        history.push({
+          date: rows[i][COL.DUTY.DATE] || '',
+          time: rows[i][COL.DUTY.TIME] || '',
+          name: rows[i][COL.DUTY.NAME] || '',
+          shift: rows[i][COL.DUTY.SHIFT] || '',
+          point: rows[i][COL.DUTY.POINT] || '',
+          latitude: rows[i][COL.DUTY.LAT] || '',
+          longitude: rows[i][COL.DUTY.LNG] || '',
+          note: rows[i][COL.DUTY.NOTE] || ''
+        });
+        if (history.length >= MAX_HISTORY * 3) break; // จำกัด 30 รายการล่าสุด
       }
     }
     return jsonResponse(true, '', history);

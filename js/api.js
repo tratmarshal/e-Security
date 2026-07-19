@@ -8,7 +8,12 @@ var api = (function () {
 
     return fetch(CONFIG.GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 
+        'Content-Type': 'text/plain;charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
       body: JSON.stringify({ fn: fn, payload: payload }),
       signal: controller.signal
     })
@@ -55,6 +60,10 @@ var api = (function () {
     return callGas('getHistory', { lineUserId: lineUserId });
   }
 
+  function getAllHistory() {
+    return callGas('getAllHistory', {});
+  }
+
   // ===== SWAP APIs =====
   function getSubstituteList() {
     return callGas('getSubstituteList', {});
@@ -74,6 +83,7 @@ var api = (function () {
     saveDuty: saveDuty,
     getPoints: getPoints,
     getHistory: getHistory,
+    getAllHistory: getAllHistory,
     getSubstituteList: getSubstituteList,
     submitSwap: submitSwap,
     getSwapHistory: getSwapHistory

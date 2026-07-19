@@ -107,6 +107,7 @@ var ROUTES = {
   verifyUser:       function(p) { return verifyUser(p); },
   saveDuty:         function(p) { return saveDuty(p); },
   getHistory:       function(p) { return getHistory(p); },
+  getAllHistory:    function(p) { return getAllHistory(); },
   getPoints:        function(p) { return getPoints(); },
   // SWAP
   getSubstituteList: function(p) { return getSubstituteList(); },

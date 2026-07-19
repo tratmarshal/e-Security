@@ -201,7 +201,39 @@ var App = (function () {
         }
     }
 
-    // โหลดและแสดงประวัติย้อนหลัง (2 คอลัมน์ + จัดกลุ่มตามผลัด)
+    // แปลงวันที่เป็น string YYYY-MM-DD เพื่อใช้เปรียบเทียบ
+    function toDateKey(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return String(dateStr);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    // ตรวจสอบว่า log อยู่ในช่วงเวลาผลัดปัจจุบันหรือไม่
+    function isInCurrentShiftPeriod(log) {
+        var now = new Date();
+        var h = now.getHours();
+        var m = now.getMinutes();
+        var totalMin = h * 60 + m;
+        var logDate = toDateKey(log.date);
+        var todayKey = toDateKey(now.toISOString());
+        var yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        var yesterdayKey = toDateKey(yesterday.toISOString());
+
+        if (totalMin >= 420 && totalMin < 1140) { // 07:00-19:00 = DAY
+            // แสดงเฉพาะกลางวันของวันนี้
+            return log.shift === 'กลางวัน' && logDate === todayKey;
+        } else if (totalMin >= 1140) { // 19:00-23:59 = NIGHT (เริ่มวันนี้)
+            // แสดงเฉพาะกลางคืนของวันนี้
+            return log.shift === 'กลางคืน' && logDate === todayKey;
+        } else { // 00:00-06:59 = NIGHT (เริ่มเมื่อวาน)
+            // แสดงเฉพาะกลางคืนของเมื่อวาน
+            return log.shift === 'กลางคืน' && logDate === yesterdayKey;
+        }
+    }
+
+    // โหลดและแสดงประวัติเข้างานของทุกคน (กรองตามช่วงเวลาผลัด + จัดกลุ่มตามวันที่)
     async function updateHistoryUI() {
         var historySection = document.getElementById('history-section');
         var historyContainer = document.getElementById('history-container');
@@ -216,19 +248,41 @@ var App = (function () {
         }
 
         try {
-            var res = await api.getHistory(currentUser.userId);
+            var res = await api.getAllHistory();
             if (res && res.success && res.data) {
-                var history = res.data;
-                if (history.length === 0) {
+                var allHistory = res.data;
+                if (allHistory.length === 0) {
                     historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">ไม่พบประวัติ</p>';
                     return;
                 }
 
-                // แยกเป็นกลางวัน / กลางคืน
+                // กรองเฉพาะรายการที่อยู่ในช่วงเวลาผลัดปัจจุบัน
+                var filtered = allHistory.filter(function (log) {
+                    return isInCurrentShiftPeriod(log);
+                });
+
+                if (filtered.length === 0) {
+                    historyContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">ไม่มีผู้ลงชื่อในผลัดปัจจุบัน</p>';
+                    return;
+                }
+
+                // Deduplicate: ถ้าชื่อ + วันที่ + ผลัด ซ้ำกัน เก็บเฉพาะรายการแรก (ล่าสุด)
+                var seen = {};
+                var unique = [];
+                filtered.forEach(function (log) {
+                    var key = (log.name || '') + '|' + toDateKey(log.date) + '|' + (log.shift || '');
+                    if (!seen[key]) {
+                        seen[key] = true;
+                        unique.push(log);
+                    }
+                });
+
+                // แยกเป็นกลางวัน / กลางคืน (จัดการ cross-midnight)
                 var dayItems = [];
                 var nightItems = [];
-                history.forEach(function (log) {
-                    // หาผลัดจาก log.shift หรือเดาจากเวลา
+                var currentPeriod = getCurrentPeriod();
+
+                unique.forEach(function (log) {
                     if (log.shift === 'กลางวัน') {
                         dayItems.push(log);
                     } else {
@@ -236,46 +290,83 @@ var App = (function () {
                     }
                 });
 
-                // เรียงลำดับ: กลุ่มหลักตามช่วงเวลาปัจจุบันขึ้นก่อน
-                var currentPeriod = getCurrentPeriod();
+                // จัดกลุ่มตามวันที่
+                function groupByDate(items) {
+                    var groups = {};
+                    items.forEach(function (item) {
+                        var key = toDateKey(item.date);
+                        if (!groups[key]) {
+                            groups[key] = { dateKey: key, displayDate: formatShortDate(item.date), items: [] };
+                        }
+                        groups[key].items.push(item);
+                    });
+                    // แปลงเป็น array เรียงวันที่ล่าสุดก่อน
+                    var result = [];
+                    for (var k in groups) {
+                        if (groups.hasOwnProperty(k)) {
+                            result.push(groups[k]);
+                        }
+                    }
+                    result.sort(function (a, b) {
+                        return b.dateKey.localeCompare(a.dateKey);
+                    });
+                    return result;
+                }
+
                 var primaryGroup, secondaryGroup;
                 var primaryLabel, secondaryLabel;
 
                 if (currentPeriod === 'กลางวัน') {
-                    primaryGroup = dayItems;
-                    secondaryGroup = nightItems;
+                    primaryGroup = groupByDate(dayItems);
+                    secondaryGroup = groupByDate(nightItems);
                     primaryLabel = '☀️ กลางวัน';
                     secondaryLabel = '🌙 กลางคืน';
                 } else {
-                    primaryGroup = nightItems;
-                    secondaryGroup = dayItems;
+                    primaryGroup = groupByDate(nightItems);
+                    secondaryGroup = groupByDate(dayItems);
                     primaryLabel = '🌙 กลางคืน';
                     secondaryLabel = '☀️ กลางวัน';
                 }
 
                 historyContainer.innerHTML = '';
 
-                // Render กลุ่มหลัก
+                // Render กลุ่มหลัก (ปัจจุบัน)
                 if (primaryGroup.length > 0) {
                     var primaryHeader = document.createElement('div');
-                    primaryHeader.className = 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mb-1 mt-1';
+                    primaryHeader.className = 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mb-2 mt-1';
                     primaryHeader.textContent = primaryLabel;
                     historyContainer.appendChild(primaryHeader);
 
-                    primaryGroup.forEach(function (log) {
-                        historyContainer.appendChild(createHistoryItem(log));
+                    primaryGroup.forEach(function (dateGroup) {
+                        // หัวข้อวันที่
+                        var dateHeader = document.createElement('div');
+                        dateHeader.className = 'text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 mt-1';
+                        dateHeader.textContent = '📅 ' + dateGroup.displayDate;
+                        historyContainer.appendChild(dateHeader);
+
+                        // รายการของคนในวันนั้น
+                        dateGroup.items.forEach(function (log) {
+                            historyContainer.appendChild(createHistoryItem(log));
+                        });
                     });
                 }
 
                 // Render กลุ่มรอง (ถ้ามี)
                 if (secondaryGroup.length > 0) {
                     var secondaryHeader = document.createElement('div');
-                    secondaryHeader.className = 'text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1 mt-2';
+                    secondaryHeader.className = 'text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-2 mt-3';
                     secondaryHeader.textContent = secondaryLabel;
                     historyContainer.appendChild(secondaryHeader);
 
-                    secondaryGroup.forEach(function (log) {
-                        historyContainer.appendChild(createHistoryItem(log));
+                    secondaryGroup.forEach(function (dateGroup) {
+                        var dateHeader = document.createElement('div');
+                        dateHeader.className = 'text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-1.5 mt-1';
+                        dateHeader.textContent = '📅 ' + dateGroup.displayDate;
+                        historyContainer.appendChild(dateHeader);
+
+                        dateGroup.items.forEach(function (log) {
+                            historyContainer.appendChild(createHistoryItem(log));
+                        });
                     });
                 }
             } else {
@@ -287,10 +378,9 @@ var App = (function () {
         }
     }
 
-    // สร้าง element ประวัติ 2 คอลัมน์
+    // สร้าง element ประวัติ (ไม่แสดงวันที่ซ้ำ เพราะจัดกลุ่มตามวันที่แล้ว)
     function createHistoryItem(log) {
         var classes = common.getHistoryItemClasses();
-        var displayDate = formatShortDate(log.date);
         // ดึงเวลาเฉพาะ hh:mm (24 ชม.)
         var timeOnly = log.time || '';
         if (timeOnly.indexOf('T') !== -1) {
@@ -303,20 +393,19 @@ var App = (function () {
             timeOnly = timeOnly.substring(0, 5);
         }
         // ใช้ชื่อจาก log ที่บันทึกไว้ ถ้าไม่มีใช้ currentUser.name
-        var displayName = log.name || currentUser.name;
+        var displayName = log.name || currentUser.name || '(ไม่ระบุชื่อ)';
 
         var logItem = document.createElement('div');
         logItem.className = 'p-2.5 border rounded-xl flex justify-between items-start text-xs transition shadow-sm ' + classes.itemBg;
 
-        // ซ้าย: วันที่เล็ก + ชื่อใหญ่
+        // ซ้าย: ชื่อ
         var leftCol = document.createElement('div');
         leftCol.className = 'flex flex-col space-y-0.5 flex-1 min-w-0';
         leftCol.innerHTML = [
-            '<span class="text-[9px] ' + classes.accentText + '">' + escapeHtml(displayDate) + '</span>',
             '<span class="font-bold text-sm ' + classes.mainText + ' truncate">' + escapeHtml(displayName) + '</span>'
         ].join('');
 
-        // ขวา: เวลาเล็ก + จุดตรวจใหญ่
+        // ขวา: เวลา + จุดตรวจ
         var rightCol = document.createElement('div');
         rightCol.className = 'flex flex-col space-y-0.5 items-end flex-shrink-0 ml-2';
         rightCol.innerHTML = [
