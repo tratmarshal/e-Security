@@ -1,0 +1,55 @@
+// OA.gs
+function doPost(e) {
+  try {
+    const event = JSON.parse(e.postData.contents).events[0];
+    
+    // ตรวจสอบว่าเป็นข้อความหรือไม่
+    if (event.type === 'message' && event.message.type === 'text') {
+      const userId = event.source.userId;
+      const messageText = event.message.text.trim();
+      
+      // ตรวจสอบว่าข้อความคือ "สมัครสมาชิก" หรือไม่
+      if (messageText === 'สมัครสมาชิก') {
+        replyMessage(event.replyToken, `User ID ของคุณคือ: ${userId}`);
+      }
+      // ถ้าเป็นคำอื่น ไม่ตอบกลับ (ไม่ต้องทำอะไร)
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }));
+  } catch (error) {
+    console.error('Error:', error);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.toString() }));
+  }
+}
+
+// ฟังก์ชันสำหรับส่งข้อความตอบกลับ
+function replyMessage(replyToken, message) {
+  const url = 'https://api.line.me/v2/bot/message/reply';
+  
+  const payload = {
+    replyToken: replyToken,
+    messages: [
+      {
+        type: 'text',
+        text: message
+      }
+    ]
+  };
+  
+  const options = {
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + 'sG/Y07BRnFZPFM2ghUgKoBDJY7ano8TpLjoAXTuvHPVdFrV9nP0hjNXLQdKaDaCF5yynW28Xss079Ybx2ulCjN4xiM0Asrz2TqL4C6YJCRUR7TGCAS8JjASZ+bvm4f23lJ5HGZ9bWn8uSPU4gM5AQAdB04t89/1O/w1cDnyilFU=' // เปลี่ยนเป็น Access Token ของคุณ
+    },
+    payload: JSON.stringify(payload)
+  };
+  
+  UrlFetchApp.fetch(url, options);
+}
+
+// ฟังก์ชันทดสอบ (ใช้สำหรับทดสอบใน GAS)
+function test() {
+  // ใช้สำหรับทดสอบการทำงาน
+  Logger.log('Bot is ready!');
+}

@@ -31,7 +31,7 @@ function getSubstituteList() {
   }
 }
 
-// ===== SUBMIT SWAP (บันทึกการลา) — รองรับลาห้วงเวลา =====
+// ===== SUBMIT SWAP (บันทึกการลา) — รองรับลาห้วงเวลา + ป้องกันผู้แทนซ้ำ + ตรวจสอบตาม Business Rules =====
 
 function submitSwap(payload) {
   var lock = LockService.getScriptLock();
@@ -60,9 +60,15 @@ function submitSwap(payload) {
       return jsonResponse(false, 'ไม่สามารถเลือกตนเองเป็นผู้แทนเวรได้');
     }
 
-    // 5. ดึงชื่อผู้แทน (จากชีท SUPLIST โดยใช้ employeeId)
+    // เรียกชีทออกมาก่อนเพื่อนำมาประมวลผลอย่างปลอดภัย
+    var sheet = SheetService.getSheet(SHEETS.SWAP);
+    var ssId = sheet.getParent().getId();
+    var sheetId = sheet.getSheetId();
+
+    // 5. ดึงชื่อผู้แทน (จากชีท SUPLIST)
     var substituteName = '';
     var listRows = SheetService.getValues(SHEETS.SUPLIST, 'A:C');
+    
     for (var j = 1; j < listRows.length; j++) {
       if (listRows[j][COL.SUPLIST.EMPLOYEE_ID] && String(listRows[j][COL.SUPLIST.EMPLOYEE_ID]).trim() === payload.substituteEmployeeId) {
         substituteName = listRows[j][COL.SUPLIST.NAME] || '';
@@ -82,56 +88,166 @@ function submitSwap(payload) {
       current.setDate(current.getDate() + 1);
     }
 
-    // 7. หาแถวของตัวเองเก่า + แถวที่ substitute ถูกเลือกซ้ำ เพื่อลบ
-    var sheet = SheetService.getSheet(SHEETS.SWAP);
-    var existingRows = SheetService.getValues(SHEETS.SWAP, 'A:G');
-    var requesterName = auth.data.name || '';
-    var rowsToDelete = {};
+    // ==========================================
+    // UNIFIED VALIDATION BLOCK (Rules 1, 2, 3)
+    // ==========================================
 
-    // เก็บ index แถวที่ต้องลบ (key = dateStr)
+    // อ่านข้อมูลจากชีท SWAP เพียงรอบเดียวสำหรับทำ Validation ทุกข้อ
+    var existingRows = SheetService.getValues(SHEETS.SWAP, 'A:G');
+
+    var colSubEmployeeId = (typeof COL !== 'undefined' && COL.SWAP && COL.SWAP.SUBLIST_EMPLOYEE_ID !== undefined) 
+      ? COL.SWAP.SUBLIST_EMPLOYEE_ID 
+      : 4;
+
+    var reqLineUserId = String(payload.lineUserId).trim();
+    var reqEmpId = String(auth.data.employeeId || '').trim();
+    var subEmpId = String(payload.substituteEmployeeId).trim();
+    var proposedShift = String(payload.shift).trim();
+
+    var deleteIndices = [];
+    var activeSubstitutes = {}; // เก็บสถานะปฏิบัติงานจริง { employeeId: { "yyyy-MM-dd|shift": true } }
+
+    // ฟังก์ชันช่วยจัดรูปแบบวันที่เป็น yyyy-MM-dd
+    function parseRowDate(cellValue) {
+      if (!cellValue) return "";
+      if (cellValue instanceof Date) {
+        return Utilities.formatDate(cellValue, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      var tempDate = new Date(cellValue);
+      if (!isNaN(tempDate.getTime())) {
+        return Utilities.formatDate(tempDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      return String(cellValue).trim();
+    }
+
+    // ฟังก์ชันคำนวณวันข้างเคียง (บวก/ลบวัน)
+    function getAdjacentDateStr(dateStr, offsetDays) {
+      var parts = dateStr.split('-');
+      var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      d.setDate(d.getDate() + offsetDays);
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    // ฟังก์ชันตรวจการควงกะ (ห้าม กลางวัน X -> กลางคืน X และ ห้าม กลางคืน X -> กลางวัน X+1)
+    function hasConsecutiveShifts(scheduleMap) {
+      for (var key in scheduleMap) {
+        if (!scheduleMap[key]) continue;
+        var parts = key.split('|');
+        var dStr = parts[0];
+        var shift = parts[1];
+
+        if (shift === "กลางวัน") {
+          // ตรวจผลัดกลางคืนในวันเดียวกัน
+          if (scheduleMap[dStr + '|กลางคืน']) return true;
+        } else if (shift === "กลางคืน") {
+          // ตรวจผลัดกลางวันในวันถัดไป
+          var nextDayStr = getAdjacentDateStr(dStr, 1);
+          if (scheduleMap[nextDayStr + '|กลางวัน']) return true;
+        }
+      }
+      return false;
+    }
+
+    // ขั้นตอนที่ 1: ดึงเฉพาะข้อมูลที่ปฏิบัติงานจริง และค้นหาข้อมูลเก่าของผู้ใช้เดิมที่จะทำการเขียนทับ (Rule 3)
     for (var i = 1; i < existingRows.length; i++) {
       var row = existingRows[i];
-      if (row[COL.SWAP.DATE] && row[COL.SWAP.LINE_USER_ID]) {
-        var existingDate = String(row[COL.SWAP.DATE]).trim();
-        var existingUserId = String(row[COL.SWAP.LINE_USER_ID]).trim();
+      if (!row[COL.SWAP.DATE]) continue;
 
-        // ลบแถวเก่าของ user นี้ในวันที่ซ้ำกัน (upsert)
-        if (existingUserId === payload.lineUserId) {
-          for (var di = 0; di < dates.length; di++) {
-            if (existingDate === dates[di]) {
-              rowsToDelete[i] = true;
-              break;
-            }
+      var rowDateStr = parseRowDate(row[COL.SWAP.DATE]);
+      var rowShift = String(row[COL.SWAP.SHIFT] || '').trim();
+      var rowUserId = String(row[COL.SWAP.LINE_USER_ID] || '').trim();
+      var rowSubId = String(row[colSubEmployeeId] || '').trim();
+
+      var isSameDateAndShift = (dates.indexOf(rowDateStr) !== -1 && rowShift === proposedShift);
+
+      if (isSameDateAndShift && rowUserId === reqLineUserId) {
+        // บันทึก Index แถวเดิมของผู้ยื่นรายนี้ เพื่อเตรียมใช้ทำลายล้าง/เขียนทับใน Rule 3
+        deleteIndices.push(i);
+      } else {
+        // เก็บรายชื่อและตารางงานของผู้ปฏิบัติหน้าที่แทนท่านอื่นที่ยังใช้งานอยู่
+        if (rowSubId) {
+          if (!activeSubstitutes[rowSubId]) {
+            activeSubstitutes[rowSubId] = {};
           }
+          activeSubstitutes[rowSubId][rowDateStr + '|' + rowShift] = true;
         }
       }
     }
 
-    // ลบแถวเก่าทั้งหมด (เรียง index จากมากไปน้อย)
-    var deleteIndices = [];
-    for (var idx in rowsToDelete) {
-      if (rowsToDelete.hasOwnProperty(idx)) {
-        deleteIndices.push(parseInt(idx));
-      }
+    // ----------------------------------------------------
+    // RULE 1 : ห้ามควงกะผลัดติดกัน (ตรวจทั้งผู้ลา และผู้แทน)
+    // ----------------------------------------------------
+
+    // 1. ตรวจสอบเงื่อนไขผู้แทนเวร (นำผลัดใหม่มาทดลองรวมกับตารางงานที่มีอยู่แล้วตรวจหาควงกะ)
+    var subSchedule = {};
+    if (activeSubstitutes[subEmpId]) {
+      subSchedule = Object.assign({}, activeSubstitutes[subEmpId]);
     }
-    deleteIndices.sort(function(a, b) { return b - a; });
-    // แปลง index 0-based ของ array เป็น row number ใน sheet (+1 เพราะ header)
-    for (var k = 0; k < deleteIndices.length; k++) {
-      sheet.deleteRow(deleteIndices[k] + 1);
+    dates.forEach(function(D) {
+      subSchedule[D + '|' + proposedShift] = true;
+    });
+
+    if (hasConsecutiveShifts(subSchedule)) {
+      return jsonResponse(false, 'ห้ามควงกะผลัดติดกัน (ผู้แทนเวรปฏิบัติงานติดต่อกันเกินกำหนด)');
     }
 
-    // 8. บันทึกข้อมูลทีละวัน
+    // 2. ตรวจสอบเงื่อนไขผู้ลา (เนื่องจากเป็นการลาออก จึงไม่นับกะใหม่เข้าไปในแผนการทำงาน)
+    if (reqEmpId) {
+      var reqSchedule = {};
+      if (activeSubstitutes[reqEmpId]) {
+        reqSchedule = Object.assign({}, activeSubstitutes[reqEmpId]);
+      }
+      if (hasConsecutiveShifts(reqSchedule)) {
+        return jsonResponse(false, 'ห้ามควงกะผลัดติดกัน (ผู้ลามีการปฏิบัติงานผลัดอื่นติดต่อกันเกินกำหนด)');
+      }
+    }
+
+    // ----------------------------------------------------
+    // RULE 2 : ผู้แทนซ้ำของคนอื่น
+    // ----------------------------------------------------
     for (var di = 0; di < dates.length; di++) {
-      var values = [[
+      var D = dates[di];
+      if (activeSubstitutes[subEmpId] && activeSubstitutes[subEmpId][D + '|' + proposedShift]) {
+        return jsonResponse(false, 'ผู้แทนเวรคนนี้ถูกเลือกโดยเจ้าหน้าที่ท่านอื่นแล้ว');
+      }
+    }
+
+    // ----------------------------------------------------
+    // RULE 3 : ผู้แทนซ้ำของตัวเอง = แก้ไขข้อมูล
+    // ----------------------------------------------------
+    // ดำเนินการลบแถวเดิมที่บันทึกไว้ในวัน/เวลาเดียวกันออกก่อนเขียนชุดใหม่เข้าไปแทนที่ เพื่อรักษาความถูกต้องไม่ให้มีข้อมูลซ้ำซ้อน
+    if (deleteIndices.length > 0) {
+      deleteIndices.sort(function(a, b) { return b - a; });
+      deleteIndices.forEach(function(idx) {
+        sheet.deleteRow(idx + 1); // existingRows อ้างอิง index 0-based แต่ row ของ Google Sheets เป็น 1-based
+      });
+    }
+
+    // 8. บันทึกข้อมูลใหม่เข้าสู่ตารางทำงาน
+    var newRows = [];
+    for (var di = 0; di < dates.length; di++) {
+      newRows.push([
         dates[di],
         payload.lineUserId,
-        requesterName,
+        auth.data.name || '',
         substituteName,
         payload.substituteEmployeeId,
         payload.shift,
         nowTimestamp()
-      ]];
-      SheetService.appendRow(SHEETS.SWAP, values[0]);
+      ]);
+    }
+
+    newRows.forEach(function(newRow) {
+      sheet.appendRow(newRow);
+    });
+
+    // 9. จัดเรียงข้อมูลตามวันที่ (คอลัมน์ A)
+    var lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).sort({column: 1, ascending: true});
     }
 
     return jsonResponse(true, 'บันทึกการลาเรียบร้อย ✅ (' + dates.length + ' วัน)');
