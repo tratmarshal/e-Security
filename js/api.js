@@ -6,14 +6,10 @@ var api = (function () {
     var controller = new AbortController();
     var timer = setTimeout(function () { controller.abort(); }, CONFIG.TIMEOUT);
 
-    return fetch(CONFIG.GAS_URL, {
+    var url = CONFIG.GAS_URL + (CONFIG.GAS_URL.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+    return fetch(url, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'text/plain;charset=utf-8',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ fn: fn, payload: payload }),
       signal: controller.signal
     })
